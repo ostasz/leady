@@ -22,15 +22,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
                 if (parsedCredentials.success) {
                     const { email, password } = parsedCredentials.data;
+                    console.log('Attempting login for:', email);
+
                     const user = await prisma.user.findUnique({ where: { email } });
 
-                    if (!user) return null;
+                    if (!user) {
+                        console.log('User not found in DB');
+                        return null;
+                    }
 
+                    console.log('User found, verifying password...');
                     const passwordsMatch = await bcrypt.compare(password, user.password);
-                    if (passwordsMatch) return user;
+
+                    if (passwordsMatch) {
+                        console.log('Password match! Login successful.');
+                        return user;
+                    } else {
+                        console.log('Password mismatch.');
+                    }
+                } else {
+                    console.log('Invalid credentials format');
                 }
 
-                console.log('Invalid credentials');
+                console.log('Login failed');
                 return null;
             },
         }),

@@ -27,21 +27,21 @@ export default function RegisterPage() {
                 router.push('/login');
             } else {
                 const data = await res.json();
-                setError(data.error || 'Registration failed');
+                setError(data.error || 'Rejestracja nie powiodła się');
             }
         } catch (err) {
-            setError('An error occurred');
+            setError('Wystąpił błąd');
         }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
             <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-                <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">Register</h1>
+                <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">Rejestracja</h1>
                 {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Imię</label>
                         <div className="relative">
                             <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                             <input
@@ -67,7 +67,7 @@ export default function RegisterPage() {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Hasło</label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                             <input
@@ -83,13 +83,13 @@ export default function RegisterPage() {
                         type="submit"
                         className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold"
                     >
-                        Register
+                        Zarejestruj się
                     </button>
                 </form>
                 <p className="mt-4 text-center text-sm text-gray-600">
-                    Already have an account?{' '}
+                    Masz już konto?{' '}
                     <Link href="/login" className="text-blue-600 hover:underline">
-                        Login
+                        Zaloguj się
                     </Link>
                 </p>
             </div>
