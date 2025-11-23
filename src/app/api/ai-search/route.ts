@@ -22,6 +22,7 @@ export async function POST(request: Request) {
         // Find businesses and get their locations for the map.
         const mapsModel = genAI.getGenerativeModel({
             model: "gemini-2.0-flash-exp",
+            // @ts-ignore
             tools: [{ googleMaps: {} }],
         });
 
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
         // Use the list of found companies to find their NIPs using Google Search.
         const searchModel = genAI.getGenerativeModel({
             model: "gemini-2.0-flash-exp",
+            // @ts-ignore
             tools: [{ googleSearch: {} }],
         });
 
