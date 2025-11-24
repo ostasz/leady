@@ -37,6 +37,21 @@ export default function AdminPage() {
         }
     };
 
+    const handleBlock = async (userId: string, currentStatus: boolean) => {
+        try {
+            const res = await fetch('/api/admin/users', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: userId, isBlocked: !currentStatus }),
+            });
+            if (!res.ok) throw new Error('Failed to update user');
+
+            setUsers(users.map(u => u.id === userId ? { ...u, isBlocked: !currentStatus } : u));
+        } catch (err) {
+            alert('Błąd aktualizacji statusu użytkownika');
+        }
+    };
+
     const handleDelete = async (userId: string) => {
         if (!confirm('Czy na pewno chcesz usunąć tego użytkownika?')) return;
 
@@ -60,7 +75,7 @@ export default function AdminPage() {
             <div className="max-w-4xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-                        <Shield className="text-blue-600" />
+                        <Shield className="text-primary" />
                         Panel Administratora
                     </h1>
                     <button
@@ -102,19 +117,33 @@ export default function AdminPage() {
                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                                             {user.role}
                                         </span>
+                                        {user.isBlocked && (
+                                            <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                Zablokowany
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {new Date(user.createdAt).toLocaleDateString('pl-PL')}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                         {user.email !== 'ostasz@mac.com' && (
-                                            <button
-                                                onClick={() => handleDelete(user.id)}
-                                                className="text-red-600 hover:text-red-900"
-                                                title="Usuń użytkownika"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
+                                            <>
+                                                <button
+                                                    onClick={() => handleBlock(user.id, user.isBlocked)}
+                                                    className={`${user.isBlocked ? 'text-green-600 hover:text-green-900' : 'text-orange-600 hover:text-orange-900'}`}
+                                                    title={user.isBlocked ? "Odblokuj" : "Zablokuj"}
+                                                >
+                                                    <Shield size={18} className={user.isBlocked ? "fill-current" : ""} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(user.id)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                    title="Usuń użytkownika"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </>
                                         )}
                                     </td>
                                 </tr>

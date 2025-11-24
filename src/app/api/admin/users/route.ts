@@ -19,6 +19,7 @@ export async function GET() {
                 name: true,
                 email: true,
                 role: true,
+                isBlocked: true,
                 createdAt: true,
             },
         });
@@ -56,3 +57,36 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
     }
 }
+
+export async function PATCH(request: Request) {
+    const session = await auth();
+    // @ts-ignore
+    if (!session || session.user.role !== 'admin') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        const body = await request.json();
+        const { id, isBlocked } = body;
+
+        if (!id || typeof isBlocked !== 'boolean') {
+            return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
+        }
+
+        // Prevent blocking self
+        // @ts-ignore
+        if (id === session.user.id) {
+            return NextResponse.json({ error: 'Cannot block yourself' }, { status: 400 });
+        }
+
+        const user = await prisma.user.update({
+            where: { id },
+            data: { isBlocked },
+        });
+
+        return NextResponse.json({ user });
+    } catch (error) {
+        return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+    }
+}
+

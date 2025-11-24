@@ -47,7 +47,7 @@ export default function LoginPage() {
                                 type="email"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                 required
                             />
                         </div>
@@ -60,21 +60,21 @@ export default function LoginPage() {
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
                                 required
                             />
                         </div>
                     </div>
                     <button
                         type="submit"
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+                        className="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition-colors font-semibold"
                     >
                         Zaloguj się
                     </button>
                 </form>
                 <p className="mt-4 text-center text-sm text-gray-600">
                     Nie masz konta?{' '}
-                    <Link href="/register" className="text-blue-600 hover:underline">
+                    <Link href="/register" className="text-primary hover:underline">
                         Zarejestruj się
                     </Link>
                 </p>

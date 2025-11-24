@@ -35,6 +35,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     const passwordsMatch = await bcrypt.compare(password, user.password);
 
                     if (passwordsMatch) {
+                        if (user.isBlocked) {
+                            console.log('User is blocked');
+                            throw new Error('Your account has been blocked.');
+                        }
                         console.log('Password match! Login successful.');
                         return user;
                     } else {

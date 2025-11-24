@@ -146,7 +146,7 @@ export default function Home() {
                 <span className="text-sm font-semibold text-gray-700">{session.user.name || session.user.email}</span>
                 {/* @ts-ignore */}
                 {session.user.role === 'admin' && (
-                  <Link href="/admin" className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-bold">
+                  <Link href="/admin" className="text-xs text-primary hover:text-primary-dark mt-1 font-bold">
                     Panel Administratora
                   </Link>
                 )}
@@ -164,7 +164,7 @@ export default function Home() {
           <div className="flex mb-6 bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setMode('radius')}
-              className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${mode === 'radius' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'
+              className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${mode === 'radius' ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'
                 }`}
             >
               <div className="flex items-center justify-center gap-1">
@@ -174,7 +174,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setMode('route')}
-              className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${mode === 'route' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'
+              className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${mode === 'route' ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'
                 }`}
             >
               <div className="flex items-center justify-center gap-1">
@@ -205,7 +205,7 @@ export default function Home() {
                 value={address1}
                 onChange={(e) => setAddress1(e.target.value)}
                 placeholder={mode === 'ai' ? "np. Warszawa, duże fabryki" : "np. Warszawa, Marszałkowska 1"}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                 required
               />
             </div>
@@ -220,7 +220,7 @@ export default function Home() {
                   value={address2}
                   onChange={(e) => setAddress2(e.target.value)}
                   placeholder="np. Łódź, Piotrkowska"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                   required
                 />
               </div>
@@ -229,7 +229,7 @@ export default function Home() {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${mode === 'ai' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+              className={`w-full text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${mode === 'ai' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-primary hover:bg-primary-dark'}`}
             >
               {loading ? (
                 'Szukanie...'
@@ -575,7 +575,7 @@ export default function Home() {
                         href={place.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 bg-blue-50 text-blue-700 hover:bg-blue-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-blue-200"
+                        className="flex-1 bg-primary-lighter text-primary-dark hover:bg-primary-light py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-primary-light"
                       >
                         🌐 Strona WWW
                       </a>
