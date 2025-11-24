@@ -5,13 +5,13 @@ import { useSession, signOut } from 'next-auth/react';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import Link from 'next/link';
 import Map from '@/components/Map';
-import { Search, MapPin, Navigation, Sparkles } from 'lucide-react';
+import { Search, MapPin, Navigation, Sparkles, Locate } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
 export default function Home() {
-  const [mode, setMode] = useState<'radius' | 'route' | 'ai'>('radius');
+  const [mode, setMode] = useState<'radius' | 'route' | 'ai'>('ai');
   const [address1, setAddress1] = useState('');
   const [address2, setAddress2] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,6 +20,7 @@ export default function Home() {
   const [routePath, setRoutePath] = useState<any[]>([]);
   const [error, setError] = useState('');
   const [aiReport, setAiReport] = useState('');
+  const [gettingLocation, setGettingLocation] = useState(false);
   const { data: session } = useSession();
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -88,6 +89,43 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getUserLocation = () => {
+    setGettingLocation(true);
+    if (!navigator.geolocation) {
+      alert('Geolokalizacja nie jest wspierana przez Twoją przeglądarkę');
+      setGettingLocation(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          // Reverse geocode to get address
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${API_KEY}`
+          );
+          const data = await response.json();
+          if (data.results && data.results[0]) {
+            const address = data.results[0].formatted_address;
+            setAddress1(address);
+            setCenter({ lat: latitude, lng: longitude });
+          }
+        } catch (error) {
+          console.error('Error getting address:', error);
+          setAddress1(`${latitude}, ${longitude}`);
+        } finally {
+          setGettingLocation(false);
+        }
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        alert('Nie udało się pobrać lokalizacji. Sprawdź uprawnienia przeglądarki.');
+        setGettingLocation(false);
+      }
+    );
   };
 
   // Helper to parse AI report
@@ -200,14 +238,25 @@ export default function Home() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {mode === 'route' ? 'Punkt Startowy' : 'Adres / Obszar'}
               </label>
-              <input
-                type="text"
-                value={address1}
-                onChange={(e) => setAddress1(e.target.value)}
-                placeholder={mode === 'ai' ? "np. Warszawa, duże fabryki" : "np. Warszawa, Marszałkowska 1"}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                required
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={address1}
+                  onChange={(e) => setAddress1(e.target.value)}
+                  placeholder={mode === 'ai' ? "np. Warszawa, duże fabryki" : "np. Warszawa, Marszałkowska 1"}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={getUserLocation}
+                  disabled={gettingLocation}
+                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Użyj mojej lokalizacji"
+                >
+                  <Locate size={20} className={gettingLocation ? 'animate-pulse' : ''} />
+                </button>
+              </div>
             </div>
 
             {mode === 'route' && (
