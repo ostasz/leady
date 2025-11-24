@@ -91,6 +91,7 @@ WAŻNE: Zwróć TYLKO czysty JSON, bez markdown, bez \`\`\`json, bez dodatkowego
 
         // Process grounding metadata to create map markers
         let places: any[] = [];
+        // @ts-ignore - groundingMetadata exists but not in TypeScript definitions
         const groundingMetadata = searchResponse.groundingMetadata;
 
         if (groundingMetadata?.groundingChunks) {
@@ -152,7 +153,7 @@ WAŻNE: Zwróć TYLKO czysty JSON, bez markdown, bez \`\`\`json, bez dodatkowego
             });
 
             const results = await Promise.all(placesPromises);
-            places = results.filter(p => p !== null);
+            places = results.filter((p: any) => p !== null);
             console.log(`Grounding metadata returned ${groundingMetadata.groundingChunks.length} chunks, mapped to ${places.length} places.`);
         }
 
