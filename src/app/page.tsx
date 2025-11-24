@@ -60,23 +60,14 @@ export default function Home() {
       }
 
       if (mode === 'ai') {
-        setAiReport(data.report);
-        // If the API returns structured places from grounding metadata, use them for markers and list
-        if (data.places && data.places.length > 0) {
-          setResults(data.places);
+        setAiReport(data.report || '');
+        // Backend now returns 'results' instead of 'places'
+        if (data.results && data.results.length > 0) {
+          setResults(data.results);
           // Calculate center from the first result if available
-          if (data.places[0]?.location) {
-            setCenter(data.places[0].location);
+          if (data.results[0]?.location) {
+            setCenter(data.results[0].location);
           }
-        }
-        // Process grounding metadata if available to show markers
-        // For now, we rely on the text report, but if metadata has locations, we could parse them.
-        // The current Map component expects { id, location: { lat, lng }, name, ... }
-        // If Gemini returns grounding chunks with location data, we can map it here.
-        // This is a placeholder for metadata processing:
-        if (data.groundingMetadata?.groundingChunks) {
-          // console.log('Grounding Metadata:', data.groundingMetadata);
-          // Implementation depends on exact structure of grounding chunks for Maps
         }
       } else {
         setResults(data.results);
@@ -472,168 +463,184 @@ export default function Home() {
           )}
 
           {/* Results List */}
-          {mode !== 'ai' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center border-b pb-2">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Wyniki ({results.length})
-                </h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={async () => {
-                      if (results.length === 0) return;
-                      try {
-                        const XLSX = await import('xlsx');
-                        const ws = XLSX.utils.json_to_sheet(results.map(r => ({
-                          Name: r.name,
-                          Address: r.address,
-                          Phone: r.phone || '',
-                          Website: r.website || '',
-                          Rating: r.rating || '',
-                          Reviews: r.user_ratings_total || ''
-                        })));
-                        const wb = XLSX.utils.book_new();
-                        XLSX.utils.book_append_sheet(wb, ws, "Prospects");
-                        XLSX.writeFile(wb, "prospects.xlsx");
-                      } catch (e) {
-                        alert("Błąd: Biblioteka xlsx nie jest zainstalowana. Uruchom w terminalu: npm install xlsx");
-                        console.error(e);
-                      }
-                    }}
-                    className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
-                    title="Eksportuj do Excel"
+          <div className="space-y-4">
+            <div className="flex justify-between items-center border-b pb-2">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Wyniki ({results.length})
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    if (results.length === 0) return;
+                    try {
+                      const XLSX = await import('xlsx');
+                      const ws = XLSX.utils.json_to_sheet(results.map(r => ({
+                        Name: r.name,
+                        Address: r.address,
+                        Phone: r.phone || '',
+                        Website: r.website || '',
+                        Rating: r.rating || '',
+                        Reviews: r.user_ratings_total || ''
+                      })));
+                      const wb = XLSX.utils.book_new();
+                      XLSX.utils.book_append_sheet(wb, ws, "Prospects");
+                      XLSX.writeFile(wb, "prospects.xlsx");
+                    } catch (e) {
+                      alert("Błąd: Biblioteka xlsx nie jest zainstalowana. Uruchom w terminalu: npm install xlsx");
+                      console.error(e);
+                    }
+                  }}
+                  className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
+                  title="Eksportuj do Excel"
+                >
+                  Excel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (results.length === 0) return;
+                    try {
+                      const jsPDF = (await import('jspdf')).default;
+                      const autoTable = (await import('jspdf-autotable')).default;
+
+                      const doc = new jsPDF();
+
+                      // Load custom font for Polish characters
+                      const fontUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf';
+                      const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
+                      const fontBase64 = Buffer.from(fontBytes).toString('base64'); // Requires Buffer polyfill or browser equivalent
+
+                      // Browser compatible base64 conversion
+                      const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
+                        let binary = '';
+                        const bytes = new Uint8Array(buffer);
+                        const len = bytes.byteLength;
+                        for (let i = 0; i < len; i++) {
+                          binary += String.fromCharCode(bytes[i]);
+                        }
+                        return window.btoa(binary);
+                      };
+
+                      const base64String = arrayBufferToBase64(fontBytes);
+
+                      doc.addFileToVFS('Roboto-Regular.ttf', base64String);
+                      doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+                      doc.setFont('Roboto');
+
+                      // Add Title
+                      doc.setFontSize(18);
+                      doc.setTextColor(40, 40, 40);
+                      doc.text("Raport Potencjalnych Klientów", 14, 22);
+
+                      doc.setFontSize(10);
+                      doc.setTextColor(100, 100, 100);
+                      doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 30);
+
+                      const tableData = results.map(r => [
+                        r.name,
+                        r.address,
+                        r.phone || '-',
+                        r.website || '-'
+                      ]);
+
+                      autoTable(doc, {
+                        startY: 40,
+                        head: [['Nazwa Firmy', 'Adres', 'Telefon', 'Strona WWW']],
+                        body: tableData,
+                        styles: {
+                          font: 'Roboto',
+                          fontSize: 10,
+                          cellPadding: 3,
+                        },
+                        headStyles: {
+                          fillColor: [41, 128, 185], // Blue
+                          textColor: 255,
+                          fontStyle: 'bold',
+                        },
+                        alternateRowStyles: {
+                          fillColor: [245, 245, 245],
+                        },
+                        columnStyles: {
+                          0: { cellWidth: 50 }, // Name
+                          1: { cellWidth: 60 }, // Address
+                          2: { cellWidth: 30 }, // Phone
+                          3: { cellWidth: 'auto' }, // Website
+                        },
+                      });
+
+                      doc.save("prospects.pdf");
+                    } catch (e) {
+                      alert("Błąd: Biblioteki PDF nie są zainstalowane lub wystąpił błąd generowania. Uruchom w terminalu: npm install jspdf jspdf-autotable");
+                      console.error(e);
+                    }
+                  }}
+                  className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors"
+                  title="Eksportuj do PDF"
+                >
+                  PDF
+                </button>
+              </div>
+            </div>
+
+            {results.length === 0 && !loading && (
+              <p className="text-gray-500 text-sm italic">Brak wyników. Wpisz adres i kliknij szukaj.</p>
+            )}
+            {results.map((place) => (
+              <div key={place.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <h3 className="font-bold text-gray-900 text-lg">
+                  <a
+                    href={`https://www.google.com/search?q=${encodeURIComponent(place.name + " " + (place.address || ""))}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary hover:underline"
                   >
-                    Excel
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (results.length === 0) return;
-                      try {
-                        const jsPDF = (await import('jspdf')).default;
-                        const autoTable = (await import('jspdf-autotable')).default;
+                    {place.name}
+                  </a>
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">{place.address}</p>
 
-                        const doc = new jsPDF();
+                {/* @ts-ignore */}
+                {place.nip && (
+                  <div className="flex items-center gap-1 mt-2 text-xs font-mono text-purple-700 bg-purple-50 px-2 py-1 rounded w-fit border border-purple-100">
+                    <span className="font-bold">NIP:</span>
+                    {/* @ts-ignore */}
+                    {place.nip}
+                  </div>
+                )}
 
-                        // Load custom font for Polish characters
-                        const fontUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf';
-                        const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-                        const fontBase64 = Buffer.from(fontBytes).toString('base64'); // Requires Buffer polyfill or browser equivalent
+                {place.summary && (
+                  <p className="text-xs text-gray-500 mt-2 italic border-l-2 border-gray-300 pl-2">
+                    {place.summary}
+                  </p>
+                )}
 
-                        // Browser compatible base64 conversion
-                        const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
-                          let binary = '';
-                          const bytes = new Uint8Array(buffer);
-                          const len = bytes.byteLength;
-                          for (let i = 0; i < len; i++) {
-                            binary += String.fromCharCode(bytes[i]);
-                          }
-                          return window.btoa(binary);
-                        };
+                <div className="flex items-center mt-2 gap-2 mb-3">
+                  <span className="text-yellow-500 text-sm font-medium">★ {place.rating || 'N/A'}</span>
+                  <span className="text-gray-400 text-xs">({place.user_ratings_total || 0} opinii)</span>
+                </div>
 
-                        const base64String = arrayBufferToBase64(fontBytes);
-
-                        doc.addFileToVFS('Roboto-Regular.ttf', base64String);
-                        doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
-                        doc.setFont('Roboto');
-
-                        // Add Title
-                        doc.setFontSize(18);
-                        doc.setTextColor(40, 40, 40);
-                        doc.text("Raport Potencjalnych Klientów", 14, 22);
-
-                        doc.setFontSize(10);
-                        doc.setTextColor(100, 100, 100);
-                        doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 30);
-
-                        const tableData = results.map(r => [
-                          r.name,
-                          r.address,
-                          r.phone || '-',
-                          r.website || '-'
-                        ]);
-
-                        autoTable(doc, {
-                          startY: 40,
-                          head: [['Nazwa Firmy', 'Adres', 'Telefon', 'Strona WWW']],
-                          body: tableData,
-                          styles: {
-                            font: 'Roboto',
-                            fontSize: 10,
-                            cellPadding: 3,
-                          },
-                          headStyles: {
-                            fillColor: [41, 128, 185], // Blue
-                            textColor: 255,
-                            fontStyle: 'bold',
-                          },
-                          alternateRowStyles: {
-                            fillColor: [245, 245, 245],
-                          },
-                          columnStyles: {
-                            0: { cellWidth: 50 }, // Name
-                            1: { cellWidth: 60 }, // Address
-                            2: { cellWidth: 30 }, // Phone
-                            3: { cellWidth: 'auto' }, // Website
-                          },
-                        });
-
-                        doc.save("prospects.pdf");
-                      } catch (e) {
-                        alert("Błąd: Biblioteki PDF nie są zainstalowane lub wystąpił błąd generowania. Uruchom w terminalu: npm install jspdf jspdf-autotable");
-                        console.error(e);
-                      }
-                    }}
-                    className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors"
-                    title="Eksportuj do PDF"
-                  >
-                    PDF
-                  </button>
+                <div className="flex gap-2 mt-3 border-t pt-3">
+                  {place.phone && (
+                    <a
+                      href={`tel:${place.phone}`}
+                      className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-green-200"
+                    >
+                      📞 Zadzwoń
+                    </a>
+                  )}
+                  {place.website && (
+                    <a
+                      href={place.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 bg-primary-lighter text-primary-dark hover:bg-primary-light py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-primary-light"
+                    >
+                      🌐 Strona WWW
+                    </a>
+                  )}
                 </div>
               </div>
-
-              {results.length === 0 && !loading && (
-                <p className="text-gray-500 text-sm italic">Brak wyników. Wpisz adres i kliknij szukaj.</p>
-              )}
-              {results.map((place) => (
-                <div key={place.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <h3 className="font-bold text-gray-900 text-lg">{place.name}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{place.address}</p>
-
-                  {place.summary && (
-                    <p className="text-xs text-gray-500 mt-2 italic border-l-2 border-gray-300 pl-2">
-                      {place.summary}
-                    </p>
-                  )}
-
-                  <div className="flex items-center mt-2 gap-2 mb-3">
-                    <span className="text-yellow-500 text-sm font-medium">★ {place.rating || 'N/A'}</span>
-                    <span className="text-gray-400 text-xs">({place.user_ratings_total || 0} opinii)</span>
-                  </div>
-
-                  <div className="flex gap-2 mt-3 border-t pt-3">
-                    {place.phone && (
-                      <a
-                        href={`tel:${place.phone}`}
-                        className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-green-200"
-                      >
-                        📞 Zadzwoń
-                      </a>
-                    )}
-                    {place.website && (
-                      <a
-                        href={place.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 bg-primary-lighter text-primary-dark hover:bg-primary-light py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-primary-light"
-                      >
-                        🌐 Strona WWW
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
         </div>
 
         {/* Map Area */}
