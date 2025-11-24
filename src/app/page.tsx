@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { APIProvider } from '@vis.gl/react-google-maps';
+import Link from 'next/link';
 import Map from '@/components/Map';
 import { Search, MapPin, Navigation, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -143,6 +144,12 @@ export default function Home() {
               <div className="flex flex-col items-end">
                 <span className="text-xs text-gray-500">Zalogowany jako:</span>
                 <span className="text-sm font-semibold text-gray-700">{session.user.name || session.user.email}</span>
+                {/* @ts-ignore */}
+                {session.user.role === 'admin' && (
+                  <Link href="/admin" className="text-xs text-blue-600 hover:text-blue-800 mt-1 font-bold">
+                    Panel Administratora
+                  </Link>
+                )}
                 <button
                   onClick={() => signOut()}
                   className="text-xs text-red-500 hover:text-red-700 mt-1 underline"
