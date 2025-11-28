@@ -40,6 +40,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                             throw new Error('Your account has been blocked.');
                         }
                         console.log('Password match! Login successful.');
+                        // Update lastLogin
+                        try {
+                            console.log('Attempting to update lastLogin for user:', user.id);
+                            const updateResult = await prisma.user.update({
+                                where: { id: user.id },
+                                data: { lastLogin: new Date() }
+                            });
+                            console.log('LastLogin updated successfully:', updateResult.lastLogin);
+                        } catch (error) {
+                            console.error('Failed to update lastLogin:', error);
+                            // Don't block login if update fails
+                        }
                         return user;
                     } else {
                         console.log('Password mismatch.');

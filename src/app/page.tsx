@@ -5,7 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import Link from 'next/link';
 import Map from '@/components/Map';
-import { Search, MapPin, Navigation, Sparkles, Locate } from 'lucide-react';
+import { Search, MapPin, Navigation, Sparkles, Locate, Save, BookmarkPlus } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
@@ -23,7 +23,65 @@ export default function Home() {
   const [gettingLocation, setGettingLocation] = useState(false);
   const [deepSearchResults, setDeepSearchResults] = useState<Record<string, any>>({});
   const [deepSearchLoading, setDeepSearchLoading] = useState<Record<string, boolean>>({});
+  const [savingLead, setSavingLead] = useState<Record<string, boolean>>({});
   const { data: session } = useSession();
+
+  const handleSaveLead = async (place: any) => {
+    setSavingLead(prev => ({ ...prev, [place.id]: true }));
+    try {
+      // First, run Deep Search if not already done
+      let deepData = deepSearchResults[place.id];
+      if (!deepData || deepData.error) {
+        const res = await fetch('/api/deep-search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: place.name,
+            address: place.address,
+            website: place.website
+          })
+        });
+        const searchData = await res.json();
+        if (searchData.data) {
+          deepData = searchData.data;
+          setDeepSearchResults(prev => ({ ...prev, [place.id]: deepData }));
+        }
+      }
+
+      // Now save to leads
+      const leadData = {
+        companyName: place.name,
+        address: place.address,
+        phone: place.phone,
+        website: place.website,
+        nip: deepData?.nip,
+        keyPeople: deepData?.keyPeople || [],
+        revenue: deepData?.revenue,
+        employees: deepData?.employees,
+        socials: deepData?.socials,
+        description: deepData?.description || place.summary,
+        technologies: deepData?.technologies || []
+      };
+
+      const saveRes = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(leadData)
+      });
+
+      if (saveRes.ok) {
+        alert('Lead zapisany pomyślnie!');
+      } else {
+        const error = await saveRes.json();
+        alert(`Błąd: ${error.error}`);
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Błąd podczas zapisywania leada.');
+    } finally {
+      setSavingLead(prev => ({ ...prev, [place.id]: false }));
+    }
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -246,6 +304,15 @@ export default function Home() {
               </div>
             </button>
           </div>
+
+          {/* My Leads Button */}
+          <Link
+            href="/my-leads"
+            className="block w-full mb-6 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-4 rounded-lg text-center font-semibold hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+          >
+            <BookmarkPlus size={18} />
+            Moje Leady
+          </Link>
 
           {/* Search Form */}
           <form onSubmit={handleSearch} className="space-y-4 mb-8">
@@ -672,6 +739,19 @@ export default function Home() {
                       <Sparkles size={12} />
                     )}
                     {deepSearchResults[place.id] ? 'Odśwież Info' : 'Deep Search'}
+                  </button>
+                  <button
+                    onClick={() => handleSaveLead(place)}
+                    disabled={savingLead[place.id]}
+                    className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-green-200 flex items-center justify-center gap-1"
+                    title="Zapisz do mojej bazy leadów"
+                  >
+                    {savingLead[place.id] ? (
+                      <span className="animate-spin">⏳</span>
+                    ) : (
+                      <BookmarkPlus size={12} />
+                    )}
+                    Zapisz Lead
                   </button>
                 </div>
 

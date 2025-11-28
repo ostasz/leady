@@ -1,10 +1,21 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { auth } from '@/auth';
+import { PrismaClient } from '@prisma/client';
 
+const prisma = new PrismaClient();
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export async function POST(request: Request) {
     try {
+        const session = await auth();
+        if (session?.user?.id) {
+            prisma.user.update({
+                where: { id: session.user.id },
+                data: { searchCount: { increment: 1 } }
+            }).catch(err => console.error('Failed to update search count', err));
+        }
+
         const { name, address, website } = await request.json();
 
         if (!name) {

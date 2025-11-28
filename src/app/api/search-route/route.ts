@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { decode } from '@googlemaps/polyline-codec';
+import { auth } from '@/auth';
+import { PrismaClient } from '@prisma/client';
 
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+const prisma = new PrismaClient();
+const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 async function getDirections(origin: string, destination: string) {
-    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${GOOGLE_MAPS_API_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
 
@@ -17,7 +20,7 @@ async function getDirections(origin: string, destination: string) {
 
 async function searchNearby(location: { lat: number; lng: number }, radius: number) {
     const keyword = 'manufacturing|factory|industrial';
-    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=${radius}&keyword=${encodeURIComponent(keyword)}&key=${GOOGLE_MAPS_API_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=${radius}&keyword=${encodeURIComponent(keyword)}&key=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
     return data.results || [];
@@ -25,7 +28,7 @@ async function searchNearby(location: { lat: number; lng: number }, radius: numb
 
 async function getPlaceDetails(placeId: string) {
     const fields = 'formatted_phone_number,website,editorial_summary';
-    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${GOOGLE_MAPS_API_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
     return data.result || {};
@@ -73,6 +76,14 @@ function samplePath(path: { lat: number; lng: number }[], intervalMeters: number
 }
 
 export async function GET(request: Request) {
+    const session = await auth();
+    if (session?.user?.id) {
+        prisma.user.update({
+            where: { id: session.user.id },
+            data: { searchCount: { increment: 1 } }
+        }).catch(err => console.error('Failed to update search count', err));
+    }
+
     const { searchParams } = new URL(request.url);
     const origin = searchParams.get('origin');
     const destination = searchParams.get('destination');

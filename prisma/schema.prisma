@@ -15,6 +15,42 @@ model User {
   name      String?
   role      String   @default("user")
   isBlocked Boolean  @default(false)
+  lastLogin DateTime?
+  searchCount Int    @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  leads     Lead[]
 }
+
+model Lead {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Company info
+  companyName   String
+  address       String?
+  phone         String?
+  website       String?
+  nip           String?
+  
+  // Lead management
+  status        String   @default("new") // new, contacted, interested, closed
+  priority      String   @default("medium") // low, medium, high
+  notes         String?
+  
+  // Deep search data
+  keyPeople     String[]
+  revenue       String?
+  employees     String?
+  socials       Json?
+  description   String?
+  technologies  String[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
+}
+

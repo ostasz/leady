@@ -1,0 +1,322 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, Save, Building2, Phone, Globe, MapPin, Users, DollarSign, Code } from 'lucide-react';
+
+type Lead = {
+    id: string;
+    companyName: string;
+    address: string | null;
+    phone: string | null;
+    website: string | null;
+    nip: string | null;
+    status: string;
+    priority: string;
+    notes: string | null;
+    keyPeople: string[];
+    revenue: string | null;
+    employees: string | null;
+    description: string | null;
+    technologies: string[];
+    socials: any;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export default function LeadDetailPage() {
+    const { data: session, status } = useSession();
+    const router = useRouter();
+    const params = useParams();
+    const id = params?.id as string;
+
+    const [lead, setLead] = useState<Lead | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    // Editable fields
+    const [statusValue, setStatusValue] = useState('');
+    const [priorityValue, setPriorityValue] = useState('');
+    const [notes, setNotes] = useState('');
+
+    useEffect(() => {
+        if (status === 'loading') return;
+        if (!session) {
+            router.push('/login');
+            return;
+        }
+        if (id) {
+            fetchLead();
+        }
+    }, [session, status, router, id]);
+
+    const fetchLead = async () => {
+        try {
+            const res = await fetch(`/api/leads/${id}`);
+            if (!res.ok) throw new Error('Failed to fetch lead');
+            const data = await res.json();
+            setLead(data.lead);
+            setStatusValue(data.lead.status);
+            setPriorityValue(data.lead.priority);
+            setNotes(data.lead.notes || '');
+        } catch (error) {
+            console.error('Error fetching lead:', error);
+            alert('Błąd przy pobieraniu leada');
+            router.push('/my-leads');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            const res = await fetch(`/api/leads/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    status: statusValue,
+                    priority: priorityValue,
+                    notes: notes || null
+                })
+            });
+
+            if (!res.ok) throw new Error('Failed to update');
+            alert('Lead zaktualizowany!');
+            fetchLead();
+        } catch (error) {
+            alert('Błąd przy zapisywaniu');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    if (status === 'loading' || loading) {
+        return <div className="min-h-screen flex items-center justify-center">Ładowanie...</div>;
+    }
+
+    if (!lead) {
+        return <div className="min-h-screen flex items-center justify-center">Lead nie znaleziony</div>;
+    }
+
+    return (
+        <div className="min-h-screen bg-gray-50 p-8">
+            <div className="max-w-4xl mx-auto">
+                {/* Header */}
+                <div className="flex items-center gap-4 mb-8">
+                    <Link
+                        href="/my-leads"
+                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                    >
+                        <ArrowLeft size={24} />
+                    </Link>
+                    <div className="flex-1">
+                        <h1 className="text-3xl font-bold text-gray-800">{lead.companyName}</h1>
+                        <p className="text-gray-600 text-sm mt-1">
+                            Dodano: {new Date(lead.createdAt).toLocaleString('pl-PL')}
+                        </p>
+                    </div>
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                    >
+                        <Save size={18} />
+                        {saving ? 'Zapisywanie...' : 'Zapisz'}
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Main Info */}
+                    <div className="lg:col-span-2 space-y-6">
+                        {/* Company Info Card */}
+                        <div className="bg-white p-6 rounded-lg shadow-sm">
+                            <h2 className="text-xl font-bold text-gray-800 mb-4">Informacje o firmie</h2>
+                            <div className="space-y-3">
+                                {lead.address && (
+                                    <div className="flex items-start gap-3">
+                                        <MapPin size={20} className="text-gray-400 mt-1" />
+                                        <div>
+                                            <p className="text-sm text-gray-600">Adres</p>
+                                            <p className="font-medium">{lead.address}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {lead.phone && (
+                                    <div className="flex items-center gap-3">
+                                        <Phone size={20} className="text-gray-400" />
+                                        <div>
+                                            <p className="text-sm text-gray-600">Telefon</p>
+                                            <a href={`tel:${lead.phone}`} className="font-medium text-indigo-600 hover:underline">
+                                                {lead.phone}
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
+                                {lead.website && (
+                                    <div className="flex items-center gap-3">
+                                        <Globe size={20} className="text-gray-400" />
+                                        <div>
+                                            <p className="text-sm text-gray-600">Strona WWW</p>
+                                            <a href={lead.website} target="_blank" rel="noopener noreferrer" className="font-medium text-indigo-600 hover:underline">
+                                                {lead.website}
+                                            </a>
+                                        </div>
+                                    </div>
+                                )}
+                                {lead.nip && (
+                                    <div className="flex items-center gap-3">
+                                        <Building2 size={20} className="text-gray-400" />
+                                        <div>
+                                            <p className="text-sm text-gray-600">NIP</p>
+                                            <p className="font-medium font-mono">{lead.nip}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Deep Search Data */}
+                        {(lead.description || lead.keyPeople.length > 0 || lead.revenue || lead.employees) && (
+                            <div className="bg-white p-6 rounded-lg shadow-sm">
+                                <h2 className="text-xl font-bold text-gray-800 mb-4">Dodatkowe informacje (AI)</h2>
+
+                                {lead.description && (
+                                    <div className="mb-4">
+                                        <p className="text-sm text-gray-600 mb-1">Opis działalności</p>
+                                        <p className="text-gray-800">{lead.description}</p>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                    {lead.revenue && (
+                                        <div className="flex items-center gap-2">
+                                            <DollarSign size={18} className="text-green-600" />
+                                            <div>
+                                                <p className="text-xs text-gray-600">Przychody</p>
+                                                <p className="font-medium text-sm">{lead.revenue}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {lead.employees && (
+                                        <div className="flex items-center gap-2">
+                                            <Users size={18} className="text-blue-600" />
+                                            <div>
+                                                <p className="text-xs text-gray-600">Pracownicy</p>
+                                                <p className="font-medium text-sm">{lead.employees}</p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {lead.keyPeople.length > 0 && (
+                                    <div className="mt-4">
+                                        <p className="text-sm text-gray-600 mb-2 flex items-center gap-2">
+                                            <Users size={16} />
+                                            Kluczowe osoby
+                                        </p>
+                                        <ul className="list-disc list-inside space-y-1">
+                                            {lead.keyPeople.map((person, idx) => (
+                                                <li key={idx} className="text-sm">{person}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                {lead.technologies.length > 0 && (
+                                    <div className="mt-4">
+                                        <p className="text-sm text-gray-600 mb-2 flex items-center gap-2">
+                                            <Code size={16} />
+                                            Technologie
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {lead.technologies.map((tech, idx) => (
+                                                <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
+                                                    {tech}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {lead.socials && (
+                                    <div className="mt-4">
+                                        <p className="text-sm text-gray-600 mb-2">Media społecznościowe</p>
+                                        <div className="flex gap-3">
+                                            {lead.socials.linkedin && (
+                                                <a href={lead.socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                                                    LinkedIn
+                                                </a>
+                                            )}
+                                            {lead.socials.facebook && (
+                                                <a href={lead.socials.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                                                    Facebook
+                                                </a>
+                                            )}
+                                            {lead.socials.instagram && (
+                                                <a href={lead.socials.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline text-sm">
+                                                    Instagram
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Sidebar - Editable */}
+                    <div className="space-y-6">
+                        {/* Status & Priority */}
+                        <div className="bg-white p-6 rounded-lg shadow-sm">
+                            <h2 className="text-xl font-bold text-gray-800 mb-4">Zarządzanie</h2>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                                    <select
+                                        value={statusValue}
+                                        onChange={(e) => setStatusValue(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    >
+                                        <option value="new">Nowy</option>
+                                        <option value="contacted">Skontaktowany</option>
+                                        <option value="interested">Zainteresowany</option>
+                                        <option value="closed">Zamknięty</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Priorytet</label>
+                                    <select
+                                        value={priorityValue}
+                                        onChange={(e) => setPriorityValue(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    >
+                                        <option value="high">Wysoki</option>
+                                        <option value="medium">Średni</option>
+                                        <option value="low">Niski</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Notes */}
+                        <div className="bg-white p-6 rounded-lg shadow-sm">
+                            <h2 className="text-xl font-bold text-gray-800 mb-4">Notatki</h2>
+                            <textarea
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                rows={8}
+                                placeholder="Dodaj notatki o tym leadzie..."
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
