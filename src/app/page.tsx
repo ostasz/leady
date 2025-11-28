@@ -21,6 +21,8 @@ export default function Home() {
   const [error, setError] = useState('');
   const [aiReport, setAiReport] = useState('');
   const [gettingLocation, setGettingLocation] = useState(false);
+  const [deepSearchResults, setDeepSearchResults] = useState<Record<string, any>>({});
+  const [deepSearchLoading, setDeepSearchLoading] = useState<Record<string, boolean>>({});
   const { data: session } = useSession();
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -160,6 +162,28 @@ export default function Home() {
     // Push the last one
     if (currentCompany.Name) parsedData.push(currentCompany);
     return parsedData;
+  };
+
+  const handleDeepSearch = async (id: string, name: string, address: string, website: string) => {
+    setDeepSearchLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      const res = await fetch('/api/deep-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, address, website })
+      });
+      const data = await res.json();
+      if (data.data) {
+        setDeepSearchResults(prev => ({ ...prev, [id]: data.data }));
+      } else {
+        setDeepSearchResults(prev => ({ ...prev, [id]: { error: 'Nie udało się pobrać danych.' } }));
+      }
+    } catch (e) {
+      console.error(e);
+      setDeepSearchResults(prev => ({ ...prev, [id]: { error: 'Błąd połączenia.' } }));
+    } finally {
+      setDeepSearchLoading(prev => ({ ...prev, [id]: false }));
+    }
   };
 
   return (
@@ -618,7 +642,7 @@ export default function Home() {
                   <span className="text-gray-400 text-xs">({place.user_ratings_total || 0} opinii)</span>
                 </div>
 
-                <div className="flex gap-2 mt-3 border-t pt-3">
+                <div className="flex gap-2 mt-3 border-t pt-3 flex-wrap">
                   {place.phone && (
                     <a
                       href={`tel:${place.phone}`}
@@ -637,7 +661,89 @@ export default function Home() {
                       🌐 Strona WWW
                     </a>
                   )}
+                  <button
+                    onClick={() => handleDeepSearch(place.id, place.name, place.address, place.website)}
+                    disabled={deepSearchLoading[place.id]}
+                    className="flex-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-indigo-200 flex items-center justify-center gap-1"
+                  >
+                    {deepSearchLoading[place.id] ? (
+                      <span className="animate-spin">⏳</span>
+                    ) : (
+                      <Sparkles size={12} />
+                    )}
+                    {deepSearchResults[place.id] ? 'Odśwież Info' : 'Deep Search'}
+                  </button>
                 </div>
+
+                {/* Deep Search Results */}
+                {deepSearchResults[place.id] && (
+                  <div className="mt-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100 text-sm animate-in fade-in slide-in-from-top-2">
+                    <h4 className="font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                      <Sparkles size={14} />
+                      Analiza AI
+                    </h4>
+
+                    {deepSearchResults[place.id].error ? (
+                      <p className="text-red-600">{deepSearchResults[place.id].error}</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {deepSearchResults[place.id].description && (
+                          <p className="text-gray-700 italic">{deepSearchResults[place.id].description}</p>
+                        )}
+
+                        {deepSearchResults[place.id].nip && (
+                          <div className="mt-2 bg-purple-50 p-2 rounded border border-purple-100 inline-block">
+                            <span className="text-xs font-bold text-purple-800 uppercase tracking-wider">NIP: </span>
+                            <span className="font-mono font-medium text-purple-900">{deepSearchResults[place.id].nip}</span>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                          {deepSearchResults[place.id].revenue && (
+                            <div className="bg-white p-2 rounded border border-indigo-100">
+                              <span className="block text-xs text-gray-500">Przychody</span>
+                              <span className="font-medium text-indigo-800">{deepSearchResults[place.id].revenue}</span>
+                            </div>
+                          )}
+                          {deepSearchResults[place.id].employees && (
+                            <div className="bg-white p-2 rounded border border-indigo-100">
+                              <span className="block text-xs text-gray-500">Pracownicy</span>
+                              <span className="font-medium text-indigo-800">{deepSearchResults[place.id].employees}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {deepSearchResults[place.id].keyPeople && deepSearchResults[place.id].keyPeople.length > 0 && (
+                          <div className="mt-2">
+                            <span className="block text-xs text-gray-500 mb-1">Kluczowe Osoby:</span>
+                            <ul className="list-disc list-inside text-gray-800">
+                              {deepSearchResults[place.id].keyPeople.map((person: string, idx: number) => (
+                                <li key={idx}>{person}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {deepSearchResults[place.id].socials && Object.values(deepSearchResults[place.id].socials).some(v => v) && (
+                          <div className="mt-2 flex gap-2">
+                            {/* @ts-ignore */}
+                            {deepSearchResults[place.id].socials.linkedin && (
+                              <a href={deepSearchResults[place.id].socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">LinkedIn</a>
+                            )}
+                            {/* @ts-ignore */}
+                            {deepSearchResults[place.id].socials.facebook && (
+                              <a href={deepSearchResults[place.id].socials.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Facebook</a>
+                            )}
+                            {/* @ts-ignore */}
+                            {deepSearchResults[place.id].socials.instagram && (
+                              <a href={deepSearchResults[place.id].socials.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">Instagram</a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
