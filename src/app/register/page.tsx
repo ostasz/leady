@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { User, Mail, Lock } from 'lucide-react';
@@ -10,27 +11,38 @@ export default function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { signUp } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
+
+        // Check email domain (allow @ekovoltis.pl or whitelisted emails)
+        const allowedEmails = ['ostasz@mac.com'];
+        if (!email.endsWith('@ekovoltis.pl') && !allowedEmails.includes(email.toLowerCase())) {
+            setError('Rejestracja dostępna tylko dla pracowników Ekovoltis (@ekovoltis.pl)');
+            setLoading(false);
+            return;
+        }
 
         try {
-            const res = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password }),
-            });
-
-            if (res.ok) {
-                router.push('/login');
+            await signUp(email, password, name);
+            // Redirect to verify email page
+            router.push('/verify-email');
+        } catch (err: any) {
+            console.error('Registration error:', err);
+            if (err.code === 'auth/email-already-in-use') {
+                setError('Ten adres email jest już zarejestrowany');
+            } else if (err.code === 'auth/weak-password') {
+                setError('Hasło jest zbyt słabe. Użyj minimum 6 znaków.');
             } else {
-                const data = await res.json();
-                setError(data.error || 'Rejestracja nie powiodła się');
+                setError('Wystąpił błąd podczas rejestracji');
             }
-        } catch (err) {
-            setError('Wystąpił błąd');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -81,9 +93,10 @@ export default function RegisterPage() {
                     </div>
                     <button
                         type="submit"
-                        className="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition-colors font-semibold"
+                        disabled={loading}
+                        className="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Zarejestruj się
+                        {loading ? 'Rejestracja...' : 'Zarejestruj się'}
                     </button>
                 </form>
                 <p className="mt-4 text-center text-sm text-gray-600">

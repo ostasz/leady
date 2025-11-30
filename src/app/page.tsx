@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/components/AuthProvider';
+import { useRouter } from 'next/navigation';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import Link from 'next/link';
 import Map from '@/components/Map';
@@ -11,6 +12,7 @@ import ReactMarkdown from 'react-markdown';
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
 export default function Home() {
+  const { user, userData, loading: authLoading, signOut, getAuthHeaders } = useAuth();
   const [mode, setMode] = useState<'radius' | 'route' | 'ai'>('ai');
   const [address1, setAddress1] = useState('');
   const [address2, setAddress2] = useState('');
@@ -24,7 +26,17 @@ export default function Home() {
   const [deepSearchResults, setDeepSearchResults] = useState<Record<string, any>>({});
   const [deepSearchLoading, setDeepSearchLoading] = useState<Record<string, boolean>>({});
   const [savingLead, setSavingLead] = useState<Record<string, boolean>>({});
-  const { data: session } = useSession();
+  const [saveSuccess, setSaveSuccess] = useState(false);
+  const router = useRouter();
+
+  // Authentication guard
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/login');
+    } else if (user && !user.emailVerified) {
+      router.push('/verify-email');
+    }
+  }, [user, authLoading, router]);
 
   const handleSaveLead = async (place: any) => {
     setSavingLead(prev => ({ ...prev, [place.id]: true }));
@@ -32,9 +44,10 @@ export default function Home() {
       // First, run Deep Search if not already done
       let deepData = deepSearchResults[place.id];
       if (!deepData || deepData.error) {
+        const headers = await getAuthHeaders();
         const res = await fetch('/api/deep-search', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers,
           body: JSON.stringify({
             name: place.name,
             address: place.address,
@@ -63,14 +76,16 @@ export default function Home() {
         technologies: deepData?.technologies || []
       };
 
+      const headers = await getAuthHeaders();
       const saveRes = await fetch('/api/leads', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(leadData)
       });
 
       if (saveRes.ok) {
-        alert('Lead zapisany pomyślnie!');
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
       } else {
         const error = await saveRes.json();
         alert(`Błąd: ${error.error}`);
@@ -106,9 +121,14 @@ export default function Home() {
         body = { address: address1 };
       }
 
-      const options: RequestInit = { method };
+      // Get Firebase Auth headers
+      const headers = await getAuthHeaders();
+
+      const options: RequestInit = {
+        method,
+        headers
+      };
       if (method === 'POST') {
-        options.headers = { 'Content-Type': 'application/json' };
         options.body = JSON.stringify(body);
       }
 
@@ -248,15 +268,23 @@ export default function Home() {
     <APIProvider apiKey={API_KEY}>
       <div className="flex h-screen flex-col md:flex-row">
         {/* Sidebar */}
-        <div className="w-full md:w-1/3 bg-white p-6 shadow-xl z-10 overflow-y-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Sales Prospecting</h1>
-            {session?.user && (
+        <div className="w-full md:w-1/3 bg-white p-6 shadow-xl z-10 overflow-y-auto relative">
+          {/* Success Toast - Fixed position */}
+          {saveSuccess && (
+            <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-fade-in-out">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-sm font-medium">Zapisano</span>
+            </div>
+          )}
+
+          <div className="flex justify-between items-center mb-6">\n            <h1 className="text-2xl font-bold text-gray-800">Sales Prospecting</h1>
+            {user && (
               <div className="flex flex-col items-end">
-                <span className="text-xs text-gray-500">Zalogowany jako:</span>
-                <span className="text-sm font-semibold text-gray-700">{session.user.name || session.user.email}</span>
-                {/* @ts-ignore */}
-                {session.user.role === 'admin' && (
+                <span className="text-xs text-gray-700 font-medium">Zalogowany jako:</span>
+                <span className="text-sm font-semibold text-gray-900">{user.displayName || user.email}</span>
+                {userData?.role === 'admin' && (
                   <Link href="/admin" className="text-xs text-primary hover:text-primary-dark mt-1 font-bold">
                     Panel Administratora
                   </Link>
@@ -275,8 +303,7 @@ export default function Home() {
           <div className="flex mb-6 bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setMode('radius')}
-              className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${mode === 'radius' ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'
-                }`}
+              className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${mode === 'radius' ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
             >
               <div className="flex items-center justify-center gap-1">
                 <MapPin size={14} />
@@ -285,8 +312,7 @@ export default function Home() {
             </button>
             <button
               onClick={() => setMode('route')}
-              className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${mode === 'route' ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'
-                }`}
+              className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${mode === 'route' ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
             >
               <div className="flex items-center justify-center gap-1">
                 <Navigation size={14} />
@@ -295,7 +321,9 @@ export default function Home() {
             </button>
             <button
               onClick={() => setMode('ai')}
-              className={`flex-1 py-2 px-2 rounded-md text-xs font-medium transition-colors ${mode === 'ai' ? 'bg-white shadow text-purple-600' : 'text-gray-500 hover:text-purple-700'
+              className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${mode === 'ai'
+                  ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white shadow-lg shadow-purple-500/50 animate-pulse-glow'
+                  : 'bg-gray-100 text-gray-800 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 hover:shadow-md'
                 }`}
             >
               <div className="flex items-center justify-center gap-1">

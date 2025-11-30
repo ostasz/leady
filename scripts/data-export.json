@@ -1,0 +1,263 @@
+{
+  "exportDate": "2025-11-29T09:00:33.822Z",
+  "users": [
+    {
+      "id": "cmid0623i0000kv04kr2n5s07",
+      "email": "grzegorz.bruski@ekovoltis.pl",
+      "name": "Grzegorz",
+      "role": "user",
+      "isBlocked": false,
+      "lastLogin": null,
+      "searchCount": 0,
+      "createdAt": "2025-11-24T10:27:15.102Z",
+      "updatedAt": "2025-11-24T10:27:15.102Z",
+      "leads": []
+    },
+    {
+      "id": "cmid1b5u10000l804qgmkpd18",
+      "email": "dariusz.konopka@ekovoltis.pl",
+      "name": "Dariusz",
+      "role": "user",
+      "isBlocked": false,
+      "lastLogin": null,
+      "searchCount": 0,
+      "createdAt": "2025-11-24T10:59:12.842Z",
+      "updatedAt": "2025-11-24T10:59:12.842Z",
+      "leads": []
+    },
+    {
+      "id": "cmid2x2fz0000l704m5v1jmno",
+      "email": "Artur.Basiaga@ekovoltis.pl",
+      "name": "Artur",
+      "role": "user",
+      "isBlocked": false,
+      "lastLogin": null,
+      "searchCount": 0,
+      "createdAt": "2025-11-24T11:44:14.496Z",
+      "updatedAt": "2025-11-24T11:44:14.496Z",
+      "leads": []
+    },
+    {
+      "id": "cmih85f1f0000l805diw9o0yv",
+      "email": "adam.ochocki@ekovoltis.pl",
+      "name": "Adam",
+      "role": "user",
+      "isBlocked": false,
+      "lastLogin": null,
+      "searchCount": 0,
+      "createdAt": "2025-11-27T09:21:46.851Z",
+      "updatedAt": "2025-11-27T09:21:46.851Z",
+      "leads": []
+    },
+    {
+      "id": "cmiilv0jj0000l204quemteq9",
+      "email": "ewa.garwarska@ekovoltis.pl",
+      "name": "EWA",
+      "role": "user",
+      "isBlocked": false,
+      "lastLogin": null,
+      "searchCount": 0,
+      "createdAt": "2025-11-28T08:33:22.291Z",
+      "updatedAt": "2025-11-28T08:33:22.291Z",
+      "leads": []
+    },
+    {
+      "id": "cmiin2b9m0001l204k6k4oo5c",
+      "email": "michal.winsze@ekovoltis.pl",
+      "name": "Michał",
+      "role": "user",
+      "isBlocked": false,
+      "lastLogin": null,
+      "searchCount": 0,
+      "createdAt": "2025-11-28T09:07:02.410Z",
+      "updatedAt": "2025-11-28T09:07:02.410Z",
+      "leads": []
+    },
+    {
+      "id": "cmiiphcaf0000l80455pwyizv",
+      "email": "marika.ruminska@ekovoltis.pl",
+      "name": "Marika",
+      "role": "user",
+      "isBlocked": false,
+      "lastLogin": null,
+      "searchCount": 0,
+      "createdAt": "2025-11-28T10:14:42.807Z",
+      "updatedAt": "2025-11-28T10:14:42.807Z",
+      "leads": []
+    },
+    {
+      "id": "cmiis1syt0000uilrhbbowlf6",
+      "email": "piotr.ostaszewski@ekovoltis.pl",
+      "name": "Piotr",
+      "role": "user",
+      "isBlocked": false,
+      "lastLogin": null,
+      "searchCount": 2,
+      "createdAt": "2025-11-28T11:26:36.774Z",
+      "updatedAt": "2025-11-28T17:39:03.609Z",
+      "leads": []
+    },
+    {
+      "id": "cmic70ae30000js045w3m00f6",
+      "email": "ostasz@mac.com",
+      "name": "Piotr",
+      "role": "admin",
+      "isBlocked": false,
+      "lastLogin": "2025-11-28T18:37:45.186Z",
+      "searchCount": 16,
+      "createdAt": "2025-11-23T20:50:57.051Z",
+      "updatedAt": "2025-11-28T20:27:49.945Z",
+      "leads": [
+        {
+          "id": "cmijazwnp0001uiwgtmx29arl",
+          "companyName": "Gazy techniczne",
+          "address": "Wyczółki 82, Warszawa",
+          "phone": "509 175 473",
+          "website": "http://www.gazytechniczne.net/",
+          "nip": "8251658669",
+          "status": "new",
+          "priority": "medium",
+          "notes": null,
+          "keyPeople": [
+            "Krzysztof Miszkurka - Właściciel"
+          ],
+          "revenue": "brak danych",
+          "employees": "brak danych",
+          "socials": {
+            "facebook": "brak danych",
+            "linkedin": null,
+            "instagram": "brak danych"
+          },
+          "description": "Firma Gazy Techniczne Krzysztof Miszkurka od 1997 roku zajmuje się sprzedażą gazów technicznych i przemysłowych, takich jak tlen, acetylen, azot, argon, dwutlenek węgla, hel i freon. Oferują dostawę gazów w butlach, akcesoria spawalnicze oraz usługi wymiany, legalizacji i naprawy butli.",
+          "technologies": [
+            "WordPress",
+            "Elegant Themes"
+          ],
+          "createdAt": "2025-11-28T20:17:00.921Z",
+          "updatedAt": "2025-11-28T20:17:00.921Z"
+        },
+        {
+          "id": "cmij7gpxx0001ui58v9jgyid2",
+          "companyName": "Carinii - Producent Obuwia",
+          "address": "Warszawska 78, Łaskarzew",
+          "phone": "25 684 69 89",
+          "website": "https://sklep.carinii.com.pl/",
+          "nip": "8262209426",
+          "status": "new",
+          "priority": "medium",
+          "notes": null,
+          "keyPeople": [
+            "Grzegorz Edward Urawski - Członek Zarządu, Wspólnik",
+            "Wanda Urawska - Członek Zarządu, Wspólnik"
+          ],
+          "revenue": "brak danych",
+          "employees": "brak danych",
+          "socials": {
+            "facebook": null,
+            "linkedin": null,
+            "instagram": null
+          },
+          "description": "Carinii to polska marka zajmująca się produkcją obuwia damskiego i młodzieżowego. Współpracuje z włoskimi stylistami. Oferuje szeroką gamę obuwia wykonanego ze skór pochodzenia polskiego i włoskiego. W ofercie znajdują się botki, czółenka, kozaki, sneakersy, klapki, baleriny i sandały.",
+          "technologies": [
+            "brak danych"
+          ],
+          "createdAt": "2025-11-28T18:38:06.933Z",
+          "updatedAt": "2025-11-28T20:18:31.351Z"
+        },
+        {
+          "id": "cmijb6x7w0001uikjbsfvs0t4",
+          "companyName": "ALTOM Window Factory | Windows, doors, facades from PVC and aluminum",
+          "address": "Polna 11A, Toruń",
+          "phone": "56 652 83 06",
+          "website": "https://www.altom-okna.pl/",
+          "nip": "9561889760",
+          "status": "new",
+          "priority": "medium",
+          "notes": null,
+          "keyPeople": [
+            "Mirosław Kaczorowski - Prezes Zarządu",
+            "Ewa Danura Sawicka-Kaczorowska - Wspólnik"
+          ],
+          "revenue": "brak danych",
+          "employees": "brak danych",
+          "socials": {
+            "facebook": null,
+            "linkedin": null,
+            "instagram": null
+          },
+          "description": "ALTOM Fabryka Okien Sp. z o.o. produkuje okna i drzwi z PCV i aluminium od 1990 roku. Oferuje również rolety, żaluzje i bramy. Współpracuje z VEKA, ALUPLAST, ALUPROF, PROCULAR i REYNAERS.",
+          "technologies": [
+            "VEKA",
+            "ALUPLAST",
+            "ALUPROF",
+            "PROCULAR",
+            "REYNAERS",
+            "Powerdur Inside"
+          ],
+          "createdAt": "2025-11-28T20:22:28.235Z",
+          "updatedAt": "2025-11-28T20:22:28.235Z"
+        },
+        {
+          "id": "cmijb8vr40003uikjn19ne3gg",
+          "companyName": "KLEIB SP. Z O.O.",
+          "address": "Pikutkowo 43",
+          "phone": "54 427 08 00",
+          "website": "https://www.kleib.pl/",
+          "nip": "8882808730",
+          "status": "new",
+          "priority": "medium",
+          "notes": null,
+          "keyPeople": [
+            "Przemysław Tadeusz Milewski - Prezes Zarządu",
+            "Rafał Andrzej Kopeć - Wiceprezes Zarządu",
+            "Robert Marek Rećko - Wiceprezes Zarządu",
+            "Sławomir Dariusz Czarnecki - Wiceprezes Zarządu",
+            "Sławomir Czarnecki - Prokurent"
+          ],
+          "revenue": "110.9 mln PLN (dane z 2024)",
+          "employees": "54 (dane z 2021)",
+          "socials": {
+            "facebook": null,
+            "linkedin": null,
+            "instagram": null
+          },
+          "description": "KLEIB SP. Z O.O. to firma specjalizująca się w produkcji chemii budowlanej wysokiej jakości. Oferuje kleje do płytek, gładzie szpachlowe, zaprawy murarskie i tynkarskie, posadzki cementowe, preparaty gruntujące, systemy ociepleń, tynki, farby elewacyjne i emulsyjne, hydroizolacje oraz farby dla rolnictwa.",
+          "technologies": [
+            "brak danych"
+          ],
+          "createdAt": "2025-11-28T20:23:59.449Z",
+          "updatedAt": "2025-11-28T20:23:59.449Z"
+        },
+        {
+          "id": "cmijbe5cy0007uikjrhm6rjuz",
+          "companyName": "RTE Poland",
+          "address": "Machnacz 91",
+          "phone": null,
+          "website": "https://rte.pt/",
+          "nip": "9571109746",
+          "status": "new",
+          "priority": "medium",
+          "notes": null,
+          "keyPeople": [
+            "Jorge Manuel Da Silva Salgado - Prezes Zarządu",
+            "Bruno Miguel De Melo Salgado - Wiceprezes Zarządu",
+            "Ana Maria Da Silva Farinho Lamelas - Członek Zarządu"
+          ],
+          "revenue": "Na podstawie danych historycznych: 751,3 tys. - 55,0 mln PLN (dane z GoWork.pl)",
+          "employees": "Szacunkowo 70+ (informacja z 2018/2021, możliwe zmiany)",
+          "socials": {
+            "facebook": null,
+            "linkedin": "https://www.linkedin.com/company/rte-portugal/",
+            "instagram": null
+          },
+          "description": "RTE Poland Sp. z o.o. to firma produkcyjna specjalizująca się w produkcji rowerów i komponentów rowerowych. Należy do Grupy RTE, która posiada ponad 30-letnie doświadczenie w branży. Firma oferuje szeroką gamę produktów, od rowerów dziecięcych po wysokiej klasy modele, w tym elektryczne i składane. Współpracuje m.in. z Decathlonem.",
+          "technologies": [
+            "Nowoczesne, zautomatyzowane maszyny i urządzenia (Industry 4.0)"
+          ],
+          "createdAt": "2025-11-28T20:28:05.410Z",
+          "updatedAt": "2025-11-28T20:28:05.410Z"
+        }
+      ]
+    }
+  ]
+}

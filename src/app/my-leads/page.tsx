@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -31,6 +31,8 @@ type Lead = {
     priority: string;
     notes: string | null;
     createdAt: string;
+    ownerEmail?: string;
+    ownerId?: string;
     user?: {
         name: string | null;
         email: string;
@@ -38,7 +40,7 @@ type Lead = {
 };
 
 export default function MyLeadsPage() {
-    const { data: session, status } = useSession();
+    const { user, userData, loading: authLoading, getAuthHeaders } = useAuth();
     const router = useRouter();
     const [leads, setLeads] = useState<Lead[]>([]);
     const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
@@ -50,13 +52,13 @@ export default function MyLeadsPage() {
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
     useEffect(() => {
-        if (status === 'loading') return;
-        if (!session) {
+        if (authLoading) return;
+        if (!user) {
             router.push('/login');
             return;
         }
         fetchLeads();
-    }, [session, status, router]);
+    }, [user, authLoading, router]);
 
     useEffect(() => {
         applyFiltersAndSort();
@@ -64,7 +66,8 @@ export default function MyLeadsPage() {
 
     const fetchLeads = async () => {
         try {
-            const res = await fetch('/api/leads');
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/leads', { headers });
             if (!res.ok) throw new Error('Failed to fetch leads');
             const data = await res.json();
             setLeads(data.leads);
@@ -120,7 +123,8 @@ export default function MyLeadsPage() {
         if (!confirm('Czy na pewno chcesz usunąć ten lead?')) return;
 
         try {
-            const res = await fetch(`/api/leads/${id}`, { method: 'DELETE' });
+            const headers = await getAuthHeaders();
+            const res = await fetch(`/api/leads/${id}`, { method: 'DELETE', headers });
             if (!res.ok) throw new Error('Failed to delete');
             setLeads(leads.filter(l => l.id !== id));
         } catch (error) {
@@ -130,7 +134,8 @@ export default function MyLeadsPage() {
 
     const handleExport = async () => {
         try {
-            const res = await fetch('/api/leads/export');
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/leads/export', { headers });
             const blob = await res.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -180,7 +185,7 @@ export default function MyLeadsPage() {
         );
     };
 
-    if (status === 'loading' || loading) {
+    if (authLoading || loading) {
         return <div className="min-h-screen flex items-center justify-center">Ładowanie...</div>;
     }
 
@@ -194,7 +199,7 @@ export default function MyLeadsPage() {
                             <BookmarkCheck className="text-green-600" />
                             Moje Leady
                         </h1>
-                        <p className="text-gray-600 mt-1">{filteredLeads.length} leadów</p>
+                        <p className="text-gray-700 mt-1 font-medium">{filteredLeads.length} leadów</p>
                     </div>
                     <div className="flex gap-3">
                         <button
@@ -219,7 +224,7 @@ export default function MyLeadsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {/* Search */}
                         <div className="relative">
-                            <Search className="absolute left-3 top-3 text-gray-400" size={18} />
+                            <Search className="absolute left-3 top-3 text-gray-600" size={18} />
                             <input
                                 type="text"
                                 placeholder="Szukaj firmy..."
@@ -292,7 +297,7 @@ export default function MyLeadsPage() {
                             </div>
 
                             {/* Details */}
-                            <div className="space-y-2 text-sm text-gray-600 mb-4">
+                            <div className="space-y-2 text-sm text-gray-700 mb-4">
                                 {lead.address && (
                                     <div className="flex items-start gap-2">
                                         <Building2 size={16} className="mt-0.5 flex-shrink-0" />
@@ -320,11 +325,17 @@ export default function MyLeadsPage() {
                                         <span className="font-semibold">NIP:</span> {lead.nip}
                                     </div>
                                 )}
+                                {/* Show owner for admin */}
+                                {userData?.role === 'admin' && lead.ownerEmail && (
+                                    <div className="text-xs bg-blue-50 px-2 py-1 rounded inline-block mt-2">
+                                        <span className="font-semibold">Właściciel:</span> {lead.ownerEmail}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Footer */}
                             <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-gray-700 font-medium">
                                     {new Date(lead.createdAt).toLocaleDateString('pl-PL')}
                                 </span>
                                 <div className="flex gap-2">

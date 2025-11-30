@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/components/AuthProvider';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Building2, Phone, Globe, MapPin, Users, DollarSign, Code } from 'lucide-react';
@@ -27,7 +27,7 @@ type Lead = {
 };
 
 export default function LeadDetailPage() {
-    const { data: session, status } = useSession();
+    const { user, loading: authLoading, getAuthHeaders } = useAuth();
     const router = useRouter();
     const params = useParams();
     const id = params?.id as string;
@@ -42,19 +42,20 @@ export default function LeadDetailPage() {
     const [notes, setNotes] = useState('');
 
     useEffect(() => {
-        if (status === 'loading') return;
-        if (!session) {
+        if (authLoading) return;
+        if (!user) {
             router.push('/login');
             return;
         }
         if (id) {
             fetchLead();
         }
-    }, [session, status, router, id]);
+    }, [user, authLoading, router, id]);
 
     const fetchLead = async () => {
         try {
-            const res = await fetch(`/api/leads/${id}`);
+            const headers = await getAuthHeaders();
+            const res = await fetch(`/api/leads/${id}`, { headers });
             if (!res.ok) throw new Error('Failed to fetch lead');
             const data = await res.json();
             setLead(data.lead);
@@ -73,9 +74,10 @@ export default function LeadDetailPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch(`/api/leads/${id}`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({
                     status: statusValue,
                     priority: priorityValue,
@@ -93,7 +95,7 @@ export default function LeadDetailPage() {
         }
     };
 
-    if (status === 'loading' || loading) {
+    if (authLoading || loading) {
         return <div className="min-h-screen flex items-center justify-center">Ładowanie...</div>;
     }
 

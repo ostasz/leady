@@ -1,32 +1,32 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Trash2, Shield, User } from 'lucide-react';
 
 export default function AdminPage() {
-    const { data: session, status } = useSession();
+    const { user, userData, loading: authLoading, getAuthHeaders } = useAuth();
     const router = useRouter();
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (status === 'loading') return;
+        if (authLoading) return;
 
-        // @ts-ignore
-        if (!session || session.user.role !== 'admin') {
+        if (!user || userData?.role !== 'admin') {
             router.push('/');
             return;
         }
 
         fetchUsers();
-    }, [session, status, router]);
+    }, [user, userData, authLoading, router]);
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch('/api/admin/users');
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/admin/users', { headers });
             if (!res.ok) throw new Error('Failed to fetch users');
             const data = await res.json();
             setUsers(data.users);
@@ -39,9 +39,10 @@ export default function AdminPage() {
 
     const handleBlock = async (userId: string, currentStatus: boolean) => {
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/users', {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({ id: userId, isBlocked: !currentStatus }),
             });
             if (!res.ok) throw new Error('Failed to update user');
@@ -56,8 +57,10 @@ export default function AdminPage() {
         if (!confirm('Czy na pewno chcesz usunąć tego użytkownika?')) return;
 
         try {
+            const headers = await getAuthHeaders();
             const res = await fetch(`/api/admin/users?id=${userId}`, {
                 method: 'DELETE',
+                headers
             });
             if (!res.ok) throw new Error('Failed to delete user');
             setUsers(users.filter(u => u.id !== userId));
@@ -66,13 +69,13 @@ export default function AdminPage() {
         }
     };
 
-    if (status === 'loading' || loading) {
+    if (authLoading || loading) {
         return <div className="min-h-screen flex items-center justify-center">Ładowanie...</div>;
     }
 
     return (
         <div className="min-h-screen bg-gray-100 p-8">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
                         <Shield className="text-primary" />
@@ -88,23 +91,22 @@ export default function AdminPage() {
 
                 {error && <div className="bg-red-100 text-red-700 p-4 rounded mb-6">{error}</div>}
 
-                <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="bg-white rounded-lg shadow overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Użytkownik</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rola</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ostatnie logowanie</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liczba wyszukiwań</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data utworzenia</th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Akcje</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Użytkownik</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rola</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liczba wyszukiwań</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data utworzenia</th>
+                                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Akcje</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
                             {users.map((user) => (
                                 <tr key={user.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-4 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                                                 <User size={20} className="text-gray-500" />
@@ -114,45 +116,39 @@ export default function AdminPage() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                            {user.role}
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap">
+                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                                            }`}>
+                                            {user.role === 'admin' ? 'Admin' : 'User'}
                                         </span>
-                                        {user.isBlocked && (
-                                            <span className="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                Zablokowany
-                                            </span>
-                                        )}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {user.lastLogin ? new Date(user.lastLogin).toLocaleString('pl-PL') : '-'}
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{user.searchCount || 0}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {user.createdAt ? new Date(user.createdAt).toLocaleDateString('pl-PL', {
+                                            year: 'numeric',
+                                            month: '2-digit',
+                                            day: '2-digit'
+                                        }) : '-'}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {user.searchCount || 0}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {new Date(user.createdAt).toLocaleDateString('pl-PL')}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                        {user.email !== 'ostasz@mac.com' && (
-                                            <>
-                                                <button
-                                                    onClick={() => handleBlock(user.id, user.isBlocked)}
-                                                    className={`${user.isBlocked ? 'text-green-600 hover:text-green-900' : 'text-orange-600 hover:text-orange-900'}`}
-                                                    title={user.isBlocked ? "Odblokuj" : "Zablokuj"}
-                                                >
-                                                    <Shield size={18} className={user.isBlocked ? "fill-current" : ""} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(user.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                    title="Usuń użytkownika"
-                                                >
-                                                    <Trash2 size={18} />
-                                                </button>
-                                            </>
-                                        )}
+                                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => handleBlock(user.id, user.isBlocked || false)}
+                                                className={`px-3 py-1 rounded ${user.isBlocked
+                                                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                                                    : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                                                    }`}
+                                            >
+                                                {user.isBlocked ? 'Odblokuj' : 'Zablokuj'}
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(user.id)}
+                                                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

@@ -1,20 +1,27 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { auth } from '@/auth';
-import { PrismaClient } from '@prisma/client';
+import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
-const prisma = new PrismaClient();
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export async function POST(request: Request) {
     try {
-        const session = await auth();
-        if (session?.user?.id) {
-            prisma.user.update({
-                where: { id: session.user.id },
-                data: { searchCount: { increment: 1 } }
-            }).catch(err => console.error('Failed to update search count', err));
+        // Get Firebase Auth token
+        const authHeader = request.headers.get('authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
+        const token = authHeader.split('Bearer ')[1];
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        const uid = decodedToken.uid;
+
+        // Update search count
+        const userDoc = await adminDb.collection('users').doc(uid).get();
+        const currentCount = userDoc.data()?.searchCount || 0;
+        await adminDb.collection('users').doc(uid).update({
+            searchCount: currentCount + 1
+        }).catch(() => { });
 
         const { name, address, website } = await request.json();
 
@@ -23,16 +30,13 @@ export async function POST(request: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(API_KEY || '');
-
         const searchModel = genAI.getGenerativeModel({
             model: "gemini-2.0-flash-exp",
             // @ts-ignore
             tools: [{ googleSearch: {} }],
         });
 
-        const searchChat = searchModel.startChat({
-            history: [],
-        });
+        const searchChat = searchModel.startChat({ history: [] });
 
         const prompt = `
 Jesteś ekspertem od wywiadu gospodarczego (OSINT). Twoim zadaniem jest znalezienie szczegółowych informacji o firmie:

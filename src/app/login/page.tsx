@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Lock, Mail } from 'lucide-react';
@@ -10,26 +10,44 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const { signIn } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
+
+        console.log('[LOGIN] Starting login process...');
+
+        // Check email domain (allow @ekovoltis.pl or whitelisted emails)
+        const allowedEmails = ['ostasz@mac.com'];
+        if (!email.endsWith('@ekovoltis.pl') && !allowedEmails.includes(email.toLowerCase())) {
+            setError('Logowanie dostępne tylko dla pracowników Ekovoltis (@ekovoltis.pl)');
+            setLoading(false);
+            return;
+        }
 
         try {
-            const result = await signIn('credentials', {
-                email,
-                password,
-                redirect: false,
-            });
-
-            if (result?.error) {
+            console.log('[LOGIN] Calling signIn...');
+            await signIn(email, password);
+            console.log('[LOGIN] signIn completed successfully');
+            console.log('[LOGIN] Attempting redirect to /');
+            window.location.href = '/';
+            console.log('[LOGIN] window.location.href set');
+        } catch (err: any) {
+            console.error('[LOGIN] Login error:', err);
+            if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
                 setError('Nieprawidłowy email lub hasło');
+            } else if (err.code === 'auth/too-many-requests') {
+                setError('Zbyt wiele prób. Spróbuj ponownie później.');
             } else {
-                router.push('/');
+                setError('Wystąpił błąd podczas logowania');
             }
-        } catch (err) {
-            setError('Wystąpił błąd');
+        } finally {
+            console.log('[LOGIN] Setting loading to false');
+            setLoading(false);
         }
     };
 
@@ -67,12 +85,18 @@ export default function LoginPage() {
                     </div>
                     <button
                         type="submit"
-                        className="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition-colors font-semibold"
+                        disabled={loading}
+                        className="w-full bg-primary text-white py-2 rounded-lg hover:bg-primary-dark transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Zaloguj się
+                        {loading ? 'Logowanie...' : 'Zaloguj się'}
                     </button>
                 </form>
                 <p className="mt-4 text-center text-sm text-gray-600">
+                    <Link href="/reset-password" className="text-primary hover:underline">
+                        Zapomniałeś hasła?
+                    </Link>
+                </p>
+                <p className="mt-2 text-center text-sm text-gray-600">
                     Nie masz konta?{' '}
                     <Link href="/register" className="text-primary hover:underline">
                         Zarejestruj się
