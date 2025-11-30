@@ -264,6 +264,14 @@ export default function Home() {
     }
   };
 
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Ładowanie...</div>;
+  }
+
+  if (!user || !user.emailVerified) {
+    return null; // Will redirect in useEffect
+  }
+
   return (
     <APIProvider apiKey={API_KEY}>
       <div className="flex h-screen flex-col md:flex-row">
@@ -322,8 +330,8 @@ export default function Home() {
             <button
               onClick={() => setMode('ai')}
               className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${mode === 'ai'
-                  ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white shadow-lg shadow-purple-500/50 animate-pulse-glow'
-                  : 'bg-gray-100 text-gray-800 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 hover:shadow-md'
+                ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white shadow-lg shadow-purple-500/50 animate-pulse-glow'
+                : 'bg-gray-100 text-gray-800 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 hover:shadow-md'
                 }`}
             >
               <div className="flex items-center justify-center gap-1">
