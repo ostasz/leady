@@ -17,7 +17,6 @@ import {
     Globe,
     Edit,
     Trash2,
-    Trash2,
     ArrowUpDown,
     FileText,
     ArrowLeft
@@ -169,7 +168,7 @@ export default function MyLeadsPage() {
                     lead.status === 'interested' ? 'Zainteresowany' : 'Zamknięty',
             lead.priority === 'high' ? 'Wysoki' :
                 lead.priority === 'medium' ? 'Średni' : 'Niski',
-            [lead.phone, lead.email].filter(Boolean).join('\n'),
+            [lead.phone, lead.website].filter(Boolean).join('\n'),
             lead.address || '-'
         ]);
 
