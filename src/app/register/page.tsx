@@ -39,7 +39,7 @@ export default function RegisterPage() {
             } else if (err.code === 'auth/weak-password') {
                 setError('Hasło jest zbyt słabe. Użyj minimum 6 znaków.');
             } else {
-                setError('Wystąpił błąd podczas rejestracji');
+                setError(`Wystąpił błąd podczas rejestracji: ${err.message}`);
             }
         } finally {
             setLoading(false);
