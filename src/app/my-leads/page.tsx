@@ -17,8 +17,13 @@ import {
     Globe,
     Edit,
     Trash2,
-    ArrowUpDown
+    Trash2,
+    ArrowUpDown,
+    FileText,
+    ArrowLeft
 } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type Lead = {
     id: string;
@@ -147,6 +152,39 @@ export default function MyLeadsPage() {
         }
     };
 
+    const handleExportPDF = () => {
+        const doc = new jsPDF();
+
+        // Add title
+        doc.setFontSize(18);
+        doc.text('Lista Leadów', 14, 22);
+        doc.setFontSize(11);
+        doc.text(`Data: ${new Date().toLocaleDateString('pl-PL')}`, 14, 30);
+
+        // Prepare data
+        const tableData = filteredLeads.map(lead => [
+            lead.companyName,
+            lead.status === 'new' ? 'Nowy' :
+                lead.status === 'contacted' ? 'Skontaktowany' :
+                    lead.status === 'interested' ? 'Zainteresowany' : 'Zamknięty',
+            lead.priority === 'high' ? 'Wysoki' :
+                lead.priority === 'medium' ? 'Średni' : 'Niski',
+            [lead.phone, lead.email].filter(Boolean).join('\n'),
+            lead.address || '-'
+        ]);
+
+        // Generate table
+        autoTable(doc, {
+            head: [['Firma', 'Status', 'Priorytet', 'Kontakt', 'Adres']],
+            body: tableData,
+            startY: 40,
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [79, 70, 229] } // Indigo-600
+        });
+
+        doc.save(`leads_${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
     const getStatusBadge = (status: string) => {
         const colors = {
             new: 'bg-blue-100 text-blue-800',
@@ -202,19 +240,33 @@ export default function MyLeadsPage() {
                         <p className="text-gray-700 mt-1 font-medium">{filteredLeads.length} leadów</p>
                     </div>
                     <div className="flex gap-3">
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                            <ArrowLeft size={18} />
+                            Wróć
+                        </Link>
                         <button
                             onClick={handleExport}
                             className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                         >
                             <Download size={18} />
-                            Eksportuj CSV
+                            CSV
+                        </button>
+                        <button
+                            onClick={handleExportPDF}
+                            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                        >
+                            <FileText size={18} />
+                            PDF
                         </button>
                         <Link
                             href="/"
                             className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
                         >
                             <Plus size={18} />
-                            Dodaj Leady
+                            Dodaj
                         </Link>
                     </div>
                 </div>
