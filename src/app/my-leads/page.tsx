@@ -183,8 +183,6 @@ export default function MyLeadsPage() {
             head: [['Firma', 'Status', 'Priorytet', 'Kontakt', 'Adres']],
             body: tableData,
             startY: 40,
-            body: tableData,
-            startY: 40,
             styles: {
                 fontSize: 8,
                 font: 'Roboto',
