@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Wyszukiwanie leadów",
   description: "Aplikacja do wyszukiwania i zarządzania leadami sprzedażowymi",
+  icons: {
+    icon: '/ekovoltis-logo.png',
+  },
 };
 
 export default function RootLayout({
