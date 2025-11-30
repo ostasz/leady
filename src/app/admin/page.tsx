@@ -27,11 +27,17 @@ export default function AdminPage() {
         try {
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/users', { headers });
-            if (!res.ok) throw new Error('Failed to fetch users');
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || `Error ${res.status}: Failed to fetch users`);
+            }
+
             const data = await res.json();
             setUsers(data.users);
-        } catch (err) {
-            setError('Błąd pobierania użytkowników');
+        } catch (err: any) {
+            console.error('Fetch users error:', err);
+            setError(err.message || 'Błąd pobierania użytkowników');
         } finally {
             setLoading(false);
         }
