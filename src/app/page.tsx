@@ -287,7 +287,7 @@ export default function Home() {
             </div>
           )}
 
-          <div className="flex justify-between items-center mb-6">\n            <h1 className="text-2xl font-bold text-gray-800">Sales Prospecting</h1>
+          <div className="flex justify-between items-center mb-6">\n            <h1 className="text-2xl font-bold text-gray-800">Wyszukiwanie leadów</h1>
             {user && (
               <div className="flex flex-col items-end">
                 <span className="text-xs text-gray-700 font-medium">Zalogowany jako:</span>
