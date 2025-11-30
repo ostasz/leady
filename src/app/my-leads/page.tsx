@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { robotoRegular } from '@/lib/fonts/roboto-regular';
 
 type Lead = {
     id: string;
@@ -154,6 +155,11 @@ export default function MyLeadsPage() {
     const handleExportPDF = () => {
         const doc = new jsPDF();
 
+        // Add custom font
+        doc.addFileToVFS('Roboto-Regular.ttf', robotoRegular);
+        doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+        doc.setFont('Roboto');
+
         // Add title
         doc.setFontSize(18);
         doc.text('Lista Leadów', 14, 22);
@@ -177,8 +183,18 @@ export default function MyLeadsPage() {
             head: [['Firma', 'Status', 'Priorytet', 'Kontakt', 'Adres']],
             body: tableData,
             startY: 40,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [79, 70, 229] } // Indigo-600
+            body: tableData,
+            startY: 40,
+            styles: {
+                fontSize: 8,
+                font: 'Roboto',
+                fontStyle: 'normal'
+            },
+            headStyles: {
+                fillColor: [79, 70, 229], // Indigo-600
+                font: 'Roboto',
+                fontStyle: 'normal'
+            }
         });
 
         doc.save(`leads_${new Date().toISOString().split('T')[0]}.pdf`);
