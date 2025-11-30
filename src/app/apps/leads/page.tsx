@@ -351,7 +351,7 @@ export default function Home() {
           {/* My Leads Button */}
           <Link
             href="/my-leads"
-            className="block w-full mb-6 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-4 rounded-lg text-center font-semibold hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            className="block w-full mb-6 bg-primary text-white py-3 px-4 rounded-lg text-center font-semibold hover:bg-primary-dark transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
           >
             <BookmarkPlus size={18} />
             Moje Leady
