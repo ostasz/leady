@@ -245,9 +245,10 @@ export default function Home() {
   const handleDeepSearch = async (id: string, name: string, address: string, website: string) => {
     setDeepSearchLoading(prev => ({ ...prev, [id]: true }));
     try {
+      const headers = await getAuthHeaders();
       const res = await fetch('/api/deep-search', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ name, address, website })
       });
       const data = await res.json();
