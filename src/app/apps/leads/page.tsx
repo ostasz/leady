@@ -370,7 +370,7 @@ export default function Home() {
                   value={address1}
                   onChange={(e) => setAddress1(e.target.value)}
                   placeholder={mode === 'ai' ? "np. Warszawa, duże fabryki" : "np. Warszawa, Marszałkowska 1"}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900"
                   required
                 />
                 <button
@@ -395,7 +395,7 @@ export default function Home() {
                   value={address2}
                   onChange={(e) => setAddress2(e.target.value)}
                   placeholder="np. Łódź, Piotrkowska"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900"
                   required
                 />
               </div>

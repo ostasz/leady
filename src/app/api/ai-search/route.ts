@@ -58,8 +58,8 @@ Twoje zadanie:
    - 3: Mały handel: sklep osiedlowy, mała gastronomia, apteka.
    - 4: Średni handel: supermarket, większa restauracja, stacja paliw.
    - 5: Mała produkcja/magazyn: piekarnia, mała drukarnia, hurtownia.
-   - 6: Średnie obiekty: biurowiec, hotel, szkoła, obiekt sportowy.
-   - 7: Duże obiekty komercyjne: galeria handlowa, szpital, duży hotel.
+   - 6: Średnie obiekty: biurowiec, hotel, obiekt sportowy.
+   - 7: Duże obiekty komercyjne: galeria handlowa, duży hotel.
    - 8: Średnia produkcja: fabryka mebli, zakład przetwórczy.
    - 9: Duża produkcja: duża fabryka, zakład chemiczny, cementownia.
    - 10: Przemysł ciężki/energochłonny: huta, odlewnia, chłodnia przemysłowa, data center.
@@ -73,6 +73,7 @@ Twoje zadanie:
    - Zwróć MAKSYMALNIE 30 firm.
    - Jeśli w danej lokalizacji jest mniej firm spełniających kryteria, zwróć mniej. NIE obniżaj kryteriów na siłę.
    - Do wyników dodawaj TYLKO firmy z energy_intensity_score >= 4 ORAZ lead_fit_score >= 50.
+   - BEZWZGLĘDNIE ODRZUCAJ: szpitale, przychodnie, placówki medyczne (nawet jeśli są duże).
    - Nie wymyślaj firm – zwracaj tylko takie, które faktycznie istnieją i pojawiły się w wynikach.
 
 5. Dla każdej firmy spróbuj znaleźć NIP. Jeśli nie masz pewności, ustaw null.
