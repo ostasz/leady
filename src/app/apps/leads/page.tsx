@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
+import { useRouter } from 'next/navigation';
 import { GoogleMap, Marker, InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
