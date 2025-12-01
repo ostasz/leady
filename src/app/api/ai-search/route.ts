@@ -52,12 +52,17 @@ Twoje zadanie:
    - zaklasyfikuj typ działalności (np. "fabryka mebli", "chłodnia", "galeria handlowa", "hotel", "sklep spożywczy").
 3. Oceń każdą firmę w dwóch skalach:
 
-   SKALA 1: energy_intensity_score (1-5) - Potencjał zużycia energii:
-   - 1: Małe punkty usługowe, biura, kioski, fryzjerzy, małe sklepy osiedlowe.
-   - 2: Zwykłe sklepy, małe restauracje, małe magazyny, warsztaty.
-   - 3: Większe dyskonty, małe zakłady produkcyjne, małe hotele, duże restauracje.
-   - 4: Średnie/duże zakłady produkcyjne, centra logistyczne, duże hotele, galerie handlowe, szpitale.
-   - 5: Bardzo energochłonne zakłady: huty, odlewnie, zakłady chemiczne, chłodnie/mroźnie, duże fabryki z liniami produkcyjnymi.
+   SKALA 1: energy_intensity_score (1-10) - Potencjał zużycia energii:
+   - 1: Mikro punkty: kioski, małe biura, paczkomaty.
+   - 2: Małe usługi: fryzjer, kosmetyczka, mały warsztat.
+   - 3: Mały handel: sklep osiedlowy, mała gastronomia, apteka.
+   - 4: Średni handel: supermarket, większa restauracja, stacja paliw.
+   - 5: Mała produkcja/magazyn: piekarnia, mała drukarnia, hurtownia.
+   - 6: Średnie obiekty: biurowiec, hotel, szkoła, obiekt sportowy.
+   - 7: Duże obiekty komercyjne: galeria handlowa, szpital, duży hotel.
+   - 8: Średnia produkcja: fabryka mebli, zakład przetwórczy.
+   - 9: Duża produkcja: duża fabryka, zakład chemiczny, cementownia.
+   - 10: Przemysł ciężki/energochłonny: huta, odlewnia, chłodnia przemysłowa, data center.
 
    SKALA 2: lead_fit_score (0-100) - Ogólna atrakcyjność leada:
    - 80-100: HOT (Bardzo dobry kandydat)
@@ -67,7 +72,7 @@ Twoje zadanie:
 4. ZASADY FILTROWANIA I JAKOŚCI:
    - Zwróć MAKSYMALNIE 30 firm.
    - Jeśli w danej lokalizacji jest mniej firm spełniających kryteria, zwróć mniej. NIE obniżaj kryteriów na siłę.
-   - Do wyników dodawaj TYLKO firmy z energy_intensity_score >= 3 ORAZ lead_fit_score >= 50.
+   - Do wyników dodawaj TYLKO firmy z energy_intensity_score >= 4 ORAZ lead_fit_score >= 50.
    - Nie wymyślaj firm – zwracaj tylko takie, które faktycznie istnieją i pojawiły się w wynikach.
 
 5. Dla każdej firmy spróbuj znaleźć NIP. Jeśli nie masz pewności, ustaw null.
@@ -84,7 +89,7 @@ Zwróć ODPOWIEDŹ WYŁĄCZNIE jako poprawny JSON w formacie:
       "nip": "NIP lub null",
       "source_url": "link do źródła (np. wizytówka Google, strona www)",
       "business_type": "np. fabryka mebli",
-      "energy_intensity_score": 4,
+      "energy_intensity_score": 8,
       "lead_fit_score": 85,
       "reason": "Krótkie uzasadnienie dlaczego to dobry klient (np. 'Duża hala produkcyjna, praca na 3 zmiany')."
     }
@@ -120,8 +125,8 @@ WAŻNE: Zwróć TYLKO czysty JSON.
                 // Filter out duplicates based on name (simple normalization)
                 // This is a basic check, ideally we'd check against DB or more complex logic
 
-                // Filter by score as requested
-                return score >= 3 && fit >= 50;
+                // Filter by score as requested (reject 3 and lower means keep >= 4)
+                return score >= 4 && fit >= 50;
             });
 
         } catch (e) {
