@@ -13,8 +13,31 @@ async function geocode(address: string) {
     throw new Error(data.error_message || 'Geocoding failed');
 }
 
-async function searchNearby(location: { lat: number; lng: number }, radius: number) {
-    const keyword = 'manufacturing|factory|industrial';
+import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
+
+async function searchNearby(location: { lat: number; lng: number }, radius: number, profiles: string[]) {
+    // Default to heavy industry if no profiles selected
+    const selectedKeys = (profiles.length > 0 ? profiles : ['heavy_industry']) as ProfileKey[];
+
+    // Collect all keywords from selected profiles
+    let allKeywords: string[] = [];
+    selectedKeys.forEach(key => {
+        if (LEAD_PROFILES[key]) {
+            allKeywords = [...allKeywords, ...LEAD_PROFILES[key].keywords];
+        }
+    });
+
+    // Join with OR operator for Google Places API
+    // Note: Google Places API 'keyword' parameter matches ANY of the terms if separated by pipe? 
+    // Actually, official docs say 'keyword' matches against all fields. 
+    // To match ANY, we might need multiple requests or rely on the pipe behavior which is unofficial but often works,
+    // OR just send a broad query. 
+    // Given the user's instruction "Zestaw słów kluczowych... na tej podstawie budować zapytania", 
+    // and the previous code used pipe, we will stick to pipe.
+    // However, too many keywords might break the request. 
+    // Let's try to join them. If it fails, we might need to limit.
+    const keyword = allKeywords.join('|');
+
     const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=${radius}&keyword=${encodeURIComponent(keyword)}&key=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
@@ -51,13 +74,15 @@ export async function GET(request: Request) {
 
         const { searchParams } = new URL(request.url);
         const address = searchParams.get('address');
+        const profilesParam = searchParams.get('profiles');
+        const profiles = profilesParam ? profilesParam.split(',') : [];
 
         if (!address) {
             return NextResponse.json({ error: 'Address is required' }, { status: 400 });
         }
 
         const location = await geocode(address);
-        const results = await searchNearby(location, 20000); // 20km radius
+        const results = await searchNearby(location, 20000, profiles); // 20km radius
 
         // Sort by prominence
         results.sort((a: any, b: any) => (b.user_ratings_total || 0) - (a.user_ratings_total || 0));

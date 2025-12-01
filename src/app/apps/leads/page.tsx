@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { useRouter } from 'next/navigation';
+import { GoogleMap, Marker, InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
 import { APIProvider } from '@vis.gl/react-google-maps';
+import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
 import Link from 'next/link';
 import Map from '@/components/Map';
 import { Search, MapPin, Navigation, Sparkles, Locate, Save, BookmarkPlus, ArrowLeft } from 'lucide-react';
@@ -26,6 +27,7 @@ export default function Home() {
   const [deepSearchResults, setDeepSearchResults] = useState<Record<string, any>>({});
   const [deepSearchLoading, setDeepSearchLoading] = useState<Record<string, boolean>>({});
   const [savingLead, setSavingLead] = useState<Record<string, boolean>>({});
+  const [selectedProfiles, setSelectedProfiles] = useState<ProfileKey[]>(['heavy_industry', 'logistics']);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const router = useRouter();
 
@@ -112,7 +114,8 @@ export default function Home() {
       let method = 'GET';
 
       if (mode === 'radius') {
-        url = `/api/search-radius?address=${encodeURIComponent(address1)}`;
+        const profilesParam = selectedProfiles.join(',');
+        url = `/api/search-radius?address=${encodeURIComponent(address1)}&profiles=${profilesParam}`;
       } else if (mode === 'route') {
         url = `/api/search-route?origin=${encodeURIComponent(address1)}&destination=${encodeURIComponent(address2)}`;
       } else if (mode === 'ai') {
@@ -360,6 +363,33 @@ export default function Home() {
 
           {/* Search Form */}
           <form onSubmit={handleSearch} className="space-y-4 mb-8">
+
+            {/* Profile Selection (Only for Radius Mode) */}
+            {mode === 'radius' && (
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-3">Wybierz profile firm:</label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {Object.values(LEAD_PROFILES).map((profile) => (
+                    <label key={profile.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={selectedProfiles.includes(profile.id as ProfileKey)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedProfiles([...selectedProfiles, profile.id as ProfileKey]);
+                          } else {
+                            setSelectedProfiles(selectedProfiles.filter(id => id !== profile.id));
+                          }
+                        }}
+                        className="rounded text-primary focus:ring-primary"
+                      />
+                      <span className="text-sm text-gray-700">{profile.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {mode === 'route' ? 'Punkt Startowy' : 'Adres / Obszar'}
