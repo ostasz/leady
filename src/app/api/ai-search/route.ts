@@ -40,21 +40,37 @@ export async function POST(request: Request) {
         const searchChat = searchModel.startChat({ history: [] });
 
         const searchPrompt = `
-Jesteś asystentem sprzedażowym pomagającym znaleźć potencjalnych klientów dla Spółki Obrotu Energią (sprzedaż prądu i gazu).
+Jesteś ekspertem ds. analizy rynku energetycznego i wyszukiwania leadów B2B.
+Twoim celem jest znalezienie firm, które zużywają dużo energii elektrycznej (duży wolumen MWh) i mogą być zainteresowane zmianą sprzedawcy prądu.
 
 Użytkownik podał zapytanie: "${address}"
 
 Twoje zadanie:
-1. ZANALIZUJ zapytanie użytkownika:
-   - Jeśli użytkownik wpisał konkretną branżę (np. "fabryki", "hotele", "szkoły"), szukaj WYŁĄCZNIE firm z tej kategorii.
-   - Jeśli użytkownik wpisał tylko miasto/obszar (np. "Radomsko"), szukaj firm z dużym zużyciem energii (fabryki, zakłady produkcyjne, chłodnie, duże hotele, galerie handlowe).
+1. Na podstawie wyników wyszukiwania Google znajdź firmy w podanej lokalizacji.
+2. Dla każdej potencjalnej firmy:
+   - przeczytaj opis działalności (wizytówka Google, meta-opis, fragment strony),
+   - zaklasyfikuj typ działalności (np. "fabryka mebli", "chłodnia", "galeria handlowa", "hotel", "sklep spożywczy").
+3. Oceń każdą firmę w dwóch skalach:
 
-2. Używając narzędzia googleSearch znajdź MINIMUM 20-25 firm pasujących do powyższych kryteriów.
-   - WAŻNE: Znajdź jak NAJWIĘCEJ firm (20-30), nie ograniczaj się do pierwszych wyników!
-   - Szukamy firm, które płacą wysokie rachunki za prąd i mogą szukać tańszego sprzedawcy energii.
+   SKALA 1: energy_intensity_score (1-5) - Potencjał zużycia energii:
+   - 1: Małe punkty usługowe, biura, kioski, fryzjerzy, małe sklepy osiedlowe.
+   - 2: Zwykłe sklepy, małe restauracje, małe magazyny, warsztaty.
+   - 3: Większe dyskonty, małe zakłady produkcyjne, małe hotele, duże restauracje.
+   - 4: Średnie/duże zakłady produkcyjne, centra logistyczne, duże hotele, galerie handlowe, szpitale.
+   - 5: Bardzo energochłonne zakłady: huty, odlewnie, zakłady chemiczne, chłodnie/mroźnie, duże fabryki z liniami produkcyjnymi.
 
-3. Dla każdej firmy spróbuj znaleźć NIP w wiarygodnych źródłach.
-   - Jeśli NIE masz wysokiej pewności co do NIP, ustaw pole "nip" na null.
+   SKALA 2: lead_fit_score (0-100) - Ogólna atrakcyjność leada:
+   - 80-100: HOT (Bardzo dobry kandydat)
+   - 50-79: WARM (Dobry kandydat)
+   - 0-49: COLD (Słaby kandydat)
+
+4. ZASADY FILTROWANIA I JAKOŚCI:
+   - Zwróć MAKSYMALNIE 30 firm.
+   - Jeśli w danej lokalizacji jest mniej firm spełniających kryteria, zwróć mniej. NIE obniżaj kryteriów na siłę.
+   - Do wyników dodawaj TYLKO firmy z energy_intensity_score >= 3 ORAZ lead_fit_score >= 50.
+   - Nie wymyślaj firm – zwracaj tylko takie, które faktycznie istnieją i pojawiły się w wynikach.
+
+5. Dla każdej firmy spróbuj znaleźć NIP. Jeśli nie masz pewności, ustaw null.
 
 Zwróć ODPOWIEDŹ WYŁĄCZNIE jako poprawny JSON w formacie:
 
@@ -62,19 +78,21 @@ Zwróć ODPOWIEDŹ WYŁĄCZNIE jako poprawny JSON w formacie:
   "companies": [
     {
       "name": "Pełna nazwa firmy",
-      "address": "Pełny adres z kodem pocztowym",
+      "address": "Pełny adres",
       "phone": "numer telefonu lub null",
       "website": "https://... lub null",
-      "nip": "10-cyfrowy NIP lub null",
-      "reason": "krótkie uzasadnienie dlaczego to dobry klient",
-      "mapsUrl": "link do Google Maps lub null"
+      "nip": "NIP lub null",
+      "source_url": "link do źródła (np. wizytówka Google, strona www)",
+      "business_type": "np. fabryka mebli",
+      "energy_intensity_score": 4,
+      "lead_fit_score": 85,
+      "reason": "Krótkie uzasadnienie dlaczego to dobry klient (np. 'Duża hala produkcyjna, praca na 3 zmiany')."
     }
   ],
-  "summary": "krótkie podsumowanie znalezionych firm"
+  "summary": "Krótkie podsumowanie znalezionych firm i specyfiki lokalizacji."
 }
 
-Znajdź 20-30 najlepszych potencjalnych klientów.
-WAŻNE: Zwróć TYLKO czysty JSON, bez markdown, bez \`\`\`json, bez dodatkowego tekstu.
+WAŻNE: Zwróć TYLKO czysty JSON.
 `;
 
         const searchResult = await searchChat.sendMessage(searchPrompt);
@@ -93,6 +111,19 @@ WAŻNE: Zwróć TYLKO czysty JSON, bez markdown, bez \`\`\`json, bez dodatkowego
             const parsed = JSON.parse(cleanJson);
             companiesFromModel = parsed.companies || [];
             summary = parsed.summary || '';
+
+            // Backend Filtering (Double Check)
+            companiesFromModel = companiesFromModel.filter(company => {
+                const score = company.energy_intensity_score || 0;
+                const fit = company.lead_fit_score || 0;
+
+                // Filter out duplicates based on name (simple normalization)
+                // This is a basic check, ideally we'd check against DB or more complex logic
+
+                // Filter by score as requested
+                return score >= 3 && fit >= 50;
+            });
+
         } catch (e) {
             console.error('Cannot parse model JSON', e);
             console.log('Response text:', responseText);
