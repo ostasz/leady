@@ -42,8 +42,7 @@ export const LEAD_PROFILES = {
         keywords: [
             "hotel", "resort", "spa resort", "wellness",
             "conference hotel", "conference center", "thermal", "aquapark",
-            "hotel spa", "ośrodek wypoczynkowy",
-            "pensjonat", "centrum konferencyjne", "termy", "aquapark"
+            "ośrodek wypoczynkowy", "pensjonat", "centrum konferencyjne", "termy"
         ]
     },
     restaurants: {
@@ -53,8 +52,7 @@ export const LEAD_PROFILES = {
         keywords: [
             "restaurant", "steakhouse", "seafood restaurant",
             "fine dining", "grill house", "barbecue restaurant", "pizzeria", "bistro",
-            "restauracja", "karczma", "steakhouse",
-            "restauracja grill", "restauracja hotelowa", "pizzeria", "bistro", "tawerna"
+            "restauracja", "karczma", "restauracja hotelowa", "tawerna"
         ]
     },
     bakeries: {
@@ -77,9 +75,8 @@ export const LEAD_PROFILES = {
             "farm", "dairy farm", "poultry farm", "pig farm",
             "cattle farm", "greenhouse", "vegetable farm", "orchard",
             "gospodarstwo rolne", "ferma drobiu", "ferma kur",
-            "ferma trzody", "ferma bydła", "obora", "obora bydła",
-            "kurnik", "szklarnia", "szklarnie",
-            "uprawa warzyw", "sad", "gospodarstwo ogrodnicze"
+            "ferma trzody", "ferma bydła", "obora",
+            "kurnik", "szklarnia", "uprawa warzyw", "sad", "gospodarstwo ogrodnicze"
         ]
     },
     energy_services: {
@@ -93,7 +90,7 @@ export const LEAD_PROFILES = {
             "car wash", "automatic car wash",
             "pralnia", "pralnia przemysłowa", "pralnia wodna", "magiel",
             "pralnia chemiczna", "drukarnia", "drukarnia offsetowa",
-            "druk cyfrowy", "data center", "serwerownia",
+            "druk cyfrowy", "serwerownia",
             "myjnia samochodowa", "myjnia automatyczna", "myjnia bezdotykowa"
         ]
     },
@@ -107,7 +104,7 @@ export const LEAD_PROFILES = {
             "fryzjer", "salon fryzjerski", "barber",
             "salon kosmetyczny", "gabinet kosmetyczny",
             "siłownia", "fitness", "klub fitness", "studio treningowe",
-            "biuro", "coworking"
+            "biuro"
         ]
     }
 } as const;

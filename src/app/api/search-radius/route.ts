@@ -27,20 +27,18 @@ async function searchNearby(location: { lat: number; lng: number }, radius: numb
         }
     });
 
-    // Join with OR operator for Google Places API
-    // Note: Google Places API 'keyword' parameter matches ANY of the terms if separated by pipe? 
-    // Actually, official docs say 'keyword' matches against all fields. 
-    // To match ANY, we might need multiple requests or rely on the pipe behavior which is unofficial but often works,
-    // OR just send a broad query. 
-    // Given the user's instruction "Zestaw słów kluczowych... na tej podstawie budować zapytania", 
-    // and the previous code used pipe, we will stick to pipe.
-    // However, too many keywords might break the request. 
-    // Let's try to join them. If it fails, we might need to limit.
-    const keyword = allKeywords.join('|');
+    // Use Text Search API which supports "OR" operator
+    // Join keywords with " OR "
+    const query = allKeywords.join(' OR ');
 
-    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=${radius}&keyword=${encodeURIComponent(keyword)}&key=${API_KEY}`;
+    // Use Text Search API
+    // https://maps.googleapis.com/maps/api/place/textsearch/json
+    // parameters: query, location, radius, key
+    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&location=${location.lat},${location.lng}&radius=${radius}&key=${API_KEY}`;
+
     const res = await fetch(url);
     const data = await res.json();
+
     if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
         throw new Error(`Places search failed: ${data.status}`);
     }
