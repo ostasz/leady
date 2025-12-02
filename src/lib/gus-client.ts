@@ -40,6 +40,10 @@ export class GusClient {
     const url = process.env.GUS_API_URL || 'https://wyszukiwarkaregon.stat.gov.pl/wsBIR/UslugaBIRzewnPubl.svc';
     const key = process.env.GUS_API_KEY;
 
+    if (!key) {
+      throw new Error('GUS_API_KEY is not defined in environment variables');
+    }
+
     const soapBody = `
       <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ns="http://CIS/BIR/PUBL/2014/07">
         <soap:Header xmlns:wsa="http://www.w3.org/2005/08/addressing">
