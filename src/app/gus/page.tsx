@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
 import Link from 'next/link';
 import { Search, Loader2, Building2, MapPin, FileText, ArrowLeft } from 'lucide-react';
 
@@ -19,10 +21,26 @@ interface CompanyData {
 }
 
 export default function GusPage() {
+    const { user, loading: authLoading } = useAuth();
+    const router = useRouter();
     const [nip, setNip] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<CompanyData | null>(null);
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push('/login');
+        }
+    }, [user, authLoading, router]);
+
+    if (authLoading) {
+        return <div className="min-h-screen flex items-center justify-center">Ładowanie...</div>;
+    }
+
+    if (!user) {
+        return null;
+    }
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
