@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Loader2, Building2, MapPin, FileText } from 'lucide-react';
+import Link from 'next/link';
+import { Search, Loader2, Building2, MapPin, FileText, ArrowLeft } from 'lucide-react';
 
 interface CompanyData {
     name: string;
@@ -50,6 +51,13 @@ export default function GusPage() {
     return (
         <div className="min-h-screen bg-gray-50 p-8">
             <div className="max-w-2xl mx-auto">
+                <div className="mb-6">
+                    <Link href="/apps/leads" className="inline-flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors">
+                        <ArrowLeft className="h-4 w-4" />
+                        Wróć do portalu
+                    </Link>
+                </div>
+
                 <h1 className="text-3xl font-bold text-gray-900 mb-8 flex items-center gap-2">
                     <Building2 className="h-8 w-8 text-blue-600" />
                     GUS Data Checker

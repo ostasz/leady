@@ -39,8 +39,10 @@ export default function ResetPasswordPage() {
                 setError('Nie znaleziono użytkownika z tym adresem email');
             } else if (err.code === 'auth/invalid-email') {
                 setError('Nieprawidłowy format adresu email');
+            } else if (err.code === 'auth/unauthorized-continue-uri') {
+                setError('Domena nie jest autoryzowana w Firebase. Dodaj ją w konsoli Firebase (Authentication -> Settings -> Authorized domains).');
             } else {
-                setError('Wystąpił błąd. Spróbuj ponownie później.');
+                setError(`Wystąpił błąd: ${err.message}`);
             }
         } finally {
             setLoading(false);
