@@ -13,7 +13,9 @@
     "@googlemaps/polyline-codec": "^1.0.28",
     "@react-google-maps/api": "^2.20.7",
     "@types/nodemailer": "^7.0.4",
+    "@types/xml2js": "^0.4.14",
     "@vis.gl/react-google-maps": "^1.7.1",
+    "axios": "^1.13.2",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "firebase": "^12.6.0",
@@ -29,6 +31,7 @@
     "react-markdown": "^10.1.0",
     "tailwind-merge": "^3.4.0",
     "xlsx": "^0.18.5",
+    "xml2js": "^0.6.2",
     "zod": "^4.1.12"
   },
   "devDependencies": {

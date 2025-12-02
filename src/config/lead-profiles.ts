@@ -40,9 +40,8 @@ export const LEAD_PROFILES = {
         label: 'Hotele / SPA / obiekty noclegowe',
         base_score: 40,
         keywords: [
-            "hotel", "resort", "spa resort", "wellness",
-            "conference hotel", "conference center", "thermal", "aquapark",
-            "ośrodek wypoczynkowy", "pensjonat", "centrum konferencyjne", "termy"
+            "hotel", "motel", "hostel",
+            "pensjonat", "zajazd", "ośrodek wypoczynkowy", "noclegi"
         ]
     },
     restaurants: {
@@ -67,16 +66,24 @@ export const LEAD_PROFILES = {
             "ciastkarnia", "produkcja pieczywa"
         ]
     },
-    agro: {
-        id: 'agro',
-        label: 'Rolnictwo / agro / hodowla',
+    agro_farm: {
+        id: 'agro_farm',
+        label: 'Rolnictwo / Hodowla',
         base_score: 35,
         keywords: [
-            "farm", "dairy farm", "poultry farm", "pig farm",
-            "cattle farm", "greenhouse", "vegetable farm", "orchard",
             "gospodarstwo rolne", "ferma drobiu", "ferma kur",
             "ferma trzody", "ferma bydła", "obora",
-            "kurnik", "szklarnia", "uprawa warzyw", "sad", "gospodarstwo ogrodnicze"
+            "kurnik", "szklarnia", "uprawa warzyw", "sad", "gospodarstwo ogrodnicze",
+            "hodowla", "drób", "trzoda", "producent rolny"
+        ]
+    },
+    agro_meat: {
+        id: 'agro_meat',
+        label: 'Przetwórstwo mięsne / Masarnie',
+        base_score: 35,
+        keywords: [
+            "masarnia", "zakład mięsny", "ubojnia", "przetwórstwo mięsne",
+            "rzeźnia", "wędliniarstwo", "skup żywca"
         ]
     },
     energy_services: {

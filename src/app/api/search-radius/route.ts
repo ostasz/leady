@@ -13,36 +13,118 @@ async function geocode(address: string) {
     throw new Error(data.error_message || 'Geocoding failed');
 }
 
+function deg2rad(deg: number): number {
+    return deg * (Math.PI / 180);
+}
+
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+}
+
 import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
 
-async function searchNearby(location: { lat: number; lng: number }, radius: number, profiles: string[]) {
-    // Default to heavy industry if no profiles selected
-    const selectedKeys = (profiles.length > 0 ? profiles : ['heavy_industry']) as ProfileKey[];
+// Modified to search for a SINGLE profile to ensure separation of concerns
+async function searchForProfile(address: string, location: { lat: number; lng: number }, radius: number, profileKey: string) {
+    if (!LEAD_PROFILES[profileKey as ProfileKey]) return [];
 
-    // Collect all keywords from selected profiles
-    let allKeywords: string[] = [];
-    selectedKeys.forEach(key => {
-        if (LEAD_PROFILES[key]) {
-            allKeywords = [...allKeywords, ...LEAD_PROFILES[key].keywords];
+    const profile = LEAD_PROFILES[profileKey as ProfileKey];
+    const allKeywords = profile.keywords;
+
+    // Helper to execute search
+    const executeSearch = async (queryStr: string) => {
+        let results: any[] = [];
+        let nextToken = '';
+        // console.log(`[${profile.label}] Executing search: "${queryStr}"`);
+
+        for (let i = 0; i < 3; i++) {
+            let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(queryStr)}&location=${location.lat},${location.lng}&radius=${radius}&key=${API_KEY}`;
+
+            if (nextToken) {
+                url += `&pagetoken=${nextToken}`;
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+                console.error(`[${profile.label}] Page ${i + 1} failed: ${data.status}`);
+                break;
+            }
+
+            if (data.results) {
+                results = [...results, ...data.results];
+            }
+
+            nextToken = data.next_page_token;
+            if (!nextToken) break;
         }
-    });
+        return results;
+    };
 
-    // Use Text Search API which supports "OR" operator
-    // Join keywords with " OR "
-    const query = allKeywords.join(' OR ');
+    // Helper to filter results
+    const filterResults = (results: any[]) => {
+        return results.filter((place: any) => {
+            const dist = calculateDistance(
+                location.lat,
+                location.lng,
+                place.geometry.location.lat,
+                place.geometry.location.lng
+            );
+            const isWithin = dist <= (radius / 1000); // Convert radius to km
 
-    // Use Text Search API
-    // https://maps.googleapis.com/maps/api/place/textsearch/json
-    // parameters: query, location, radius, key
-    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&location=${location.lat},${location.lng}&radius=${radius}&key=${API_KEY}`;
+            if (!isWithin) {
+                console.log(`[Filter] Dropping "${place.name}" - Distance: ${dist.toFixed(2)}km > ${radius / 1000}km`);
+            }
+            return isWithin;
+        });
+    };
 
-    const res = await fetch(url);
-    const data = await res.json();
+    // STRATEGY: "The Masarnia Mechanism"
+    // Google Places API does NOT support "OR" operator reliably.
+    // Instead of one giant query, we pick the top 2-3 keywords and run separate searches.
+    // This guarantees we find "Masarnia" AND "Zakład mięsny" without syntax errors.
 
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-        throw new Error(`Places search failed: ${data.status}`);
+    const topKeywords = allKeywords.slice(0, 2); // Take top 2 keywords to manage quota
+    let combinedResults: any[] = [];
+    const seenPlaceIds = new Set<string>();
+
+    for (const keyword of topKeywords) {
+        // 1. Specific Search: "Keyword City"
+        // We try specific first to get best matches in the city center.
+        const specificQuery = `${keyword} ${address}`;
+        // console.log(`[${profile.label}] Specific: "${specificQuery}"`);
+        const specificRes = await executeSearch(specificQuery);
+        let keywordResults = [...filterResults(specificRes)];
+
+        // 2. Broad Search: "Keyword" + Radius
+        // "The Masarnia Mechanism": ALWAYS trigger broad search expansion to find results in the radius.
+        // This ensures we don't miss places just because they don't have the city name in their address.
+
+        // console.log(`[${profile.label}] Broad: "${keyword}" (Radius: ${radius/1000}km)`);
+        const broadRes = await executeSearch(keyword);
+        const filteredBroad = filterResults(broadRes);
+        keywordResults = [...keywordResults, ...filteredBroad];
+
+        // Merge into combined
+        for (const place of keywordResults) {
+            if (!seenPlaceIds.has(place.place_id)) {
+                seenPlaceIds.add(place.place_id);
+                combinedResults.push(place);
+            }
+        }
     }
-    return data.results || [];
+
+    console.log(`[${profile.label}] Total unique results: ${combinedResults.length}`);
+    return combinedResults;
 }
 
 async function getPlaceDetails(placeId: string) {
@@ -80,19 +162,37 @@ export async function GET(request: Request) {
         }
 
         const location = await geocode(address);
-        const results = await searchNearby(location, 20000, profiles); // 20km radius
 
-        // Sort by prominence
-        results.sort((a: any, b: any) => (b.user_ratings_total || 0) - (a.user_ratings_total || 0));
-        const top20 = results.slice(0, 20);
+        // Execute search for EACH profile independently to maximize results
+        // and prevent one category from drowning out another
+        let allCombinedResults: any[] = [];
+        const processedIds = new Set<string>();
 
-        // Fetch details for top 20
-        const detailedResults = await Promise.all(top20.map(async (place: any) => {
+        for (const profileKey of profiles) {
+            // Determine radius based on profile type
+            // Only 'agro_farm' gets 50km, others (including 'agro_meat') get 20km
+            const isFarm = profileKey === 'agro_farm';
+            const radius = isFarm ? 50000 : 20000;
+            console.log(`[Search] Profile: ${profileKey}, IsFarm: ${isFarm}, Radius: ${radius}m`);
+
+            const results = await searchForProfile(address, location, radius, profileKey);
+
+            // Add unique results
+            for (const place of results) {
+                if (!processedIds.has(place.place_id)) {
+                    processedIds.add(place.place_id);
+                    allCombinedResults.push(place);
+                }
+            }
+        }
+
+        // Fetch details for all results (no ranking/sorting)
+        const detailedResults = await Promise.all(allCombinedResults.map(async (place: any) => {
             const details = await getPlaceDetails(place.place_id);
             return {
                 id: place.place_id,
                 name: place.name,
-                address: place.vicinity,
+                address: place.formatted_address || place.vicinity,
                 location: place.geometry.location,
                 rating: place.rating,
                 user_ratings_total: place.user_ratings_total,

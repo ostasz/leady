@@ -71,6 +71,8 @@ export default function Home() {
         phone: place.phone,
         website: place.website,
         nip: deepData?.nip,
+        regon: deepData?.gus?.regon,
+        pkd: deepData?.gus?.pkd,
         keyPeople: deepData?.keyPeople || [],
         revenue: deepData?.revenue,
         employees: deepData?.employees,
@@ -895,6 +897,34 @@ export default function Home() {
                             )}
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* GUS Data Section */}
+                    {/* @ts-ignore */}
+                    {deepSearchResults[place.id].gus && (
+                      <div className="mt-3 pt-3 border-t border-indigo-200">
+                        <h5 className="font-bold text-indigo-800 text-xs uppercase mb-2">Dane Rejestrowe (GUS/CEIDG)</h5>
+                        <div className="grid grid-cols-1 gap-2 text-xs">
+                          {/* @ts-ignore */}
+                          {deepSearchResults[place.id].gus.regon && (
+                            <div><span className="text-gray-500">REGON:</span> <span className="font-mono">{deepSearchResults[place.id].gus.regon}</span></div>
+                          )}
+                          {/* @ts-ignore */}
+                          {deepSearchResults[place.id].gus.pkd && deepSearchResults[place.id].gus.pkd.length > 0 && (
+                            <div className="mt-1">
+                              <span className="text-gray-500 block mb-1">PKD:</span>
+                              <ul className="list-disc list-inside pl-1 text-gray-700 space-y-0.5">
+                                {/* @ts-ignore */}
+                                {deepSearchResults[place.id].gus.pkd.slice(0, 3).map((code: string, i: number) => (
+                                  <li key={i} className="truncate">{code}</li>
+                                ))}
+                                {/* @ts-ignore */}
+                                {deepSearchResults[place.id].gus.pkd.length > 3 && <li>...</li>}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
