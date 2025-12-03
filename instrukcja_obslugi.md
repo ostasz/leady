@@ -20,9 +20,11 @@ Główny ekran (Dashboard) oferuje trzy tryby wyszukiwania, dostosowane do róż
 
 ### Tryby Wyszukiwania:
 
-1.  **📍 Wokół Punktu:**
+3.  **📍 Wokół Punktu:**
     *   Służy do znalezienia firm w określonej lokalizacji.
-    *   Wpisz adres (np. *"Warszawa, Marszałkowska"*) lub użyj przycisku lokalizacji, aby znaleźć firmy w pobliżu.
+    *   **Lokalizacja:** Wpisz adres (np. *"Warszawa, Marszałkowska"*), użyj przycisku lokalizacji lub **kliknij dowolny punkt na mapie**, aby ustawić go jako centrum wyszukiwania (zostanie oznaczony niebieską kropką).
+    *   **Promień:** Użyj suwaka, aby określić promień wyszukiwania (od 1 km do 20 km).
+    *   **Profil:** Wybierz **jeden** profil klienta (np. "Przemysł ciężki", "Logistyka"), który Cię interesuje.
 
 2.  **🚗 Wzdłuż Trasy:**
     *   Idealne dla handlowców planujących podróż.
@@ -36,6 +38,7 @@ Główny ekran (Dashboard) oferuje trzy tryby wyszukiwania, dostosowane do róż
 
 ### Wyniki i Akcje:
 *   **Lista Firm:** Zobaczysz nazwę, adres, ocenę i status każdej znalezionej firmy.
+*   **Sortowanie:** Możesz sortować wyniki według liczby opinii, alfabetycznie lub odległości od wybranego punktu.
 *   **Zapisz Leada:** Kliknij ikonę **plusa/dyskietki** przy firmie, aby dodać ją do swojej bazy ("Moje Leady").
 *   **Deep Search:** Dla wybranych firm możesz uruchomić pogłębioną analizę (ikona lupy/błyskawicy), aby znaleźć dodatkowe dane kontaktowe (telefon, email, NIP).
 
