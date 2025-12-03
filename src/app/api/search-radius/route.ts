@@ -3,6 +3,24 @@ import { adminAuth, adminDb } from '@/lib/firebase-admin';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
+interface GooglePlaceResult {
+    place_id: string;
+    name: string;
+    formatted_address?: string;
+    vicinity?: string;
+    geometry: {
+        location: {
+            lat: number;
+            lng: number;
+        };
+    };
+    rating?: number;
+    user_ratings_total?: number;
+    types?: string[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any;
+}
+
 async function geocode(address: string) {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${API_KEY}`;
     const res = await fetch(url);
@@ -40,7 +58,7 @@ async function searchForProfile(address: string, location: { lat: number; lng: n
 
     // Helper to execute search
     const executeSearch = async (queryStr: string) => {
-        let results: any[] = [];
+        let results: GooglePlaceResult[] = [];
         let nextToken = '';
         // console.log(`[${profile.label}] Executing search: "${queryStr}"`);
 
@@ -71,8 +89,8 @@ async function searchForProfile(address: string, location: { lat: number; lng: n
     };
 
     // Helper to filter results
-    const filterResults = (results: any[]) => {
-        return results.filter((place: any) => {
+    const filterResults = (results: GooglePlaceResult[]) => {
+        return results.filter((place: GooglePlaceResult) => {
             const dist = calculateDistance(
                 location.lat,
                 location.lng,
@@ -94,7 +112,7 @@ async function searchForProfile(address: string, location: { lat: number; lng: n
     // This guarantees we find "Masarnia" AND "Zakład mięsny" without syntax errors.
 
     const topKeywords = allKeywords.slice(0, 2); // Take top 2 keywords to manage quota
-    let combinedResults: any[] = [];
+    const combinedResults: GooglePlaceResult[] = [];
     const seenPlaceIds = new Set<string>();
 
     for (const keyword of topKeywords) {
@@ -156,6 +174,7 @@ export async function GET(request: Request) {
         const address = searchParams.get('address');
         const profilesParam = searchParams.get('profiles');
         const profiles = profilesParam ? profilesParam.split(',') : [];
+        const radiusParam = searchParams.get('radius');
 
         if (!address) {
             return NextResponse.json({ error: 'Address is required' }, { status: 400 });
@@ -165,14 +184,23 @@ export async function GET(request: Request) {
 
         // Execute search for EACH profile independently to maximize results
         // and prevent one category from drowning out another
-        let allCombinedResults: any[] = [];
+        const allCombinedResults: GooglePlaceResult[] = [];
         const processedIds = new Set<string>();
 
         for (const profileKey of profiles) {
-            // Determine radius based on profile type
-            // Only 'agro_farm' gets 50km, others (including 'agro_meat') get 20km
+            // Determine radius based on profile type or custom param
+            // If custom radius is provided (in km), convert to meters.
+            // Otherwise fallback to defaults: 'agro_farm' gets 50km, others 20km
             const isFarm = profileKey === 'agro_farm';
-            const radius = isFarm ? 50000 : 20000;
+            let radius = isFarm ? 50000 : 20000;
+
+            if (radiusParam) {
+                const customRadiusKm = parseInt(radiusParam);
+                if (!isNaN(customRadiusKm) && customRadiusKm > 0) {
+                    radius = customRadiusKm * 1000; // Convert km to meters
+                }
+            }
+
             console.log(`[Search] Profile: ${profileKey}, IsFarm: ${isFarm}, Radius: ${radius}m`);
 
             const results = await searchForProfile(address, location, radius, profileKey);
@@ -187,7 +215,7 @@ export async function GET(request: Request) {
         }
 
         // Fetch details for all results (no ranking/sorting)
-        const detailedResults = await Promise.all(allCombinedResults.map(async (place: any) => {
+        const detailedResults = await Promise.all(allCombinedResults.map(async (place: GooglePlaceResult) => {
             const details = await getPlaceDetails(place.place_id);
             return {
                 id: place.place_id,
@@ -207,8 +235,9 @@ export async function GET(request: Request) {
             center: location,
             results: detailedResults
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+        return NextResponse.json({ error: errorMessage }, { status: 500 });
     }
 }

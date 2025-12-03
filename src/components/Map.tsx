@@ -1,7 +1,7 @@
 'use client';
 
-import { Map as GoogleMap, Marker, useMap } from '@vis.gl/react-google-maps';
-import { useEffect, useState } from 'react';
+import { Map as GoogleMap, Marker, useMap, MapMouseEvent } from '@vis.gl/react-google-maps';
+import { useEffect } from 'react';
 
 interface MapProps {
     center: { lat: number; lng: number };
@@ -11,9 +11,11 @@ interface MapProps {
         name: string;
     }>;
     routePath?: Array<{ lat: number; lng: number }>;
+    onMapClick?: (e: MapMouseEvent) => void;
+    selectedLocation?: { lat: number; lng: number } | null;
 }
 
-export default function Map({ center, markers, routePath }: MapProps) {
+export default function Map({ center, markers, routePath, onMapClick, selectedLocation }: MapProps) {
     const map = useMap();
 
     useEffect(() => {
@@ -48,6 +50,7 @@ export default function Map({ center, markers, routePath }: MapProps) {
             gestureHandling={'greedy'}
             disableDefaultUI={false}
             className="w-full h-full"
+            onClick={onMapClick}
         >
             {markers.map(marker => (
                 <Marker
@@ -56,6 +59,15 @@ export default function Map({ center, markers, routePath }: MapProps) {
                     title={marker.name}
                 />
             ))}
+            {selectedLocation && (
+                <Marker
+                    position={selectedLocation}
+                    title="Wybrany punkt"
+                    icon={{
+                        url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+                    }}
+                />
+            )}
         </GoogleMap>
     );
 }

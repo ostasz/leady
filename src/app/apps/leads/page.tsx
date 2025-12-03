@@ -1,14 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { GoogleMap, Marker, InfoWindow, DirectionsRenderer } from '@react-google-maps/api';
 import { APIProvider } from '@vis.gl/react-google-maps';
 import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
 import Link from 'next/link';
 import Map from '@/components/Map';
-import { Search, MapPin, Navigation, Sparkles, Locate, Save, BookmarkPlus, ArrowLeft } from 'lucide-react';
+import { Search, MapPin, Navigation, Sparkles, Locate, BookmarkPlus, ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
@@ -28,9 +28,11 @@ export default function Home() {
   const [deepSearchResults, setDeepSearchResults] = useState<Record<string, any>>({});
   const [deepSearchLoading, setDeepSearchLoading] = useState<Record<string, boolean>>({});
   const [savingLead, setSavingLead] = useState<Record<string, boolean>>({});
-  const [selectedProfiles, setSelectedProfiles] = useState<ProfileKey[]>(['heavy_industry', 'logistics']);
+  const [selectedProfiles, setSelectedProfiles] = useState<ProfileKey[]>(['heavy_industry']);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [sortBy, setSortBy] = useState<'reviews' | 'alphabetical' | 'distance'>('reviews');
+  const [radius, setRadius] = useState<number>(20); // Default 20km
+  const [clickedPos, setClickedPos] = useState<{ lat: number; lng: number } | null>(null);
   const router = useRouter();
 
   // Authentication guard
@@ -119,7 +121,7 @@ export default function Home() {
 
       if (mode === 'radius') {
         const profilesParam = selectedProfiles.join(',');
-        url = `/api/search-radius?address=${encodeURIComponent(address1)}&profiles=${profilesParam}`;
+        url = `/api/search-radius?address=${encodeURIComponent(address1)}&profiles=${profilesParam}&radius=${radius}`;
       } else if (mode === 'route') {
         url = `/api/search-route?origin=${encodeURIComponent(address1)}&destination=${encodeURIComponent(address2)}`;
       } else if (mode === 'ai') {
@@ -301,6 +303,32 @@ export default function Home() {
     return 0;
   });
 
+  const handleMapClick = async (e: any) => {
+    if (!e.detail.latLng) return;
+    const lat = e.detail.latLng.lat;
+    const lng = e.detail.latLng.lng;
+
+    setCenter({ lat, lng });
+    setClickedPos({ lat, lng });
+
+    // Reverse geocode
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`
+      );
+      const data = await response.json();
+      if (data.results && data.results[0]) {
+        const address = data.results[0].formatted_address;
+        setAddress1(address);
+      } else {
+        setAddress1(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+      }
+    } catch (error) {
+      console.error('Error reverse geocoding:', error);
+      setAddress1(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+    }
+  };
+
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center">Ładowanie...</div>;
   }
@@ -401,24 +429,39 @@ export default function Home() {
             {mode === 'radius' && (
               <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <label className="block text-sm font-medium text-gray-700 mb-3">Wybierz profile firm:</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
                   {Object.values(LEAD_PROFILES).map((profile) => (
                     <label key={profile.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
                       <input
-                        type="checkbox"
+                        type="radio"
+                        name="profile"
                         checked={selectedProfiles.includes(profile.id as ProfileKey)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedProfiles([...selectedProfiles, profile.id as ProfileKey]);
-                          } else {
-                            setSelectedProfiles(selectedProfiles.filter(id => id !== profile.id));
-                          }
-                        }}
-                        className="rounded text-primary focus:ring-primary"
+                        onChange={() => setSelectedProfiles([profile.id as ProfileKey])}
+                        className="text-primary focus:ring-primary"
                       />
                       <span className="text-sm text-gray-700">{profile.label}</span>
                     </label>
                   ))}
+                </div>
+
+                {/* Radius Slider */}
+                <div className="border-t border-gray-200 pt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex justify-between">
+                    <span>Promień wyszukiwania</span>
+                    <span className="font-bold text-primary">{radius} km</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={radius}
+                    onChange={(e) => setRadius(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>1 km</span>
+                    <span>20 km</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -667,6 +710,7 @@ export default function Home() {
                 <h2 className="text-lg font-semibold text-gray-800">
                   Wyniki ({results.length})
                 </h2>
+
                 {results.length > 0 && (
                   <select
                     value={sortBy}
@@ -718,8 +762,6 @@ export default function Home() {
                       // Load custom font for Polish characters
                       const fontUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf';
                       const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-                      const fontBase64 = Buffer.from(fontBytes).toString('base64'); // Requires Buffer polyfill or browser equivalent
-
                       // Browser compatible base64 conversion
                       const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
                         let binary = '';
@@ -809,11 +851,9 @@ export default function Home() {
                 </h3>
                 <p className="text-sm text-gray-600 mt-1">{place.address}</p>
 
-                {/* @ts-ignore */}
                 {place.nip && (
                   <div className="flex items-center gap-1 mt-2 text-xs font-mono text-purple-700 bg-purple-50 px-2 py-1 rounded w-fit border border-purple-100">
                     <span className="font-bold">NIP:</span>
-                    {/* @ts-ignore */}
                     {place.nip}
                   </div>
                 )}
@@ -926,15 +966,12 @@ export default function Home() {
 
                         {deepSearchResults[place.id].socials && Object.values(deepSearchResults[place.id].socials).some(v => v) && (
                           <div className="mt-2 flex gap-2">
-                            {/* @ts-ignore */}
                             {deepSearchResults[place.id].socials.linkedin && (
                               <a href={deepSearchResults[place.id].socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">LinkedIn</a>
                             )}
-                            {/* @ts-ignore */}
                             {deepSearchResults[place.id].socials.facebook && (
                               <a href={deepSearchResults[place.id].socials.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Facebook</a>
                             )}
-                            {/* @ts-ignore */}
                             {deepSearchResults[place.id].socials.instagram && (
                               <a href={deepSearchResults[place.id].socials.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">Instagram</a>
                             )}
@@ -944,25 +981,20 @@ export default function Home() {
                     )}
 
                     {/* GUS Data Section */}
-                    {/* @ts-ignore */}
                     {deepSearchResults[place.id].gus && (
                       <div className="mt-3 pt-3 border-t border-indigo-200">
                         <h5 className="font-bold text-indigo-800 text-xs uppercase mb-2">Dane Rejestrowe (GUS/CEIDG)</h5>
                         <div className="grid grid-cols-1 gap-2 text-xs">
-                          {/* @ts-ignore */}
                           {deepSearchResults[place.id].gus.regon && (
                             <div><span className="text-gray-500">REGON:</span> <span className="font-mono">{deepSearchResults[place.id].gus.regon}</span></div>
                           )}
-                          {/* @ts-ignore */}
                           {deepSearchResults[place.id].gus.pkd && deepSearchResults[place.id].gus.pkd.length > 0 && (
                             <div className="mt-1">
                               <span className="text-gray-500 block mb-1">PKD:</span>
                               <ul className="list-disc list-inside pl-1 text-gray-700 space-y-0.5">
-                                {/* @ts-ignore */}
                                 {deepSearchResults[place.id].gus.pkd.slice(0, 3).map((code: string, i: number) => (
                                   <li key={i} className="truncate">{code}</li>
                                 ))}
-                                {/* @ts-ignore */}
                                 {deepSearchResults[place.id].gus.pkd.length > 3 && <li>...</li>}
                               </ul>
                             </div>
@@ -979,7 +1011,17 @@ export default function Home() {
 
         {/* Map Area */}
         <div className="flex-1 relative h-[50vh] md:h-auto bg-gray-200">
-          <Map center={center} markers={results} routePath={routePath} />
+          <Map
+            center={center}
+            markers={results.map(r => ({
+              id: r.id,
+              location: r.location || r.geometry?.location,
+              name: r.name
+            }))}
+            routePath={routePath}
+            onMapClick={handleMapClick}
+            selectedLocation={clickedPos}
+          />
         </div>
       </div>
     </APIProvider>
