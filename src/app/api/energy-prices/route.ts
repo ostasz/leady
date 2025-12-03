@@ -14,12 +14,8 @@ export async function GET(request: NextRequest) {
             query = query.where('date', '==', date) as any;
         }
 
-        query = query.orderBy('date', 'desc').orderBy('hour', 'asc') as any;
-
-        // Limit to recent data if no date specified
-        if (!date) {
-            query = query.limit(100) as any;
-        }
+        // Simple ordering by hour only (no index needed)
+        query = query.orderBy('hour', 'asc').limit(200) as any;
 
         const snapshot = await query.get();
 

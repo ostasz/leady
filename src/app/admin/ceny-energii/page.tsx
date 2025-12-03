@@ -47,13 +47,15 @@ export default function EnergyPricesAdminPage() {
         setUploadStatus({ status: 'uploading', message: 'Uploading...' });
 
         try {
-            const headers = await getAuthHeaders();
+            const authHeaders = await getAuthHeaders();
             const formData = new FormData();
             formData.append('file', file);
 
             const response = await fetch('/api/energy-prices/upload', {
                 method: 'POST',
-                headers,
+                headers: {
+                    'Authorization': (authHeaders as any).Authorization
+                },
                 body: formData,
             });
 
