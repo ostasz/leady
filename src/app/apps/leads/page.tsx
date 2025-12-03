@@ -30,6 +30,7 @@ export default function Home() {
   const [savingLead, setSavingLead] = useState<Record<string, boolean>>({});
   const [selectedProfiles, setSelectedProfiles] = useState<ProfileKey[]>(['heavy_industry', 'logistics']);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [sortBy, setSortBy] = useState<'reviews' | 'alphabetical' | 'distance'>('reviews');
   const router = useRouter();
 
   // Authentication guard
@@ -232,7 +233,7 @@ export default function Home() {
         }
 
         // Extract name: remove markers (*, -, 1.), remove bolding (**), remove links
-        let name = trimmed.replace(/^[\*\-1-9\.]+\s*/, '') // Remove list marker
+        const name = trimmed.replace(/^[\*\-1-9\.]+\s*/, '') // Remove list marker
           .replace(/\*\*/g, '')             // Remove bold
           .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
           .trim();
@@ -270,6 +271,35 @@ export default function Home() {
       setDeepSearchLoading(prev => ({ ...prev, [id]: false }));
     }
   };
+
+  // Helper to calculate distance
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+  };
+
+  const sortedResults = [...results].sort((a, b) => {
+    if (sortBy === 'reviews') {
+      return (b.user_ratings_total || 0) - (a.user_ratings_total || 0);
+    }
+    if (sortBy === 'alphabetical') {
+      return (a.name || '').localeCompare(b.name || '');
+    }
+    if (sortBy === 'distance') {
+      if (!a.geometry?.location || !b.geometry?.location) return 0;
+      const distA = calculateDistance(center.lat, center.lng, a.geometry.location.lat, a.geometry.location.lng);
+      const distB = calculateDistance(center.lat, center.lng, b.geometry.location.lat, b.geometry.location.lng);
+      return distA - distB;
+    }
+    return 0;
+  });
 
   if (authLoading) {
     return <div className="min-h-screen flex items-center justify-center">Ładowanie...</div>;
@@ -633,9 +663,22 @@ export default function Home() {
           {/* Results List */}
           <div className="space-y-4">
             <div className="flex justify-between items-center border-b pb-2">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Wyniki ({results.length})
-              </h2>
+              <div className="flex items-center gap-4">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Wyniki ({results.length})
+                </h2>
+                {results.length > 0 && (
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'reviews' | 'alphabetical' | 'distance')}
+                    className="text-sm text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 px-2 py-1 cursor-pointer"
+                  >
+                    <option value="reviews">Ilość opinii (domyślnie)</option>
+                    <option value="alphabetical">Alfabetycznie</option>
+                    <option value="distance">Odległość od punktu</option>
+                  </select>
+                )}
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={async () => {
@@ -749,10 +792,10 @@ export default function Home() {
               </div>
             </div>
 
-            {results.length === 0 && !loading && (
+            {sortedResults.length === 0 && !loading && (
               <p className="text-gray-500 text-sm italic">Brak wyników. Wpisz adres i kliknij szukaj.</p>
             )}
-            {results.map((place) => (
+            {sortedResults.map((place) => (
               <div key={place.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <h3 className="font-bold text-gray-900 text-lg">
                   <a
