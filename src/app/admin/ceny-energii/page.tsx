@@ -1,0 +1,192 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+'use client';
+
+import { useState } from 'react';
+import { useAuth } from '@/components/AuthProvider';
+import { useRouter } from 'next/navigation';
+import { Upload, FileText, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
+
+interface UploadStatus {
+    status: 'idle' | 'uploading' | 'success' | 'error';
+    message?: string;
+    count?: number;
+}
+
+export default function EnergyPricesAdminPage() {
+    const { user, userData, loading: authLoading, getAuthHeaders } = useAuth();
+    const router = useRouter();
+    const [file, setFile] = useState<File | null>(null);
+    const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ status: 'idle' });
+
+    // Auth guard
+    if (authLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+        );
+    }
+
+    if (!user || userData?.role !== 'admin') {
+        router.push('/');
+        return null;
+    }
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFile = e.target.files?.[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+            setUploadStatus({ status: 'idle' });
+        }
+    };
+
+    const handleUpload = async () => {
+        if (!file) return;
+
+        setUploadStatus({ status: 'uploading', message: 'Uploading...' });
+
+        try {
+            const headers = await getAuthHeaders();
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/api/energy-prices/upload', {
+                method: 'POST',
+                headers,
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Upload failed');
+            }
+
+            setUploadStatus({
+                status: 'success',
+                message: data.message,
+                count: data.count
+            });
+
+            // Reset file input
+            setFile(null);
+        } catch (error: any) {
+            setUploadStatus({
+                status: 'error',
+                message: error.message || 'Upload failed'
+            });
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-50">
+            {/* Header */}
+            <header className="bg-white shadow-sm">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
+                    <Link
+                        href="/admin"
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                        <ArrowLeft size={20} />
+                    </Link>
+                    <h1 className="text-xl font-semibold text-gray-900">
+                        Ceny Energii - Panel Admina
+                    </h1>
+                </div>
+            </header>
+
+            {/* Main Content */}
+            <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                            Upload cen energii
+                        </h2>
+                        <p className="text-gray-600">
+                            Wgraj plik CSV z cenami energii na rynku dnia następnego
+                        </p>
+                    </div>
+
+                    {/* Format Guide */}
+                    <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                            <FileText size={18} />
+                            Format pliku CSV
+                        </h3>
+                        <div className="text-sm text-blue-800 space-y-1">
+                            <p>Wymagane kolumny:</p>
+                            <ul className="list-disc list-inside ml-2">
+                                <li><code className="bg-blue-100 px-1 rounded">Data</code> - np. "poniedziałek, 1 styczeń 2024"</li>
+                                <li><code className="bg-blue-100 px-1 rounded">h_num</code> - godzina (1-24)</li>
+                                <li><code className="bg-blue-100 px-1 rounded">Average of Cena</code> - cena w PLN/MWh</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* File Upload */}
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Wybierz plik CSV
+                        </label>
+                        <div className="flex gap-4">
+                            <input
+                                type="file"
+                                accept=".csv"
+                                onChange={handleFileChange}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                            />
+                            <button
+                                onClick={handleUpload}
+                                disabled={!file || uploadStatus.status === 'uploading'}
+                                className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                <Upload size={18} />
+                                {uploadStatus.status === 'uploading' ? 'Wysyłanie...' : 'Upload'}
+                            </button>
+                        </div>
+                        {file && (
+                            <p className="mt-2 text-sm text-gray-600">
+                                Wybrany plik: {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Status Messages */}
+                    {uploadStatus.status === 'success' && (
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+                            <CheckCircle size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-semibold text-green-900">Sukces!</p>
+                                <p className="text-sm text-green-800">
+                                    {uploadStatus.message} ({uploadStatus.count} wpisów)
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {uploadStatus.status === 'error' && (
+                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                            <XCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-semibold text-red-900">Błąd</p>
+                                <p className="text-sm text-red-800">{uploadStatus.message}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Quick Actions */}
+                    <div className="mt-8 pt-8 border-t border-gray-200">
+                        <h3 className="font-semibold text-gray-900 mb-4">Sprawdź dane</h3>
+                        <Link
+                            href="/apps/ceny-energii"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                            Otwórz dashboard cen →
+                        </Link>
+                    </div>
+                </div>
+            </main>
+        </div>
+    );
+}

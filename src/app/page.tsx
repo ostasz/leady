@@ -54,7 +54,7 @@ export default function Dashboard() {
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Witaj, {user.displayName?.split(' ')[0] || 'Pracowniku'}! 👋</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">Witaj, {user.displayName?.split(' ')[0] || user.email || 'Pracowniku'}! 👋</h1>
                     <p className="text-gray-600 mt-2">Wybierz aplikację, z której chcesz skorzystać.</p>
                 </div>
 
@@ -85,6 +85,24 @@ export default function Dashboard() {
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">Panel Administratora</h3>
                             <p className="text-gray-500 text-sm">
                                 Zarządzanie użytkownikami, uprawnieniami i ustawieniami systemu.
+                            </p>
+                        </Link>
+                    )}
+
+                    {/* Energy Prices Card (Admin Only) */}
+                    {userData?.role === 'admin' && (
+                        <Link
+                            href="/apps/ceny-energii"
+                            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-yellow-500/20"
+                        >
+                            <div className="h-12 w-12 bg-yellow-50 rounded-lg flex items-center justify-center text-yellow-600 mb-4 group-hover:scale-110 transition-transform">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+                                </svg>
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ceny Energii</h3>
+                            <p className="text-gray-500 text-sm">
+                                Ceny energii na rynku dnia następnego. Analizy i rekomendacje dla klientów.
                             </p>
                         </Link>
                     )}
