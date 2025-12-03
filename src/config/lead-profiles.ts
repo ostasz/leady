@@ -110,8 +110,97 @@ export const LEAD_PROFILES = {
             "gym", "fitness club", "office", "coworking",
             "fryzjer", "salon fryzjerski", "barber",
             "salon kosmetyczny", "gabinet kosmetyczny",
-            "siłownia", "fitness", "klub fitness", "studio treningowe",
             "biuro"
+        ]
+    },
+    transport: {
+        id: 'transport',
+        label: 'Firmy transportowe',
+        base_score: 40,
+        keywords: [
+            "transport company", "logistics company", "freight", "trucking", "shipping company",
+            "firma transportowa", "usługi transportowe", "spedycja", "przewozy", "transport ciężarowy", "baza transportowa"
+        ]
+    },
+    mushrooms: {
+        id: 'mushrooms',
+        label: 'Producenci pieczarek',
+        base_score: 45,
+        keywords: [
+            "mushroom farm", "mushroom producer", "fungiculture",
+            "pieczarkarnia", "producent pieczarek", "uprawa pieczarek", "hodowla grzybów"
+        ]
+    },
+    footwear: {
+        id: 'footwear',
+        label: 'Producenci obuwia',
+        base_score: 40,
+        keywords: [
+            "footwear manufacturer", "shoe factory", "shoe maker",
+            "producent obuwia", "fabryka obuwia", "zakład obuwniczy", "szewc", "produkcja butów"
+        ]
+    },
+    fruit_veg_processing: {
+        id: 'fruit_veg_processing',
+        label: 'Przetwórstwo owoców i warzyw',
+        base_score: 45,
+        keywords: [
+            "fruit processing", "vegetable processing", "food processing plant",
+            "przetwórstwo owocowo-warzywne", "zakład przetwórstwa", "producent mrożonek", "produkcja soków", "przetwory", "chłodnia owoców"
+        ]
+    },
+    wood_furniture: {
+        id: 'wood_furniture',
+        label: 'Branża drzewna / meblarska',
+        base_score: 40,
+        keywords: [
+            "furniture manufacturer", "woodworking", "carpentry",
+            "producent mebli", "fabryka mebli", "zakład stolarski", "meble na wymiar", "stolarz", "produkcja mebli"
+        ]
+    },
+    packaging: {
+        id: 'packaging',
+        label: 'Branża opakowań / folii / tworzyw',
+        base_score: 40,
+        keywords: [
+            "packaging manufacturer", "plastic packaging", "plastic factory",
+            "producent opakowań", "opakowania foliowe", "tworzywa sztuczne", "produkcja folii", "zakład tworzyw sztucznych", "wtryskownia"
+        ]
+    },
+    windows_doors: {
+        id: 'windows_doors',
+        label: 'Branża budowlana: okna / drzwi',
+        base_score: 40,
+        keywords: [
+            "window manufacturer", "door manufacturer", "joinery",
+            "producent okien", "producent drzwi", "stolarka okienna", "stolarka drzwiowa", "fabryka okien"
+        ]
+    },
+    fitness: {
+        id: 'fitness',
+        label: 'Branża Fitness',
+        base_score: 30,
+        keywords: [
+            "fitness club", "gym", "sports center", "health club",
+            "klub fitness", "siłownia", "centrum sportowe", "klub sportowy", "trening personalny"
+        ]
+    },
+    sawmills: {
+        id: 'sawmills',
+        label: 'Obróbka drewna / tartaki',
+        base_score: 45,
+        keywords: [
+            "sawmill", "lumber mill", "wood processing", "timber industry",
+            "tartak", "obróbka drewna", "zakład drzewny", "przecieranie drewna", "skład drewna"
+        ]
+    },
+    developers: {
+        id: 'developers',
+        label: 'Deweloperzy',
+        base_score: 50,
+        keywords: [
+            "real estate developer", "housing developer", "construction company",
+            "deweloper", "firma deweloperska", "budownictwo mieszkaniowe", "inwestycje budowlane", "biuro sprzedaży mieszkań"
         ]
     }
 } as const;

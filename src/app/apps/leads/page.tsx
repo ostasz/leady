@@ -427,21 +427,20 @@ export default function Home() {
 
             {/* Profile Selection (Only for Radius Mode) */}
             {mode === 'radius' && (
-              <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <label className="block text-sm font-medium text-gray-700 mb-3">Wybierz profile firm:</label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-                  {Object.values(LEAD_PROFILES).map((profile) => (
-                    <label key={profile.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 p-1 rounded">
-                      <input
-                        type="radio"
-                        name="profile"
-                        checked={selectedProfiles.includes(profile.id as ProfileKey)}
-                        onChange={() => setSelectedProfiles([profile.id as ProfileKey])}
-                        className="text-primary focus:ring-primary"
-                      />
-                      <span className="text-sm text-gray-700">{profile.label}</span>
-                    </label>
-                  ))}
+              <div className="mb-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Wybierz profile firm:</label>
+                <div className="mb-2">
+                  <select
+                    value={selectedProfiles[0] || ''}
+                    onChange={(e) => setSelectedProfiles([e.target.value as ProfileKey])}
+                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm"
+                  >
+                    {Object.values(LEAD_PROFILES).map((profile) => (
+                      <option key={profile.id} value={profile.id}>
+                        {profile.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Radius Slider */}
@@ -875,7 +874,7 @@ export default function Home() {
                       href={`tel:${place.phone}`}
                       className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-green-200"
                     >
-                      📞 Zadzwoń
+                      📞 {place.phone}
                     </a>
                   )}
                   {place.website && (
