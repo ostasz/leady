@@ -15,7 +15,7 @@ const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
 export default function Home() {
   const { user, userData, loading: authLoading, signOut, getAuthHeaders } = useAuth();
-  const [mode, setMode] = useState<'radius' | 'route' | 'ai'>('ai');
+  const [mode, setMode] = useState<'radius' | 'route' | 'ai'>('radius');
   const [address1, setAddress1] = useState('');
   const [address2, setAddress2] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,6 +34,12 @@ export default function Home() {
   const [radius, setRadius] = useState<number>(20); // Default 20km
   const [clickedPos, setClickedPos] = useState<{ lat: number; lng: number } | null>(null);
   const router = useRouter();
+  const [profileSearch, setProfileSearch] = useState('');
+
+  const sortedProfiles = Object.values(LEAD_PROFILES).sort((a, b) => a.label.localeCompare(b.label));
+  const filteredProfiles = sortedProfiles.filter(p =>
+    p.label.toLowerCase().includes(profileSearch.toLowerCase())
+  );
 
   // Authentication guard
   useEffect(() => {
@@ -43,6 +49,8 @@ export default function Home() {
       router.push('/verify-email');
     }
   }, [user, authLoading, router]);
+
+
 
   const handleSaveLead = async (place: any) => {
     setSavingLead(prev => ({ ...prev, [place.id]: true }));
@@ -428,15 +436,45 @@ export default function Home() {
             {/* Profile Selection (Only for Radius Mode) */}
             {mode === 'radius' && (
               <div className="mb-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Wybierz profile firm:</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Wybierz profile firm:</label>
+                  <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">
+                    Wybrano: {LEAD_PROFILES[selectedProfiles[0]]?.label || 'Brak'}
+                  </span>
+                </div>
+
+                {/* Profile Search Input */}
+                <div className="mb-2 relative">
+                  <input
+                    type="text"
+                    placeholder="Szukaj profilu (Enter wybiera pierwszy)..."
+                    value={profileSearch}
+                    onChange={(e) => setProfileSearch(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (filteredProfiles.length > 0) {
+                          setSelectedProfiles([filteredProfiles[0].id]);
+                          // Optional: Clear search or keep it? Keeping it lets user see what they typed.
+                          // But maybe better to clear if they want to search again?
+                          // Let's keep it for now, user can clear.
+                        }
+                      }
+                    }}
+                    className="w-full p-2 pl-8 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary"
+                  />
+                  <Search className="absolute left-2 top-2.5 text-gray-400" size={14} />
+                </div>
+
                 <div className="mb-2">
                   <select
                     value={selectedProfiles[0] || ''}
                     onChange={(e) => setSelectedProfiles([e.target.value as ProfileKey])}
                     className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm"
+                    size={5} // Show multiple options to make it easier to browse
                   >
-                    {Object.values(LEAD_PROFILES).map((profile) => (
-                      <option key={profile.id} value={profile.id}>
+                    {filteredProfiles.map((profile) => (
+                      <option key={profile.id} value={profile.id} className="py-1">
                         {profile.label}
                       </option>
                     ))}

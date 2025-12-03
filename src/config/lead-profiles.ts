@@ -187,7 +187,7 @@ export const LEAD_PROFILES = {
     },
     sawmills: {
         id: 'sawmills',
-        label: 'Obróbka drewna / tartaki',
+        label: 'Tartaki / Obróbka drewna',
         base_score: 45,
         keywords: [
             "sawmill", "lumber mill", "wood processing", "timber industry",

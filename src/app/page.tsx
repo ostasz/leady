@@ -89,19 +89,21 @@ export default function Dashboard() {
                         </Link>
                     )}
 
-                    {/* GUS Data Checker Card */}
-                    <Link
-                        href="/gus"
-                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-blue-500/20"
-                    >
-                        <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
-                            <Building2 size={24} />
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">GUS Data Checker</h3>
-                        <p className="text-gray-500 text-sm">
-                            Weryfikacja danych firm w bazie GUS (NIP/REGON).
-                        </p>
-                    </Link>
+                    {/* GUS Data Checker Card (Admin Only) */}
+                    {userData?.role === 'admin' && (
+                        <Link
+                            href="/gus"
+                            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-blue-500/20"
+                        >
+                            <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
+                                <Building2 size={24} />
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">GUS Data Checker</h3>
+                            <p className="text-gray-500 text-sm">
+                                Weryfikacja danych firm w bazie GUS (NIP/REGON).
+                            </p>
+                        </Link>
+                    )}
 
                     {/* Placeholder for future apps */}
                     <div className="bg-gray-50 p-6 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-center opacity-75">
