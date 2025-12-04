@@ -221,7 +221,7 @@ export default function EnergyPricesDashboard() {
                                     </h2>
                                 </div>
 
-                                <PriceStatistics summary={dailySummary} />
+                                <PriceStatistics data={dailySummary} />
 
                                 <div className="mt-8">
                                     <h3 className="text-md font-medium text-gray-700 mb-4">Profil godzinowy</h3>
