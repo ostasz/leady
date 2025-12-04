@@ -10,7 +10,7 @@ import {
     updateProfile,
     sendEmailVerification
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
 type AuthContextType = {
@@ -49,6 +49,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 if (userDoc.exists()) {
                     setUserData(userDoc.data());
+                    // Update lastLogin
+                    await updateDoc(userDocRef, {
+                        lastLogin: new Date()
+                    });
                 } else {
                     // User exists in Auth but not in Firestore - create document
                     console.log('Creating Firestore document for existing Auth user');

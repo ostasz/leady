@@ -114,6 +114,7 @@ export default function AdminPage() {
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rola</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Liczba wyszukiwań</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ostatnie logowanie</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data utworzenia</th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Akcje</th>
                             </tr>
@@ -139,6 +140,15 @@ export default function AdminPage() {
                                         </span>
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{user.searchCount || 0}</td>
+                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('pl-PL', {
+                                            year: 'numeric',
+                                            month: '2-digit',
+                                            day: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) : '-'}
+                                    </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString('pl-PL', {
                                             year: 'numeric',
