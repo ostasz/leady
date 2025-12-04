@@ -148,7 +148,9 @@ export async function POST(request: NextRequest) {
             const chunk = entries.slice(i, i + batchSize);
 
             chunk.forEach(entry => {
-                const docRef = adminDb.collection('energy_prices').doc();
+                // Use deterministic ID to prevent duplicates (YYYY-MM-DD-H)
+                const docId = `${entry.date}-${entry.hour}`;
+                const docRef = adminDb.collection('energy_prices').doc(docId);
                 batch.set(docRef, entry);
             });
 
