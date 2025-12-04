@@ -86,12 +86,25 @@ export async function POST(request: NextRequest) {
             }
 
             // Handle YYYY-M-D (e.g. 2024-1-1)
-            const parts = dateStr.split('-');
-            if (parts.length === 3) {
-                const year = parts[0];
-                const month = parts[1].padStart(2, '0');
-                const day = parts[2].padStart(2, '0');
-                return `${year}-${month}-${day}`;
+            if (dateStr.includes('-')) {
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    const year = parts[0];
+                    const month = parts[1].padStart(2, '0');
+                    const day = parts[2].padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                }
+            }
+
+            // Handle D.M.YYYY or DD.MM.YYYY (e.g. 1.12.2025 or 01.12.2025)
+            if (dateStr.includes('.')) {
+                const parts = dateStr.split('.');
+                if (parts.length === 3) {
+                    const day = parts[0].padStart(2, '0');
+                    const month = parts[1].padStart(2, '0');
+                    const year = parts[2];
+                    return `${year}-${month}-${day}`;
+                }
             }
 
             return dateStr; // Return original if no match, validation will catch it later
