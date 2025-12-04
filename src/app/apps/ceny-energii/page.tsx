@@ -212,6 +212,24 @@ export default function EnergyPricesDashboard() {
                             </p>
                         </div>
 
+                        {/* Daily Details Section */}
+                        {dailySummary && (
+                            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-lg font-semibold text-gray-900">
+                                        Szczegóły dnia: {formatDate(selectedDate)}
+                                    </h2>
+                                </div>
+
+                                <PriceStatistics summary={dailySummary} />
+
+                                <div className="mt-8">
+                                    <h3 className="text-md font-medium text-gray-700 mb-4">Profil godzinowy</h3>
+                                    <EnergyPriceChart data={dailySummary} />
+                                </div>
+                            </div>
+                        )}
+
                         {/* Hourly Profile Chart */}
                         {hourlyProfile.length > 0 && (
                             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
