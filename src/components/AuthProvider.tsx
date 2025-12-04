@@ -140,6 +140,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
     };
 
+    // Auto-logout logic
+    useEffect(() => {
+        if (!user) return;
+
+        const INACTIVITY_TIMEOUT = 12 * 60 * 60 * 1000; // 12 hours
+        let lastActivity = Date.now();
+
+        const updateActivity = () => {
+            lastActivity = Date.now();
+        };
+
+        const checkInactivity = () => {
+            if (Date.now() - lastActivity > INACTIVITY_TIMEOUT) {
+                console.log('User inactive for 12 hours, logging out...');
+                signOut();
+            }
+        };
+
+        // Listen for user activity
+        window.addEventListener('mousemove', updateActivity);
+        window.addEventListener('keydown', updateActivity);
+        window.addEventListener('click', updateActivity);
+        window.addEventListener('scroll', updateActivity);
+
+        // Check inactivity every minute
+        const interval = setInterval(checkInactivity, 60 * 1000);
+
+        return () => {
+            window.removeEventListener('mousemove', updateActivity);
+            window.removeEventListener('keydown', updateActivity);
+            window.removeEventListener('click', updateActivity);
+            window.removeEventListener('scroll', updateActivity);
+            clearInterval(interval);
+        };
+    }, [user]);
+
     return (
         <AuthContext.Provider value={{ user, userData, loading, signIn, signUp, signOut, getAuthHeaders }}>
             {children}
