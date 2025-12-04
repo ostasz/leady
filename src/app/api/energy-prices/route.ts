@@ -11,11 +11,12 @@ export async function GET(request: NextRequest) {
         let query = adminDb.collection('energy_prices');
 
         if (date) {
-            query = query.where('date', '==', date) as any;
+            // If date is specified, get all 24 hours for that date
+            query = query.where('date', '==', date).orderBy('hour', 'asc') as any;
+        } else {
+            // If no date, get limited sample sorted by hour
+            query = query.orderBy('hour', 'asc').limit(1000) as any;
         }
-
-        // Simple ordering by hour only (no index needed)
-        query = query.orderBy('hour', 'asc').limit(200) as any;
 
         const snapshot = await query.get();
 
@@ -32,7 +33,11 @@ export async function GET(request: NextRequest) {
             });
         });
 
-        return NextResponse.json({ prices, count: prices.length });
+        return NextResponse.json({ prices, count: prices.length }, {
+            headers: {
+                'Cache-Control': 'no-store, max-age=0'
+            }
+        });
     } catch (error: any) {
         console.error('Error fetching energy prices:', error);
         return NextResponse.json(

@@ -87,12 +87,21 @@ export default function AdminPage() {
                         <Shield className="text-primary" />
                         Panel Administratora
                     </h1>
-                    <button
-                        onClick={() => router.push('/')}
-                        className="text-gray-600 hover:text-gray-900"
-                    >
-                        Wróć do aplikacji
-                    </button>
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => router.push('/admin/ceny-energii')}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                        >
+                            <Shield size={18} />
+                            Upload Ceny Energii
+                        </button>
+                        <button
+                            onClick={() => router.push('/')}
+                            className="text-gray-600 hover:text-gray-900"
+                        >
+                            Wróć do aplikacji
+                        </button>
+                    </div>
                 </div>
 
                 {error && <div className="bg-red-100 text-red-700 p-4 rounded mb-6">{error}</div>}

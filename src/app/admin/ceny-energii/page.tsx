@@ -119,7 +119,7 @@ export default function EnergyPricesAdminPage() {
                         <div className="text-sm text-blue-800 space-y-1">
                             <p>Wymagane kolumny:</p>
                             <ul className="list-disc list-inside ml-2">
-                                <li><code className="bg-blue-100 px-1 rounded">Data</code> - np. "poniedziałek, 1 styczeń 2024"</li>
+                                <li><code className="bg-blue-100 px-1 rounded">Data</code> - format <strong>YYYY-MM-DD</strong> (np. "2024-01-01")</li>
                                 <li><code className="bg-blue-100 px-1 rounded">h_num</code> - godzina (1-24)</li>
                                 <li><code className="bg-blue-100 px-1 rounded">Average of Cena</code> - cena w PLN/MWh</li>
                             </ul>
@@ -178,14 +178,42 @@ export default function EnergyPricesAdminPage() {
                     )}
 
                     {/* Quick Actions */}
-                    <div className="mt-8 pt-8 border-t border-gray-200">
-                        <h3 className="font-semibold text-gray-900 mb-4">Sprawdź dane</h3>
-                        <Link
-                            href="/apps/ceny-energii"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                            Otwórz dashboard cen →
-                        </Link>
+                    <div className="mb-8 pt-8 border-t border-gray-200">
+                        <h3 className="font-semibold text-gray-900 mb-4">Szybkie akcje</h3>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={async () => {
+                                    if (!confirm('Czy na pewno chcesz usunąć WSZYSTKIE dane cenowe? Ta operacja jest nieodwracalna!')) return;
+                                    try {
+                                        const headers = await getAuthHeaders();
+                                        const response = await fetch('/api/energy-prices/clear', {
+                                            method: 'DELETE',
+                                            headers: {
+                                                'Authorization': (headers as any).Authorization
+                                            }
+                                        });
+                                        const data = await response.json();
+                                        if (response.ok) {
+                                            alert(`Usunięto ${data.deleted} rekordów`);
+                                            setUploadStatus({ status: 'idle' });
+                                        } else {
+                                            alert('Błąd: ' + data.error);
+                                        }
+                                    } catch (e: any) {
+                                        alert('Błąd: ' + e.message);
+                                    }
+                                }}
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                                Wyczyść całą bazę
+                            </button>
+                            <Link
+                                href="/apps/ceny-energii"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                            >
+                                Otwórz dashboard cen →
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </main>

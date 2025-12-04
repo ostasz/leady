@@ -7,8 +7,13 @@ import { useRouter } from 'next/navigation';
 import { EnergyPriceEntry, DailyPriceSummary, groupPricesByDate, calculateDailySummary } from '@/types/energy-prices';
 import EnergyPriceChart from '@/components/EnergyPriceChart';
 import PriceStatistics from '@/components/PriceStatistics';
-import { ArrowLeft, Calendar, Lightbulb, Download } from 'lucide-react';
+import { ArrowLeft, Calendar, Lightbulb, Upload } from 'lucide-react';
 import Link from 'next/link';
+import PriceHistoryChart from '@/components/PriceHistoryChart';
+import AverageHourlyProfileChart from '@/components/AverageHourlyProfileChart';
+import PriceHeatMap from '@/components/PriceHeatMap';
+import WorkProfileCalculator from '@/components/WorkProfileCalculator';
+import YearCalendar from '@/components/YearCalendar';
 
 export default function EnergyPricesDashboard() {
     const { user, userData, loading: authLoading, getAuthHeaders } = useAuth();
@@ -17,25 +22,84 @@ export default function EnergyPricesDashboard() {
     const [availableDates, setAvailableDates] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<string>('');
     const [dailySummary, setDailySummary] = useState<DailyPriceSummary | null>(null);
+    const [historyData, setHistoryData] = useState<{ date: string; avgPrice: number }[]>([]);
+    const [hourlyProfile, setHourlyProfile] = useState<{ hour: number; price: number }[]>([]);
+    const [weeklyProfile, setWeeklyProfile] = useState<{ dayOfWeek: number; name: string; prices: number[] }[]>([]);
+    const [overallAverage, setOverallAverage] = useState<number>(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [historyRange, setHistoryRange] = useState<number>(365);
+
+    // Work Profile State (lifted for sharing)
+    const [selectedShiftId, setSelectedShiftId] = useState<string>('1s-8-16');
+    const [weekendMode, setWeekendMode] = useState<'none' | 'saturday' | 'full_weekend'>('none');
 
     // Auth guard - admin only for now
+    // Auth guard - allow all authenticated users
     useEffect(() => {
-        if (!authLoading && (!user || userData?.role !== 'admin')) {
-            router.push('/');
+        if (!authLoading && !user) {
+            router.push('/login');
         }
-    }, [user, userData, authLoading, router]);
+    }, [user, authLoading, router]);
 
-    // Fetch prices
+    // Fetch available dates AND history on mount or range change
     useEffect(() => {
         if (!user) return;
+
+        const fetchData = async () => {
+            try {
+                const headers = await getAuthHeaders();
+
+                // 1. Fetch history with range
+                const historyRes = await fetch(`/api/energy-prices/history?days=${historyRange}`, { headers, cache: 'no-store' });
+                const historyJson = await historyRes.json();
+                if (historyJson.history) {
+                    setHistoryData(historyJson.history);
+
+                    // Use history dates for calendar availability
+                    // History data is already sorted by date (descending or ascending depending on API, but we can sort here)
+                    const dates = historyJson.history.map((item: any) => item.date);
+                    // Ensure uniqueness and sort descending
+                    const uniqueDates = Array.from(new Set(dates)).sort().reverse();
+                    setAvailableDates(uniqueDates as string[]);
+
+                    // Select most recent date by default if not selected
+                    if (uniqueDates.length > 0 && !selectedDate) {
+                        setSelectedDate(uniqueDates[0] as string);
+                    }
+                }
+                if (historyJson.hourlyProfile) {
+                    setHourlyProfile(historyJson.hourlyProfile);
+                }
+                if (historyJson.weeklyProfile) {
+                    setWeeklyProfile(historyJson.weeklyProfile);
+                }
+                if (historyJson.overallAverage !== undefined) {
+                    setOverallAverage(historyJson.overallAverage);
+                }
+
+                // Removed legacy fetch for availableDates as it was limited to 1000 records (~40 days)
+            } catch (err) {
+                console.error('Error fetching data:', err);
+            }
+        };
+
+        fetchData();
+    }, [user, getAuthHeaders, historyRange]); // Add historyRange dependency
+
+    // Fetch prices for selected date
+    useEffect(() => {
+        if (!user || !selectedDate) return;
 
         const fetchPrices = async () => {
             try {
                 setLoading(true);
                 const headers = await getAuthHeaders();
-                const response = await fetch('/api/energy-prices', { headers });
+                // Fetch full data for selected date
+                const response = await fetch(`/api/energy-prices?date=${encodeURIComponent(selectedDate)}`, {
+                    headers,
+                    cache: 'no-store'
+                });
 
                 if (!response.ok) {
                     throw new Error('Failed to fetch prices');
@@ -44,15 +108,9 @@ export default function EnergyPricesDashboard() {
                 const data = await response.json();
                 setPrices(data.prices || []);
 
-                // Extract unique dates
-                const grouped = groupPricesByDate(data.prices || []);
-                const dates = Array.from(grouped.keys()).sort().reverse();
-                setAvailableDates(dates);
-
-                // Select most recent date by default
-                if (dates.length > 0 && !selectedDate) {
-                    setSelectedDate(dates[0]);
-                }
+                // Calculate summary immediately
+                const summary = calculateDailySummary(data.prices || []);
+                setDailySummary(summary);
 
                 setError('');
             } catch (err: any) {
@@ -63,16 +121,7 @@ export default function EnergyPricesDashboard() {
         };
 
         fetchPrices();
-    }, [user, getAuthHeaders]);
-
-    // Calculate daily summary when date changes
-    useEffect(() => {
-        if (!selectedDate || prices.length === 0) return;
-
-        const dayPrices = prices.filter(p => p.date === selectedDate);
-        const summary = calculateDailySummary(dayPrices);
-        setDailySummary(summary);
-    }, [selectedDate, prices]);
+    }, [selectedDate, user, getAuthHeaders]);
 
     if (authLoading || loading) {
         return (
@@ -83,6 +132,21 @@ export default function EnergyPricesDashboard() {
     }
 
     if (!user || userData?.role !== 'admin') return null;
+
+    // Helper to format date for display
+    const formatDate = (dateStr: string) => {
+        try {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pl-PL', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        } catch (e) {
+            return dateStr;
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -97,6 +161,8 @@ export default function EnergyPricesDashboard() {
                             Ceny Energii - Rynek Dnia Następnego
                         </h1>
                     </div>
+
+
                 </div>
             </header>
 
@@ -107,6 +173,90 @@ export default function EnergyPricesDashboard() {
                         {error}
                     </div>
                 )}
+
+                {/* History Chart Section */}
+                {historyData.length > 0 && (
+                    <div className="flex flex-col gap-8 mb-8">
+                        {/* Trend Chart */}
+                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-lg font-semibold text-gray-900">
+                                    Trend średnich cen (ostatnie {historyRange} dni)
+                                </h2>
+                                <div className="flex gap-2 items-center">
+
+                                    <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                                        {[30, 90, 365].map((days) => (
+                                            <button
+                                                key={days}
+                                                onClick={() => setHistoryRange(days)}
+                                                className={`px-3 py-1 text-sm font-medium rounded-md transition-all ${historyRange === days
+                                                    ? 'bg-white text-primary shadow-sm'
+                                                    : 'text-gray-600 hover:text-gray-900'
+                                                    }`}
+                                            >
+                                                {days} dni
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                            <PriceHistoryChart
+                                data={historyData}
+                                onDateSelect={setSelectedDate}
+                                selectedDate={selectedDate}
+                                overallAverage={overallAverage}
+                            />
+                            <p className="text-sm text-gray-500 mt-4 text-center">
+                                Kliknij na punkt na wykresie, aby zobaczyć szczegóły dla danego dnia.
+                            </p>
+                        </div>
+
+                        {/* Hourly Profile Chart */}
+                        {hourlyProfile.length > 0 && (
+                            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                                <h2 className="text-lg font-semibold text-gray-900 mb-6">
+                                    Typowy profil dnia (średnia z {historyRange} dni)
+                                </h2>
+                                <AverageHourlyProfileChart
+                                    data={hourlyProfile}
+                                    overallAverage={overallAverage}
+                                />
+
+                            </div>
+                        )}
+                    </div>
+                )}
+
+
+                {/* Weekly Profile Chart */}
+                {weeklyProfile.length > 0 && (
+                    <>
+                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-8">
+                            <h2 className="text-lg font-semibold text-gray-900 mb-6">
+                                Typowy tydzień (średnia z {historyRange} dni)
+                            </h2>
+                            <PriceHeatMap
+                                data={weeklyProfile}
+                                overallAverage={overallAverage}
+                                selectedShiftId={selectedShiftId}
+                                weekendMode={weekendMode}
+                            />
+                        </div>
+
+                        {/* Work Profile Calculator */}
+                        <WorkProfileCalculator
+                            weeklyProfile={weeklyProfile}
+                            overallAverage={overallAverage}
+                            selectedShiftId={selectedShiftId}
+                            onShiftChange={setSelectedShiftId}
+                            weekendMode={weekendMode}
+                            onWeekendModeChange={setWeekendMode}
+                        />
+                    </>
+                )}
+
+
 
                 {availableDates.length === 0 && !loading && (
                     <div className="text-center py-12">
@@ -122,64 +272,6 @@ export default function EnergyPricesDashboard() {
 
                 {availableDates.length > 0 && (
                     <>
-                        {/* Date Selector */}
-                        <div className="mb-6 flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                                <Calendar size={20} className="text-gray-600" />
-                                <label className="text-sm font-medium text-gray-700">Wybierz dzień:</label>
-                            </div>
-                            <select
-                                value={selectedDate}
-                                onChange={(e) => setSelectedDate(e.target.value)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                            >
-                                {availableDates.map(date => (
-                                    <option key={date} value={date}>{date}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        {/* Statistics Cards */}
-                        {dailySummary && <PriceStatistics data={dailySummary} />}
-
-                        {/* Chart */}
-                        {dailySummary && (
-                            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-8">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                                    Ceny godzinowe - {selectedDate}
-                                </h2>
-                                <EnergyPriceChart data={dailySummary} />
-                            </div>
-                        )}
-
-                        {/* Smart Insights */}
-                        {dailySummary && (
-                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-                                <div className="flex items-start gap-3">
-                                    <Lightbulb size={24} className="text-blue-600 flex-shrink-0" />
-                                    <div>
-                                        <h3 className="font-semibold text-blue-900 mb-2">Smart Insights</h3>
-                                        <div className="space-y-2 text-sm text-blue-800">
-                                            <p>
-                                                💡 <strong>Najlepszy moment na zakup:</strong> Godzina {dailySummary.statistics.minHour}:00
-                                                ({dailySummary.statistics.minPrice.toFixed(2)} PLN/MWh)
-                                            </p>
-                                            <p>
-                                                ⚡ <strong>Unikaj godziny:</strong> {dailySummary.statistics.maxHour}:00
-                                                ({dailySummary.statistics.maxPrice.toFixed(2)} PLN/MWh)
-                                            </p>
-                                            <p>
-                                                💰 <strong>Potencjalne oszczędności:</strong> Przesuwając zużycie z godziny {dailySummary.statistics.maxHour}:00
-                                                na {dailySummary.statistics.minHour}:00 można zaoszczędzić {dailySummary.statistics.savings.toFixed(2)} PLN/MWh
-                                            </p>
-                                            <p>
-                                                📊 <strong>Ocena dnia:</strong> {dailySummary.statistics.avgPrice < 300 ? 'Korzystne ceny ✅' : 'Podwyższone ceny ⚠️'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </>
                 )}
             </main>

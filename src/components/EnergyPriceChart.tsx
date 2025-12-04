@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { DailyPriceSummary, getPriceColor } from '@/types/energy-prices';
 
 interface EnergyPriceChartProps {
@@ -11,7 +11,7 @@ export default function EnergyPriceChart({ data }: EnergyPriceChartProps) {
     const chartData = data.hourlyPrices.map(hp => ({
         hour: hp.hour,
         price: hp.price,
-        fill: getPriceColor(hp.price)
+        fill: getPriceColor(hp.price, data.statistics.avgPrice)
     }));
 
     const CustomTooltip = ({ active, payload }: any) => {
@@ -32,7 +32,7 @@ export default function EnergyPriceChart({ data }: EnergyPriceChartProps) {
     return (
         <div className="w-full h-96">
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                <BarChart data={chartData} margin={{ top: 20, right: 110, left: 20, bottom: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis
                         dataKey="hour"
@@ -49,13 +49,18 @@ export default function EnergyPriceChart({ data }: EnergyPriceChartProps) {
                         stroke="#6366f1"
                         strokeDasharray="5 5"
                         label={{
-                            value: `Średnia: ${data.statistics.avgPrice.toFixed(2)}`,
-                            position: 'right',
+                            value: `Średnia: ${data.statistics.avgPrice.toFixed(2)} PLN`,
+                            position: 'insideTopRight',
                             fill: '#6366f1',
-                            fontSize: 12
+                            fontSize: 12,
+                            fontWeight: 'bold'
                         }}
                     />
-                    <Bar dataKey="price" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="price" radius={[4, 4, 0, 0]}>
+                        {chartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                    </Bar>
                 </BarChart>
             </ResponsiveContainer>
         </div>

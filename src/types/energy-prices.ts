@@ -93,13 +93,41 @@ export function calculateDailySummary(entries: EnergyPriceEntry[]): DailyPriceSu
 }
 
 /**
- * Get price color based on value
+ * Get price color based on value relative to daily average
  */
-export function getPriceColor(price: number): string {
-    if (price < 250) return '#10b981'; // Green
-    if (price < 300) return '#f59e0b'; // Yellow
+export function getPriceColor(price: number, avgPrice: number): string {
+    const ratio = price / avgPrice;
+
+    if (ratio < 0.6) return '#3b82f6'; // Blue
+    if (ratio < 0.9) return '#22c55e'; // Green
+    if (ratio < 1.1) return '#eab308'; // Yellow
+    if (ratio < 1.4) return '#f97316'; // Orange
     return '#ef4444'; // Red
 }
+
+export type ShiftType = '1s' | '2s' | '24/7';
+
+export interface ShiftOption {
+    id: string;
+    label: string;
+    type: ShiftType;
+    startHour: number; // 1-24
+    endHour: number;   // 1-24
+}
+
+export const SHIFT_OPTIONS: ShiftOption[] = [
+    // 1-shift
+    { id: '1s-6-14', label: '6:00 - 14:00', type: '1s', startHour: 6, endHour: 14 },
+    { id: '1s-7-15', label: '7:00 - 15:00', type: '1s', startHour: 7, endHour: 15 },
+    { id: '1s-8-16', label: '8:00 - 16:00', type: '1s', startHour: 8, endHour: 16 },
+    { id: '1s-9-17', label: '9:00 - 17:00', type: '1s', startHour: 9, endHour: 17 },
+    // 2-shifts
+    { id: '2s-5-21', label: '5:00 - 21:00', type: '2s', startHour: 5, endHour: 21 },
+    { id: '2s-6-22', label: '6:00 - 22:00', type: '2s', startHour: 6, endHour: 22 },
+    { id: '2s-7-23', label: '7:00 - 23:00', type: '2s', startHour: 7, endHour: 23 },
+    // 24/7
+    { id: '24/7', label: 'Całą dobę (24h)', type: '24/7', startHour: 1, endHour: 24 },
+];
 
 /**
  * Format price for display

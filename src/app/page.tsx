@@ -4,7 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { Search, Shield, LogOut, User, Building2 } from 'lucide-react';
+import { Search, Shield, LogOut, User, Building2, Zap } from 'lucide-react';
 
 export default function Dashboard() {
     const { user, userData, loading, signOut } = useAuth();
@@ -89,23 +89,21 @@ export default function Dashboard() {
                         </Link>
                     )}
 
-                    {/* Energy Prices Card (Admin Only) */}
-                    {userData?.role === 'admin' && (
-                        <Link
-                            href="/apps/ceny-energii"
-                            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-yellow-500/20"
-                        >
-                            <div className="h-12 w-12 bg-yellow-50 rounded-lg flex items-center justify-center text-yellow-600 mb-4 group-hover:scale-110 transition-transform">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-                                </svg>
-                            </div>
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ceny Energii</h3>
-                            <p className="text-gray-500 text-sm">
-                                Ceny energii na rynku dnia następnego. Analizy i rekomendacje dla klientów.
-                            </p>
-                        </Link>
-                    )}
+                    {/* Energy Prices Card (Visible to everyone) */}
+                    <Link
+                        href="/apps/ceny-energii"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-yellow-500/20"
+                    >
+                        <div className="h-12 w-12 bg-yellow-50 rounded-lg flex items-center justify-center text-yellow-600 mb-4 group-hover:scale-110 transition-transform">
+                            <Zap size={24} />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Obliczenie kosztu energii po RDN (FLEX)</h3>
+                        <p className="text-gray-500 text-sm">
+                            Ceny energii na rynku dnia następnego. Analizy i rekomendacje dla klientów.
+                        </p>
+                    </Link>
+
+
 
                     {/* GUS Data Checker Card (Admin Only) */}
                     {userData?.role === 'admin' && (
@@ -131,7 +129,7 @@ export default function Dashboard() {
                         <h3 className="text-sm font-semibold text-gray-500">Wkrótce więcej aplikacji</h3>
                     </div>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }
