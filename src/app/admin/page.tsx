@@ -146,14 +146,16 @@ export default function AdminPage() {
                                             month: '2-digit',
                                             day: '2-digit',
                                             hour: '2-digit',
-                                            minute: '2-digit'
+                                            minute: '2-digit',
+                                            timeZone: 'Europe/Warsaw'
                                         }) : '-'}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString('pl-PL', {
                                             year: 'numeric',
                                             month: '2-digit',
-                                            day: '2-digit'
+                                            day: '2-digit',
+                                            timeZone: 'Europe/Warsaw'
                                         }) : '-'}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
