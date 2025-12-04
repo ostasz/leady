@@ -123,7 +123,7 @@ export default function EnergyPricesDashboard() {
         fetchPrices();
     }, [selectedDate, user, getAuthHeaders]);
 
-    if (authLoading) {
+    if (authLoading || loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -161,6 +161,8 @@ export default function EnergyPricesDashboard() {
                             Ceny Energii - Rynek Dnia Następnego
                         </h1>
                     </div>
+
+
                 </div>
             </header>
 
@@ -182,6 +184,7 @@ export default function EnergyPricesDashboard() {
                                     Trend średnich cen (ostatnie {historyRange} dni)
                                 </h2>
                                 <div className="flex gap-2 items-center">
+
                                     <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
                                         {[30, 90, 365].map((days) => (
                                             <button
@@ -207,34 +210,6 @@ export default function EnergyPricesDashboard() {
                             <p className="text-sm text-gray-500 mt-4 text-center">
                                 Kliknij na punkt na wykresie, aby zobaczyć szczegóły dla danego dnia.
                             </p>
-                        </div>
-
-                        {/* Daily Details Section */}
-                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 min-h-[400px]">
-                            {loading ? (
-                                <div className="h-full flex items-center justify-center">
-                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                                </div>
-                            ) : dailySummary ? (
-                                <>
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h2 className="text-lg font-semibold text-gray-900">
-                                            Szczegóły dnia: {formatDate(selectedDate)}
-                                        </h2>
-                                    </div>
-
-                                    <PriceStatistics data={dailySummary} />
-
-                                    <div className="mt-8">
-                                        <h3 className="text-md font-medium text-gray-700 mb-4">Profil godzinowy</h3>
-                                        <EnergyPriceChart data={dailySummary} />
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="h-full flex items-center justify-center text-gray-500">
-                                    Wybierz datę z wykresu powyżej
-                                </div>
-                            )}
                         </div>
 
                         {/* Hourly Profile Chart */}
