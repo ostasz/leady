@@ -131,7 +131,7 @@ export default function EnergyPricesDashboard() {
         );
     }
 
-    if (!user || userData?.role !== 'admin') return null;
+    if (!user) return null;
 
     // Helper to format date for display
     const formatDate = (dateStr: string) => {
