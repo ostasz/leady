@@ -237,23 +237,23 @@ export default function WeatherApp() {
                                 <Calendar size={20} />
                                 Prognoza 7-dniowa
                             </h3>
-                            <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                            <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                                 {forecastData.time.map((date: string, index: number) => (
-                                    <div key={date} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                                    <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                                         <div className="flex flex-col">
-                                            <span className="font-semibold text-gray-700">
+                                            <span className="font-semibold text-gray-700 text-sm">
                                                 {new Date(date).toLocaleDateString('pl-PL', { weekday: 'long' })}
                                             </span>
-                                            <span className="text-xs text-gray-400">
+                                            <span className="text-[10px] text-gray-400">
                                                 {new Date(date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}
                                             </span>
                                         </div>
 
-                                        <div className="flex items-center gap-4">
-                                            {getWeatherIcon(forecastData.weather_code[index], 24)}
-                                            <div className="flex flex-col items-end w-16">
-                                                <span className="font-bold text-gray-900">{forecastData.temperature_2m_max[index]}°</span>
-                                                <span className="text-xs text-gray-500">{forecastData.temperature_2m_min[index]}°</span>
+                                        <div className="flex items-center gap-3">
+                                            {getWeatherIcon(forecastData.weather_code[index], 20)}
+                                            <div className="flex flex-col items-end w-12">
+                                                <span className="font-bold text-gray-900 text-sm">{forecastData.temperature_2m_max[index]}°</span>
+                                                <span className="text-[10px] text-gray-500">{forecastData.temperature_2m_min[index]}°</span>
                                             </div>
                                         </div>
                                     </div>
