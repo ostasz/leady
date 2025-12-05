@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { Search, Shield, LogOut, User, Building2, Zap } from 'lucide-react';
+import DashboardWidgets from '@/components/DashboardWidgets';
 
 export default function Dashboard() {
     const { user, userData, loading, signOut } = useAuth();
@@ -57,6 +58,8 @@ export default function Dashboard() {
                     <h1 className="text-3xl font-bold text-gray-900">Witaj, {user.displayName?.split(' ')[0] || user.email || 'Pracowniku'}! 👋</h1>
                     <p className="text-gray-600 mt-2">Wybierz aplikację, z której chcesz skorzystać.</p>
                 </div>
+
+                <DashboardWidgets />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {/* Sales App Card */}
