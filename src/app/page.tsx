@@ -4,7 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { Search, Shield, LogOut, User, Building2, Zap } from 'lucide-react';
+import { Search, Shield, LogOut, User, Building2, Zap, Cloud } from 'lucide-react';
 import DashboardWidgets from '@/components/DashboardWidgets';
 
 export default function Dashboard() {
@@ -91,6 +91,20 @@ export default function Dashboard() {
                             </p>
                         </Link>
                     )}
+
+                    {/* Weather App Card (Visible to everyone) */}
+                    <Link
+                        href="/apps/weather"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-cyan-500/20"
+                    >
+                        <div className="h-12 w-12 bg-cyan-50 rounded-lg flex items-center justify-center text-cyan-600 mb-4 group-hover:scale-110 transition-transform">
+                            <Cloud size={24} />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Prognoza Pogody</h3>
+                        <p className="text-gray-500 text-sm">
+                            Szczegółowa prognoza pogody dla dowolnej lokalizacji.
+                        </p>
+                    </Link>
 
                     {/* Energy Prices Card (Visible to everyone) */}
                     <Link
