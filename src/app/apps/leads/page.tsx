@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { APIProvider } from '@vis.gl/react-google-maps';
+import { APIProvider, MapMouseEvent } from '@vis.gl/react-google-maps';
 import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
 import Link from 'next/link';
 import Map from '@/components/Map';
@@ -311,15 +311,9 @@ export default function Home() {
     return 0;
   });
 
-  const handleMapClick = async (e: any) => {
-    if (!e.detail.latLng) return;
-    const lat = e.detail.latLng.lat;
-    const lng = e.detail.latLng.lng;
-
+  const reverseGeocode = async (latLng: { lat: number; lng: number }) => {
+    const { lat, lng } = latLng;
     setCenter({ lat, lng });
-    setClickedPos({ lat, lng });
-
-    // Reverse geocode
     try {
       const response = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}`
@@ -334,6 +328,26 @@ export default function Home() {
     } catch (error) {
       console.error('Error reverse geocoding:', error);
       setAddress1(`${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+    }
+  };
+
+  const handleMapClick = (e: MapMouseEvent) => {
+    if (e.detail.latLng) {
+      setClickedPos(e.detail.latLng);
+      reverseGeocode(e.detail.latLng);
+    }
+  };
+
+  const handleMarkerClick = (id: string) => {
+    const element = document.getElementById(`lead-card-${id}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      // Highlight effect
+      element.classList.add('ring-2', 'ring-primary', 'bg-blue-50');
+      setTimeout(() => {
+        element.classList.remove('ring-2', 'ring-primary', 'bg-blue-50');
+      }, 2000);
     }
   };
 
@@ -875,7 +889,11 @@ export default function Home() {
               <p className="text-gray-500 text-sm italic">Brak wyników. Wpisz adres i kliknij szukaj.</p>
             )}
             {sortedResults.map((place) => (
-              <div key={place.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div
+                key={place.id}
+                id={`lead-card-${place.id}`}
+                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-500 scroll-mt-4"
+              >
                 <h3 className="font-bold text-gray-900 text-lg">
                   <a
                     href={`https://www.google.com/search?q=${encodeURIComponent(place.name + " " + (place.address || ""))}`}
@@ -1057,6 +1075,7 @@ export default function Home() {
             }))}
             routePath={routePath}
             onMapClick={handleMapClick}
+            onMarkerClick={handleMarkerClick}
             selectedLocation={clickedPos}
           />
         </div>

@@ -12,10 +12,11 @@ interface MapProps {
     }>;
     routePath?: Array<{ lat: number; lng: number }>;
     onMapClick?: (e: MapMouseEvent) => void;
+    onMarkerClick?: (id: string) => void;
     selectedLocation?: { lat: number; lng: number } | null;
 }
 
-export default function Map({ center, markers, routePath, onMapClick, selectedLocation }: MapProps) {
+export default function Map({ center, markers, routePath, onMapClick, onMarkerClick, selectedLocation }: MapProps) {
     const map = useMap();
 
     useEffect(() => {
@@ -57,6 +58,8 @@ export default function Map({ center, markers, routePath, onMapClick, selectedLo
                     key={marker.id}
                     position={marker.location}
                     title={marker.name}
+                    clickable={true}
+                    onClick={() => onMarkerClick && onMarkerClick(marker.id)}
                 />
             ))}
             {selectedLocation && (
