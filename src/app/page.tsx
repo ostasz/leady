@@ -33,7 +33,7 @@ export default function Dashboard() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <img src="/ekovoltis-logo.png" alt="Ekovoltis" className="h-8" />
-                        <span className="text-xl font-semibold text-gray-700">| Portal Pracownika</span>
+                        <span className="text-xl font-semibold text-gray-700">| Portal Handlowca</span>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-gray-600">
