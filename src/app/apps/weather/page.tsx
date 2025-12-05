@@ -212,21 +212,21 @@ export default function WeatherApp() {
                                 <Wind size={20} />
                                 Dzisiaj (godzinowo)
                             </h3>
-                            <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                            <div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                                 {hourlyData.length > 0 ? (
                                     hourlyData.map((item: any) => (
-                                        <div key={item.time} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
-                                            <span className="font-semibold text-gray-700">
+                                        <div key={item.time} className="flex items-center justify-between p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                                            <span className="font-semibold text-gray-700 text-sm">
                                                 {item.time.slice(11, 16)}
                                             </span>
                                             <div className="flex items-center gap-2">
-                                                {getWeatherIcon(item.code, 20, item.isNight)}
-                                                <span className="font-bold text-gray-900 w-12 text-right">{item.temp}°</span>
+                                                {getWeatherIcon(item.code, 18, item.isNight)}
+                                                <span className="font-bold text-gray-900 w-10 text-right text-sm">{item.temp}°</span>
                                             </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <p className="text-gray-500 text-center py-4">Koniec dnia!</p>
+                                    <p className="text-gray-500 text-center py-4 text-sm">Koniec dnia!</p>
                                 )}
                             </div>
                         </div>
@@ -237,9 +237,9 @@ export default function WeatherApp() {
                                 <Calendar size={20} />
                                 Prognoza 7-dniowa
                             </h3>
-                            <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                            <div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                                 {forecastData.time.map((date: string, index: number) => (
-                                    <div key={date} className="flex items-center justify-between p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                                    <div key={date} className="flex items-center justify-between p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                                         <div className="flex flex-col">
                                             <span className="font-semibold text-gray-700 text-sm">
                                                 {new Date(date).toLocaleDateString('pl-PL', { weekday: 'long' })}
@@ -250,7 +250,7 @@ export default function WeatherApp() {
                                         </div>
 
                                         <div className="flex items-center gap-3">
-                                            {getWeatherIcon(forecastData.weather_code[index], 20)}
+                                            {getWeatherIcon(forecastData.weather_code[index], 18)}
                                             <div className="flex flex-col items-end w-12">
                                                 <span className="font-bold text-gray-900 text-sm">{forecastData.temperature_2m_max[index]}°</span>
                                                 <span className="text-[10px] text-gray-500">{forecastData.temperature_2m_min[index]}°</span>
