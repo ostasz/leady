@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useAuth } from './AuthProvider';
 import { useEffect, useState } from 'react';
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts'; // Use Recharts like FuturesTicker
-import { Activity, TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Activity, TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, ExternalLink } from 'lucide-react';
 import { EnergyPriceEntry } from '@/types/energy-prices';
 
 export default function RDNTicker() {
@@ -63,14 +64,19 @@ export default function RDNTicker() {
     return (
         <div className="bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-800 relative overflow-hidden text-white h-full flex flex-col justify-between">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-6 relative z-10 w-full">
-                <div className="p-2 bg-gray-800 rounded-lg text-green-400">
-                    <Activity size={20} />
+            <div className="flex items-center justify-between mb-6 relative z-10 w-full">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-800 rounded-lg text-green-400">
+                        <Activity size={20} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-100">TGe24 (RDN)</h3>
+                        <p className="text-xs text-gray-400">Rynek Dnia Następnego (PLN/MWh)</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 className="text-lg font-bold text-gray-100">TGe24 (RDN)</h3>
-                    <p className="text-xs text-gray-400">Rynek Dnia Następnego (PLN/MWh)</p>
-                </div>
+                <Link href="/apps/rdn" className="text-gray-500 hover:text-green-400 transition-colors" title="Otwórz pełny dashboard">
+                    <ExternalLink size={18} />
+                </Link>
             </div>
 
             <div className="relative z-10 flex justify-between items-end">

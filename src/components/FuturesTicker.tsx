@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, Minus, Zap } from 'lucide-react';
+import Link from 'next/link';
+import { TrendingUp, TrendingDown, Minus, Zap, ExternalLink } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 
 interface FutureData {
@@ -52,14 +53,19 @@ export default function FuturesTicker() {
     return (
         <div className="bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-800 relative overflow-hidden text-white">
             {/* Header */}
-            <div className="flex items-center gap-3 mb-6 relative z-10">
-                <div className="p-2 bg-gray-800 rounded-lg text-cyan-400">
-                    <Zap size={20} />
+            <div className="flex items-center justify-between mb-6 relative z-10">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-800 rounded-lg text-cyan-400">
+                        <Zap size={20} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-100">Notowania Terminowe (Futures)</h3>
+                        <p className="text-xs text-gray-400">Kontrakty BASE (PLN/MWh)</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 className="text-lg font-bold text-gray-100">Notowania Terminowe (Futures)</h3>
-                    <p className="text-xs text-gray-400">Kontrakty BASE (PLN/MWh)</p>
-                </div>
+                <Link href="/apps/futures" className="text-gray-500 hover:text-cyan-400 transition-colors" title="Otwórz pełny dashboard">
+                    <ExternalLink size={18} />
+                </Link>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
@@ -87,7 +93,7 @@ export default function FuturesTicker() {
                                     </div>
                                     <div className="flex items-center gap-2 mt-1">
                                         <div className={`flex items-center text-xs font-semibold px-1.5 py-0.5 rounded ${change > 0 ? 'bg-green-900/30 text-green-400' :
-                                                change < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'
+                                            change < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'
                                             }`}>
                                             {change > 0 ? <TrendingUp size={12} className="mr-1" /> :
                                                 change < 0 ? <TrendingDown size={12} className="mr-1" /> : <Minus size={12} className="mr-1" />}

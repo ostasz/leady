@@ -7,7 +7,11 @@ export async function GET(request: NextRequest) {
         const nextYear = today.getFullYear() + 1;
         const nextNextYear = today.getFullYear() + 2;
 
-        console.log(`Fetching futures for Y+1 (${nextYear}) and Y+2 (${nextNextYear})`);
+        const { searchParams } = new URL(request.url);
+        const limitParam = searchParams.get('limit');
+        const limit = limitParam ? parseInt(limitParam) : 30; // Default to 30 if not specified
+
+        console.log(`Fetching futures for Y+1 (${nextYear}) and Y+2 (${nextNextYear}) with limit: ${limit === 0 ? 'ALL' : limit}`);
 
         // Fetch ALL data for the requested years to avoid composite index requirements
         // The dataset is small (one quote per day), so in-memory sorting is fine.
@@ -37,9 +41,9 @@ export async function GET(request: NextRequest) {
         const y1History = formatData(y1Snapshot);
         const y2History = formatData(y2Snapshot);
 
-        // Return only last 30 entries effectively implementing the limit
-        const y1Sliced = y1History.slice(-30);
-        const y2Sliced = y2History.slice(-30);
+        // Return sliced data based on limit (0 means all data)
+        const y1Sliced = limit > 0 ? y1History.slice(-limit) : y1History;
+        const y2Sliced = limit > 0 ? y2History.slice(-limit) : y2History;
 
         console.log(`Found ${y1History.length} entries for ${nextYear}, ${y2History.length} for ${nextNextYear}`);
 
