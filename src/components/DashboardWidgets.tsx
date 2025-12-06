@@ -86,6 +86,11 @@ export default function DashboardWidgets() {
 
     }, []);
 
+    const formatTime = (isoString: string) => {
+        if (!isoString) return '';
+        return isoString.split('T')[1];
+    };
+
     const getWeatherContent = (code: number) => {
         // WMO Weather interpretation
         // 0-3: Clear/Cloudy
@@ -159,10 +164,7 @@ export default function DashboardWidgets() {
     );
 
     const weatherInfo = getWeatherContent(weather.code);
-    const formatTime = (isoString: string) => {
-        if (!isoString) return '';
-        return isoString.split('T')[1];
-    };
+
 
     return (
         <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
