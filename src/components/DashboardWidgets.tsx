@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CloudRain, Sun, Cloud, CloudLightning, Snowflake, Wind, Sparkles, Sunrise, Sunset } from 'lucide-react';
+import { CloudRain, Sun, Moon, Cloud, CloudLightning, Snowflake, Wind, Sparkles, Sunrise, Sunset } from 'lucide-react';
 
 export default function DashboardWidgets() {
     const [weather, setWeather] = useState<any>(null);
@@ -95,6 +95,10 @@ export default function DashboardWidgets() {
         // 80-82: Showers
         // 95-99: Thunderstorm
 
+        const now = new Date();
+        const currentTime = now.toISOString().split('T')[1].slice(0, 5); // HH:mm
+        const isNight = weather?.sunrise && weather?.sunset && (currentTime < formatTime(weather.sunrise) || currentTime > formatTime(weather.sunset));
+
         if (code >= 51 && code <= 67 || code >= 80 && code <= 82) { // Rain
             return {
                 icon: <CloudRain className="w-8 h-8 text-blue-500" />,
@@ -105,9 +109,13 @@ export default function DashboardWidgets() {
 
         if (code <= 3) { // Sun/Clear
             return {
-                icon: <Sun className="w-8 h-8 text-yellow-500" />,
-                text: "Słonecznie i pogodnie. Miłego dnia!",
-                color: "bg-yellow-50 border-yellow-100"
+                icon: isNight
+                    ? <Moon className="w-8 h-8 text-indigo-300" />
+                    : <Sun className="w-8 h-8 text-yellow-500" />,
+                text: isNight
+                    ? "Spokojna noc. Odpocznij przed jutrem."
+                    : "Słonecznie i pogodnie. Miłego dnia!",
+                color: isNight ? "bg-indigo-50 border-indigo-100" : "bg-yellow-50 border-yellow-100"
             };
         }
 
