@@ -23,7 +23,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                 <p className="text-gray-400 mb-2 font-medium">
                     {format(parseISO(label), 'd MMMM yyyy (EEEE)', { locale: pl })}
                 </p>
-                {payload.map((entry, index) => (
+                {payload.map((entry: any, index: number) => (
                     <div key={index} className="flex items-center gap-2 mb-1">
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
                         <span className="text-gray-300 font-medium">{entry.name}:</span>
