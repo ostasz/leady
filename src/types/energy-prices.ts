@@ -135,3 +135,23 @@ export const SHIFT_OPTIONS: ShiftOption[] = [
 export function formatPrice(price: number): string {
     return `${price.toFixed(2)} PLN/MWh`;
 }
+
+/**
+ * Futures contract entry (BASE Y+1, etc)
+ */
+export interface FuturesEntry {
+    id?: string;
+    date: string;           // Quote date (YYYY-MM-DD)
+    deliveryYear: number;   // 2026, 2027...
+    contractType: 'BASE' | 'PEAK' | 'OFFPEAK';
+    price: number;
+    createdAt: Timestamp;
+    createdBy: string;
+}
+
+export interface FuturesCSVRow {
+    DataNotowania: string;
+    KursRozliczeniowy: string | number;
+    'Typ kontraktu': string;
+    'Rok dostawy': string | number;
+}

@@ -179,18 +179,16 @@ export default function EnergyPricesAdminPage() {
 
                     {/* Quick Actions */}
                     <div className="mb-8 pt-8 border-t border-gray-200">
-                        <h3 className="font-semibold text-gray-900 mb-4">Szybkie akcje</h3>
+                        <h3 className="font-semibold text-gray-900 mb-4">Szybkie akcje (RDN)</h3>
                         <div className="flex gap-4">
                             <button
                                 onClick={async () => {
-                                    if (!confirm('Czy na pewno chcesz usunąć WSZYSTKIE dane cenowe? Ta operacja jest nieodwracalna!')) return;
+                                    if (!confirm('Czy na pewno chcesz usunąć WSZYSTKIE dane cenowe RDN? Ta operacja jest nieodwracalna!')) return;
                                     try {
                                         const headers = await getAuthHeaders();
                                         const response = await fetch('/api/energy-prices/clear', {
                                             method: 'DELETE',
-                                            headers: {
-                                                'Authorization': (headers as any).Authorization
-                                            }
+                                            headers: { 'Authorization': (headers as any).Authorization }
                                         });
                                         const data = await response.json();
                                         if (response.ok) {
@@ -205,18 +203,130 @@ export default function EnergyPricesAdminPage() {
                                 }}
                                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                             >
-                                Wyczyść całą bazę
+                                Wyczyść bazę RDN
                             </button>
-                            <Link
-                                href="/apps/ceny-energii"
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-                            >
-                                Otwórz dashboard cen →
-                            </Link>
                         </div>
                     </div>
+
+                    {/* Futures Upload Section */}
+                    <div className="mt-12 pt-8 border-t-2 border-gray-100">
+                        <div className="mb-8">
+                            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                                Upload Notowań Terminowych (Futures)
+                            </h2>
+                            <p className="text-gray-600">
+                                Wgraj plik CSV z notowaniami kontraktów terminowych (BASE Y+1, Y+2)
+                            </p>
+                        </div>
+
+                        {/* Format Guide Futures */}
+                        <div className="mb-8 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                            <h3 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+                                <FileText size={18} />
+                                Format pliku CSV (Futures)
+                            </h3>
+                            <div className="text-sm text-purple-800 space-y-1">
+                                <p>Wymagane kolumny:</p>
+                                <ul className="list-disc list-inside ml-2">
+                                    <li><code className="bg-purple-100 px-1 rounded">DataNotowania</code> - format <strong>DD.MM.YYYY</strong></li>
+                                    <li><code className="bg-purple-100 px-1 rounded">KursRozliczeniowy</code> - cena (PLN/MWh)</li>
+                                    <li><code className="bg-purple-100 px-1 rounded">Typ kontraktu</code> - musi być <strong>BASE</strong></li>
+                                    <li><code className="bg-purple-100 px-1 rounded">Rok dostawy</code> - np. 2026, 2027</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        {/* File Upload Futures */}
+                        <div className="mb-6">
+                            <FuturesUploadSection />
+                        </div>
+                    </div>
+
                 </div>
             </main>
+        </div>
+    );
+}
+
+function FuturesUploadSection() {
+    const { getAuthHeaders } = useAuth();
+    const [file, setFile] = useState<File | null>(null);
+    const [status, setStatus] = useState<UploadStatus>({ status: 'idle' });
+
+    const handleUpload = async () => {
+        if (!file) return;
+        setStatus({ status: 'uploading', message: 'Wysyłanie...' });
+
+        try {
+            const authHeaders = await getAuthHeaders();
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/api/energy-prices/futures/upload', {
+                method: 'POST',
+                headers: { 'Authorization': (authHeaders as any).Authorization },
+                body: formData,
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Upload failed');
+
+            setStatus({ status: 'success', message: data.message, count: data.count });
+            setFile(null);
+        } catch (error: any) {
+            setStatus({ status: 'error', message: error.message || 'Upload failed' });
+        }
+    };
+
+    return (
+        <div>
+            <div className="flex gap-4">
+                <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) {
+                            setFile(f);
+                            setStatus({ status: 'idle' });
+                        }
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+                <button
+                    onClick={handleUpload}
+                    disabled={!file || status.status === 'uploading'}
+                    className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                    <Upload size={18} />
+                    {status.status === 'uploading' ? 'Wysyłanie...' : 'Upload Futures'}
+                </button>
+            </div>
+            {file && (
+                <p className="mt-2 text-sm text-gray-600">
+                    Wybrany plik: {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                </p>
+            )}
+
+            {/* Status Messages */}
+            {status.status === 'success' && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+                    <CheckCircle size={20} className="text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-semibold text-green-900">Sukces!</p>
+                        <p className="text-sm text-green-800">{status.message}</p>
+                    </div>
+                </div>
+            )}
+            {status.status === 'error' && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                    <XCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="font-semibold text-red-900">Błąd</p>
+                        <p className="text-sm text-red-800">{status.message}</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

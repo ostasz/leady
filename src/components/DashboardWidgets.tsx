@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CloudRain, Sun, Moon, Cloud, CloudLightning, Snowflake, Wind, Sparkles, Sunrise, Sunset } from 'lucide-react';
 import RDNTicker from './RDNTicker';
+import FuturesTicker from './FuturesTicker';
 
 export default function DashboardWidgets() {
     const [weather, setWeather] = useState<any>(null);
@@ -171,7 +172,7 @@ export default function DashboardWidgets() {
         <div className="mb-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <RDNTicker />
-                <RDNTicker />
+                <FuturesTicker />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Weather Widget */}
