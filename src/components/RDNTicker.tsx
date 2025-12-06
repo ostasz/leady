@@ -14,8 +14,8 @@ export default function RDNTicker() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch last 7 days to calculate change
-                const res = await fetch('/api/energy-prices/history?days=7');
+                // Fetch last 30 days to match Futures ticker
+                const res = await fetch('/api/energy-prices/history?days=30');
                 if (res.ok) {
                     const json = await res.json();
                     if (json.history && Array.isArray(json.history)) {
@@ -54,8 +54,8 @@ export default function RDNTicker() {
     if (priceChange < 0) chartColor = '#ef4444'; // Red
 
     // Prepare graph data
-    // Take last 7 data points.
-    const graphData = data.slice(-7).map(d => ({
+    // Take last 30 data points (or whatever is available if less)
+    const graphData = data.slice(-30).map(d => ({
         date: d.date,
         price: (d as any).avgPrice || d.price
     }));
@@ -119,7 +119,7 @@ export default function RDNTicker() {
 
             {/* Decor */}
             <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 ${priceChange > 0 ? 'bg-green-500/10' :
-                    priceChange < 0 ? 'bg-red-500/10' : 'bg-cyan-500/10'
+                priceChange < 0 ? 'bg-red-500/10' : 'bg-cyan-500/10'
                 }`}></div>
         </div>
     );
