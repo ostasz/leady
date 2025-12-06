@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { CloudRain, Sun, Cloud, CloudLightning, Snowflake, Wind, Sparkles, Sunrise, Sunset } from 'lucide-react';
 
 export default function DashboardWidgets() {
@@ -97,7 +98,7 @@ export default function DashboardWidgets() {
         if (code >= 51 && code <= 67 || code >= 80 && code <= 82) { // Rain
             return {
                 icon: <CloudRain className="w-8 h-8 text-blue-500" />,
-                text: "Będzie padał deszcz, to znakomicie! Moi klienci będą siedzieli w pracy.",
+                text: "Opady deszczu. Weź parasol!",
                 color: "bg-blue-50 border-blue-100"
             };
         }
@@ -105,7 +106,7 @@ export default function DashboardWidgets() {
         if (code <= 3) { // Sun/Clear
             return {
                 icon: <Sun className="w-8 h-8 text-yellow-500" />,
-                text: "Świeci słońce! Moi klienci będą mieli znakomity nastrój.",
+                text: "Słonecznie i pogodnie. Miłego dnia!",
                 color: "bg-yellow-50 border-yellow-100"
             };
         }
@@ -113,7 +114,7 @@ export default function DashboardWidgets() {
         if (code >= 71 && code <= 77) { // Snow
             return {
                 icon: <Snowflake className="w-8 h-8 text-cyan-500" />,
-                text: "Pada śnieg! Idealny czas na gorącą kawę z klientem.",
+                text: "Opady śniegu. Uwaga na drogach!",
                 color: "bg-cyan-50 border-cyan-100"
             };
         }
@@ -121,7 +122,7 @@ export default function DashboardWidgets() {
         if (code >= 95) { // Thunderstorm
             return {
                 icon: <CloudLightning className="w-8 h-8 text-purple-500" />,
-                text: "Burzowo za oknem? Wnieś spokój i pewność siebie do rozmów.",
+                text: "Możliwe burze. Zachowaj ostrożność.",
                 color: "bg-purple-50 border-purple-100"
             };
         }
@@ -129,7 +130,7 @@ export default function DashboardWidgets() {
         // Default
         return {
             icon: <Cloud className="w-8 h-8 text-gray-500" />,
-            text: "Stabilna pogoda, stabilna sprzedaż. Do dzieła!",
+            text: "Pochmurno, ale stabilnie.",
             color: "bg-gray-50 border-gray-100"
         };
     };
@@ -158,7 +159,7 @@ export default function DashboardWidgets() {
     return (
         <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Weather Widget */}
-            <div className={`p-6 rounded-xl shadow-sm border flex items-center gap-4 ${weatherInfo.color} transition-all hover:shadow-md`}>
+            <Link href="/apps/weather" className={`p-6 rounded-xl shadow-sm border flex items-center gap-4 ${weatherInfo.color} transition-all hover:shadow-md cursor-pointer`}>
                 <div className="bg-white p-3 rounded-full shadow-sm">
                     {weatherInfo.icon}
                 </div>
@@ -190,7 +191,7 @@ export default function DashboardWidgets() {
                         {weatherInfo.text}
                     </p>
                 </div>
-            </div>
+            </Link>
 
             {/* Motivation Widget */}
             <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-sm text-white flex items-center gap-4 relative overflow-hidden group">
