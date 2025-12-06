@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, Calendar, Wind, Droplets, Sun, Moon, CloudRain, Cloud, CloudLightning, Snowflake, ArrowLeft } from 'lucide-react';
+import { Search, MapPin, Calendar, Wind, Droplets, Sun, Moon, CloudRain, Cloud, CloudLightning, Snowflake, ArrowLeft, CloudSun, CloudFog } from 'lucide-react';
 import Link from 'next/link';
 
 export default function WeatherApp() {
@@ -148,15 +148,38 @@ export default function WeatherApp() {
     };
 
     const getWeatherIcon = (code: number, size = 24, isNight = false) => {
-        // Simple mapping
-        if (code <= 3) {
+        // WMO Weather interpretation codes
+        // 0: Clear sky
+        // 1, 2, 3: Mainly clear, partly cloudy, and overcast
+        if (code === 0 || code === 1) {
             return isNight
                 ? <Moon size={size} className="text-indigo-300" />
                 : <Sun size={size} className="text-yellow-500" />;
         }
-        if (code >= 51 && code <= 67) return <CloudRain size={size} className="text-blue-500" />;
-        if (code >= 71 && code <= 77) return <Snowflake size={size} className="text-cyan-500" />;
+        if (code === 2) {
+            return isNight
+                ? <Cloud size={size} className="text-indigo-200" /> // MoonCloud doesn't exist in standard lucide set usually, consistent fallback
+                : <CloudSun size={size} className="text-orange-400" />;
+        }
+        if (code === 3) return <Cloud size={size} className="text-gray-500" />;
+
+        // 45, 48: Fog
+        if (code === 45 || code === 48) return <CloudFog size={size} className="text-gray-400" />;
+
+        // Rain: 51-67 (Drizzle/Rain/Freezing Rain) + 80-82 (Showers)
+        if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+            return <CloudRain size={size} className="text-blue-500" />;
+        }
+
+        // Snow: 71-77 (Snow fall) + 85-86 (Snow showers)
+        if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
+            return <Snowflake size={size} className="text-cyan-500" />;
+        }
+
+        // Thunderstorm: 95, 96, 99
         if (code >= 95) return <CloudLightning size={size} className="text-purple-500" />;
+
+        // Fallback
         return <Cloud size={size} className="text-gray-500" />;
     };
 
