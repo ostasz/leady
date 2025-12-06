@@ -59,18 +59,25 @@ export default function WeatherApp() {
             setForecastData(data.daily);
 
             // Process hourly data
-            const currentHour = new Date().getHours();
-            const todayString = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-            const todaySunrise = data.daily.sunrise[0];
-            const todaySunset = data.daily.sunset[0];
+            const allHourlyData = data.hourly.time.map((time: string, index: number) => {
+                const datePart = time.slice(0, 10);
+                // Find the index in daily data that matches this date
+                const dayIndex = data.daily.time.findIndex((d: string) => d === datePart);
 
-            // Flatten data structure and find the starting index for current hour
-            const allHourlyData = data.hourly.time.map((time: string, index: number) => ({
-                time: time,
-                temp: data.hourly.temperature_2m[index],
-                code: data.hourly.weather_code[index],
-                isNight: time < todaySunrise || time > todaySunset // Simplified night logic for now
-            }));
+                let isNight = false;
+                if (dayIndex !== -1) {
+                    const sunrise = data.daily.sunrise[dayIndex];
+                    const sunset = data.daily.sunset[dayIndex];
+                    isNight = time < sunrise || time > sunset;
+                }
+
+                return {
+                    time: time,
+                    temp: data.hourly.temperature_2m[index],
+                    code: data.hourly.weather_code[index],
+                    isNight: isNight
+                };
+            });
 
             // Find index of current hour (approximate match by matching date and hour string)
             const now = new Date();
@@ -78,7 +85,7 @@ export default function WeatherApp() {
 
             let startIndex = allHourlyData.findIndex((item: any) => item.time.startsWith(currentHourStr));
             if (startIndex === -1) {
-                // Fallback: try to find first item after now if exact hour match fails (e.g. timezone diffs)
+                // Fallback: try to find first item after now if exact hour match fails
                 startIndex = 0;
             }
 
