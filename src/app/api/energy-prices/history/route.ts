@@ -7,14 +7,11 @@ export async function GET(request: NextRequest) {
         const days = parseInt(searchParams.get('days') || '30');
 
         // Calculate start date
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
-        const startDateStr = startDate.toISOString().split('T')[0];
-
-        // Fetch records by date range instead of limit to handle duplicates
+        // Fetch last available records (days * 24 hours) regardless of date
+        // This ensures we always show data even if it's not from the last 7 calendar days
         const snapshot = await adminDb.collection('energy_prices')
-            .where('date', '>=', startDateStr)
             .orderBy('date', 'desc')
+            .limit(days * 24)
             .get();
 
         if (snapshot.empty) {
