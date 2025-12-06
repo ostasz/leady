@@ -64,20 +64,28 @@ export default function WeatherApp() {
             const todaySunrise = data.daily.sunrise[0];
             const todaySunset = data.daily.sunset[0];
 
-            const hourly = data.hourly.time
-                .map((time: string, index: number) => ({
-                    time: time,
-                    temp: data.hourly.temperature_2m[index],
-                    code: data.hourly.weather_code[index],
-                    isNight: time < todaySunrise || time > todaySunset
-                }))
-                .filter((item: any) => {
-                    const itemDatePart = item.time.slice(0, 10);
-                    const itemHour = parseInt(item.time.slice(11, 13), 10);
-                    return itemDatePart === todayString && itemHour >= currentHour;
-                });
+            // Flatten data structure and find the starting index for current hour
+            const allHourlyData = data.hourly.time.map((time: string, index: number) => ({
+                time: time,
+                temp: data.hourly.temperature_2m[index],
+                code: data.hourly.weather_code[index],
+                isNight: time < todaySunrise || time > todaySunset // Simplified night logic for now
+            }));
 
-            setHourlyData(hourly);
+            // Find index of current hour (approximate match by matching date and hour string)
+            const now = new Date();
+            const currentHourStr = now.toISOString().slice(0, 13); // YYYY-MM-DDTHH
+
+            let startIndex = allHourlyData.findIndex((item: any) => item.time.startsWith(currentHourStr));
+            if (startIndex === -1) {
+                // Fallback: try to find first item after now if exact hour match fails (e.g. timezone diffs)
+                startIndex = 0;
+            }
+
+            // Take next 24 hours
+            const next24Hours = allHourlyData.slice(startIndex, startIndex + 24);
+
+            setHourlyData(next24Hours);
 
         } catch (err) {
             console.error(err);
@@ -210,7 +218,7 @@ export default function WeatherApp() {
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                             <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                                 <Wind size={20} />
-                                Dzisiaj (godzinowo)
+                                Nadchodzące 24h
                             </h3>
                             <div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                                 {hourlyData.length > 0 ? (
