@@ -119,7 +119,7 @@ export default function EnergyPricesAdminPage() {
                         <div className="text-sm text-blue-800 space-y-1">
                             <p>Wymagane kolumny:</p>
                             <ul className="list-disc list-inside ml-2">
-                                <li><code className="bg-blue-100 px-1 rounded">Data</code> - format <strong>YYYY-MM-DD</strong> (np. "2024-01-01")</li>
+                                <li><code className="bg-blue-100 px-1 rounded">Data</code> - format <strong>YYYY-MM-DD</strong> lub <strong>DD.MM.YYYY</strong></li>
                                 <li><code className="bg-blue-100 px-1 rounded">h_num</code> - godzina (1-24)</li>
                                 <li><code className="bg-blue-100 px-1 rounded">Average of Cena</code> - cena w PLN/MWh</li>
                             </ul>

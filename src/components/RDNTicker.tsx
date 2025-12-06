@@ -79,7 +79,7 @@ export default function RDNTicker() {
             </div>
 
             {/* Middle: Sparkline */}
-            <div className="hidden sm:block absolute right-28 top-1/2 -translate-y-1/2 opacity-20">
+            <div className="absolute right-28 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none">
                 <svg width={width} height={height} className="overflow-visible">
                     <polyline
                         points={points}

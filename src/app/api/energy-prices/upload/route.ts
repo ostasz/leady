@@ -34,31 +34,35 @@ export async function POST(request: NextRequest) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
 
-        // Try to detect encoding or assume Windows-1250 (common for Polish Excel CSVs)
-        // We'll try decoding as Windows-1250 first, as that's the most likely culprit for broken Polish chars
+        // Decoding strategy:
+        // 1. Try to decode as UTF-8 first to safely remove BOM if present
+        // 2. If it produces replacement characters or garbage, fallback to win1250
+        // But for simplicity and since Polish excel files are often Windows-1250, we start there.
+        // However, Windows-1250 doesn't have a BOM. UTF-8 does.
+
         let text = iconv.decode(buffer, 'win1250');
 
-        // Quick check if it looks like valid UTF-8 already (e.g. if user saved as UTF-8)
-        // If the file was actually UTF-8, decoding as win1250 might mess it up differently.
-        // But usually "" replacement characters indicate UTF-8 read as ASCII/ISO.
-        // If we see "poniedziaek" in the output of previous attempts, it means it was likely UTF-8 read as something else OR Windows-1250 read as UTF-8.
+        // Remove UTF-8 BOM if it was read as Windows-1250 characters (ï»¿)
+        // In Windows-1250: ï (\xEF), » (\xBB), ¿ (\xBF)
+        // Note: internal representation might vary, but let's strip widely known potential garbage
+        // Alternatively, better to remove \uFEFF if we decoded as UTF-8.
 
-        // Let's try a smarter approach:
-        // If the file is valid UTF-8, use it. If not, try Windows-1250.
-        // But detection is hard. Given the user's issues, let's try to enforce UTF-8 first, 
-        // and if that produces replacement characters, fallback or try win1250.
-
-        // Actually, the previous code used `await file.text()` which defaults to UTF-8.
-        // And we saw "poniedziaek" in the logs. This usually means the file IS Windows-1250 (or ISO-8859-2) and was read as UTF-8.
-        // So decoding as Windows-1250 is the correct fix.
-
-        text = iconv.decode(buffer, 'win1250');
+        // Let's try to detect if it's UTF-8. 
+        // If the buffer starts with EF BB BF, it IS UTF-8.
+        if (buffer.length >= 3 && buffer[0] === 0xEF && buffer[1] === 0xBB && buffer[2] === 0xBF) {
+            text = iconv.decode(buffer, 'utf-8');
+            text = text.trim(); // strip BOM/whitespace
+        } else {
+            // Assume win1250 but handle potential UTF-8 read as win1250 artifacts if detection failed
+            text = text.replace(/^\u00EF\u00BB\u00BF/, '');
+            text = text.trim();
+        }
 
         // Parse CSV
-        const parseResult = Papa.parse<EnergyPriceCSVRow>(text, {
+        const parseResult = Papa.parse<any>(text, { // Use any for row type to handle dynamic keys
             header: true,
             skipEmptyLines: true,
-            dynamicTyping: false // We'll handle type conversion manually
+            transformHeader: (h) => h.trim().replace(/^[\W_]+/, '') // Sanitize headers: remove leading non-word chars (like BOM remnants)
         });
 
         if (parseResult.errors.length > 0) {
@@ -77,60 +81,68 @@ export async function POST(request: NextRequest) {
 
         // Helper to normalize date to YYYY-MM-DD
         const normalizeDate = (dateStr: string): string => {
-            // Trim whitespace
+            if (!dateStr) return '';
             dateStr = dateStr.trim();
 
-            // If already YYYY-MM-DD (e.g. 2024-01-01)
+            // Handle D.M.YYYY or DD.MM.YYYY (e.g. 1.12.2025 or 01.12.2025)
+            // Fix: ensure we match dots correctly and pad values
+            if (dateStr.includes('.')) {
+                const parts = dateStr.split('.');
+                if (parts.length === 3) {
+                    const day = parts[0].trim().padStart(2, '0');
+                    const month = parts[1].trim().padStart(2, '0');
+                    const year = parts[2].trim();
+                    return `${year}-${month}-${day}`;
+                }
+            }
+
+            // Handle YYYY-MM-DD
             if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
                 return dateStr;
             }
 
-            // Handle YYYY-M-D (e.g. 2024-1-1)
+            // Handle YYYY-M-D
             if (dateStr.includes('-')) {
                 const parts = dateStr.split('-');
                 if (parts.length === 3) {
-                    const year = parts[0];
-                    const month = parts[1].padStart(2, '0');
-                    const day = parts[2].padStart(2, '0');
-                    return `${year}-${month}-${day}`;
+                    return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
                 }
             }
 
-            // Handle D.M.YYYY or DD.MM.YYYY (e.g. 1.12.2025 or 01.12.2025)
-            if (dateStr.includes('.')) {
-                const parts = dateStr.split('.');
-                if (parts.length === 3) {
-                    const day = parts[0].padStart(2, '0');
-                    const month = parts[1].padStart(2, '0');
-                    const year = parts[2];
-                    return `${year}-${month}-${day}`;
-                }
-            }
+            return dateStr;
+        };
 
-            return dateStr; // Return original if no match, validation will catch it later
+        // Fuzzy key finder specifically for 'Data', 'h_num', 'Average of Cena'
+        const findVal = (row: any, keyPart: string) => {
+            const key = Object.keys(row).find(k => k.toLowerCase().includes(keyPart.toLowerCase()));
+            return key ? row[key] : undefined;
         };
 
         for (const row of parseResult.data) {
             rowNumber++;
 
-            // Check for missing fields and log reason
-            if (!row.Data) {
+            // Use fuzzy matching to find columns
+            const dateVal = findVal(row, 'data');
+            const hourVal = findVal(row, 'h_num') || findVal(row, 'godzina'); // Fallback to 'godzina' just in case
+            const priceVal = findVal(row, 'average of cena') || findVal(row, 'cena');
+
+            if (!dateVal) {
                 if (skippedRows.length < 5) skippedRows.push({ row: rowNumber, reason: 'Missing Data field', data: row });
                 continue;
             }
-            if (!row.h_num) {
+            if (!hourVal) {
                 if (skippedRows.length < 5) skippedRows.push({ row: rowNumber, reason: 'Missing h_num field', data: row });
                 continue;
             }
-            if (row['Average of Cena'] === undefined || row['Average of Cena'] === null || row['Average of Cena'] === '') {
-                if (skippedRows.length < 5) skippedRows.push({ row: rowNumber, reason: 'Missing Average of Cena field', data: row });
+            if (priceVal === undefined || priceVal === null || priceVal === '') {
+                if (skippedRows.length < 5) skippedRows.push({ row: rowNumber, reason: 'Missing Price field', data: row });
                 continue;
             }
 
             const entry: any = {
-                date: normalizeDate(row.Data), // Normalize date here
-                hour: typeof row.h_num === 'string' ? parseInt(row.h_num) : row.h_num,
-                price: parsePolishNumber(row['Average of Cena']),
+                date: normalizeDate(String(dateVal)),
+                hour: typeof hourVal === 'string' ? parseInt(hourVal) : Number(hourVal),
+                price: parsePolishNumber(priceVal),
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 createdBy: userData?.email || 'unknown'
             };
