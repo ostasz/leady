@@ -14,6 +14,7 @@ interface PriceData {
 
 export default function RdnPage() {
     const [data, setData] = useState<PriceData[]>([]);
+    const [timeRange, setTimeRange] = useState<number>(30); // Default to 30 days
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -43,6 +44,9 @@ export default function RdnPage() {
         fetchData();
     }, []);
 
+    // Filter data based on selected time range
+    const filteredData = data.slice(-timeRange);
+
     return (
         <div className="min-h-screen bg-[#0f111a] text-gray-200">
             {/* Navbar / Header */}
@@ -67,18 +71,35 @@ export default function RdnPage() {
                     <>
                         {/* KPI */}
                         <div className="grid grid-cols-1">
-                            <RdnKPI data={data} label="TGe24 (365 DNI)" />
+                            <RdnKPI data={filteredData} label={`TGe24 (${timeRange === 365 ? '1 ROK' : `${timeRange} DNI`})`} />
                         </div>
 
                         {/* Main Chart */}
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h2 className="text-lg font-semibold text-gray-100">Analiza Trendu</h2>
-                                <div className="text-sm text-gray-500">
-                                    Notowania historyczne TGe24
+                            <div className="flex justify-between items-center flex-wrap gap-4">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-gray-100">Analiza Trendu</h2>
+                                    <div className="text-sm text-gray-500">
+                                        Notowania historyczne TGe24
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 bg-gray-900 p-1 rounded-lg border border-gray-800">
+                                    {[30, 90, 365].map((days) => (
+                                        <button
+                                            key={days}
+                                            onClick={() => setTimeRange(days)}
+                                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${timeRange === days
+                                                    ? 'bg-emerald-500/20 text-emerald-400 shadow-sm border border-emerald-500/20'
+                                                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+                                                }`}
+                                        >
+                                            {days === 365 ? '1 Rok' : `${days} Dni`}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                            <RdnChart data={data} />
+                            <RdnChart data={filteredData} />
                         </div>
 
                         {/* Data Table */}
