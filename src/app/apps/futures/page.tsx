@@ -21,6 +21,7 @@ export default function FuturesPage() {
     const [dataY1, setDataY1] = useState<FutureData[]>([]);
     const [dataY2, setDataY2] = useState<FutureData[]>([]);
     const [loading, setLoading] = useState(true);
+    const [timeRange, setTimeRange] = useState<number>(30); // Default to 30 days
 
     const currentYear = new Date().getFullYear();
     const year1 = (currentYear + 1).toString();
@@ -46,6 +47,10 @@ export default function FuturesPage() {
         fetchData();
     }, [year1, year2]);
 
+    // Filter data based on selected time range
+    const filteredDataY1 = dataY1.slice(-timeRange);
+    const filteredDataY2 = dataY2.slice(-timeRange);
+
     return (
         <div className="min-h-screen bg-[#0f111a] text-gray-200">
             {/* Navbar / Header */}
@@ -70,21 +75,38 @@ export default function FuturesPage() {
                     <>
                         {/* KPI Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FuturesKPI year={year1} data={dataY1} label={`BASELINE ${year1}`} />
-                            <FuturesKPI year={year2} data={dataY2} label={`BASELINE ${year2}`} />
+                            <FuturesKPI year={year1} data={filteredDataY1} label={`BASELINE ${year1}`} />
+                            <FuturesKPI year={year2} data={filteredDataY2} label={`BASELINE ${year2}`} />
                         </div>
 
                         {/* Main Chart */}
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h2 className="text-lg font-semibold text-gray-100">Analiza Cenowa</h2>
-                                <div className="text-sm text-gray-500">
-                                    Porównanie kontraktów rocznych
+                            <div className="flex justify-between items-center flex-wrap gap-4">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-gray-100">Analiza Cenowa</h2>
+                                    <div className="text-sm text-gray-500">
+                                        Porównanie kontraktów rocznych
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 bg-gray-900 p-1 rounded-lg border border-gray-800">
+                                    {[30, 90, 365].map((days) => (
+                                        <button
+                                            key={days}
+                                            onClick={() => setTimeRange(days)}
+                                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${timeRange === days
+                                                ? 'bg-cyan-500/20 text-cyan-400 shadow-sm border border-cyan-500/20'
+                                                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+                                                }`}
+                                        >
+                                            {days === 365 ? '1 Rok' : `${days} Dni`}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                             <FuturesChart
-                                dataY1={dataY1}
-                                dataY2={dataY2}
+                                dataY1={filteredDataY1}
+                                dataY2={filteredDataY2}
                                 year1={year1}
                                 year2={year2}
                             />
