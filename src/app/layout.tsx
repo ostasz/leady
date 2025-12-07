@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Wyszukiwanie leadów",
+  title: "Portal Handlowca",
   description: "Aplikacja do wyszukiwania i zarządzania leadami sprzedażowymi",
 };
 
