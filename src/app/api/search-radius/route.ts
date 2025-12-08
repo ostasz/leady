@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
-import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { adminAuth, adminDb, admin } from '@/lib/firebase-admin';
 import { logUsage } from '@/lib/usage';
+import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+if (!API_KEY) {
+    throw new Error("Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY");
+}
 
 interface GooglePlaceResult {
     place_id: string;
@@ -22,9 +27,14 @@ interface GooglePlaceResult {
     [key: string]: any;
 }
 
+// Helper for delays
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 async function geocode(address: string) {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${API_KEY}`;
     const res = await fetch(url);
+    if (!res.ok) throw new Error(`Geocoding HTTP error: ${res.status}`);
+
     const data = await res.json();
     if (data.status === 'OK') {
         return data.results[0].geometry.location;
@@ -48,37 +58,38 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
     return R * c; // Distance in km
 }
 
-import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
-
-// Modified to search for a SINGLE profile to ensure separation of concerns
 async function searchForProfile(address: string, location: { lat: number; lng: number }, radius: number, profileKey: string, uid: string) {
     if (!LEAD_PROFILES[profileKey as ProfileKey]) return [];
 
     const profile = LEAD_PROFILES[profileKey as ProfileKey];
     const allKeywords = profile.keywords;
 
-    // Helper to execute search
     const executeSearch = async (queryStr: string) => {
         let results: GooglePlaceResult[] = [];
         let nextToken = '';
-        // console.log(`[${profile.label}] Executing search: "${queryStr}"`);
 
         for (let i = 0; i < 3; i++) {
-            let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(queryStr)}&location=${location.lat},${location.lng}&radius=${radius}&key=${API_KEY}`;
+            let url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(queryStr)}&location=${location.lat},${location.lng}&radius=${radius}&key=${API_KEY}&language=pl`;
 
             if (nextToken) {
                 url += `&pagetoken=${nextToken}`;
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Google requires time to register the token
+                await delay(2000);
             }
 
             const res = await fetch(url);
+            if (!res.ok) {
+                console.error(`Fetch failed: ${res.status}`);
+                break;
+            }
+
             const data = await res.json();
 
             // Log Text Search Usage
             await logUsage(uid, 'google_maps', 'text_search', 1, { query: queryStr, page: i + 1 });
 
             if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-                console.error(`[${profile.label}] Page ${i + 1} failed: ${data.status}`);
+                console.error(`[${profile.label}] Page ${i + 1} failed: ${data.status} - ${data.error_message}`);
                 break;
             }
 
@@ -92,51 +103,35 @@ async function searchForProfile(address: string, location: { lat: number; lng: n
         return results;
     };
 
-    // Helper to filter results
     const filterResults = (results: GooglePlaceResult[]) => {
         return results.filter((place: GooglePlaceResult) => {
+            if (!place.geometry?.location) return false; // Safety check
+
             const dist = calculateDistance(
                 location.lat,
                 location.lng,
                 place.geometry.location.lat,
                 place.geometry.location.lng
             );
-            const isWithin = dist <= (radius / 1000); // Convert radius to km
-
-            if (!isWithin) {
-                console.log(`[Filter] Dropping "${place.name}" - Distance: ${dist.toFixed(2)}km > ${radius / 1000}km`);
-            }
-            return isWithin;
+            return dist <= (radius / 1000);
         });
     };
 
-    // STRATEGY: "The Masarnia Mechanism"
-    // Google Places API does NOT support "OR" operator reliably.
-    // Instead of one giant query, we pick the top 2-3 keywords and run separate searches.
-    // This guarantees we find "Masarnia" AND "Zakład mięsny" without syntax errors.
-
-    const topKeywords = allKeywords.slice(0, 2); // Take top 2 keywords to manage quota
+    const topKeywords = allKeywords.slice(0, 2);
     const combinedResults: GooglePlaceResult[] = [];
     const seenPlaceIds = new Set<string>();
 
     for (const keyword of topKeywords) {
         // 1. Specific Search: "Keyword City"
-        // We try specific first to get best matches in the city center.
         const specificQuery = `${keyword} ${address}`;
-        // console.log(`[${profile.label}] Specific: "${specificQuery}"`);
         const specificRes = await executeSearch(specificQuery);
         let keywordResults = [...filterResults(specificRes)];
 
-        // 2. Broad Search: "Keyword" + Radius
-        // "The Masarnia Mechanism": ALWAYS trigger broad search expansion to find results in the radius.
-        // This ensures we don't miss places just because they don't have the city name in their address.
-
-        // console.log(`[${profile.label}] Broad: "${keyword}" (Radius: ${radius/1000}km)`);
+        // 2. Broad Search: "Keyword" + Radius ("The Masarnia Mechanism")
         const broadRes = await executeSearch(keyword);
         const filteredBroad = filterResults(broadRes);
         keywordResults = [...keywordResults, ...filteredBroad];
 
-        // Merge into combined
         for (const place of keywordResults) {
             if (!seenPlaceIds.has(place.place_id)) {
                 seenPlaceIds.add(place.place_id);
@@ -149,20 +144,8 @@ async function searchForProfile(address: string, location: { lat: number; lng: n
     return combinedResults;
 }
 
-async function getPlaceDetails(placeId: string, uid: string) {
-    const fields = 'formatted_phone_number,website,editorial_summary';
-    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${API_KEY}`;
-    const res = await fetch(url);
-    const data = await res.json();
-
-    await logUsage(uid, 'google_maps', 'place_details', 1, { placeId });
-
-    return data.result || {};
-}
-
 export async function GET(request: Request) {
     try {
-        // Get Firebase Auth token
         const authHeader = request.headers.get('authorization');
         if (!authHeader?.startsWith('Bearer ')) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -172,10 +155,10 @@ export async function GET(request: Request) {
         const decodedToken = await adminAuth.verifyIdToken(token);
         const uid = decodedToken.uid;
 
-        // Update search count
-        await adminDb.collection('users').doc(uid).update({
-            searchCount: (await adminDb.collection('users').doc(uid).get()).data()?.searchCount + 1 || 1
-        }).catch(() => { });
+        // Atomic increment of search count
+        await adminDb.collection('users').doc(uid).set({
+            searchCount: admin.firestore.FieldValue.increment(1)
+        }, { merge: true });
 
         const { searchParams } = new URL(request.url);
         const address = searchParams.get('address');
@@ -190,30 +173,22 @@ export async function GET(request: Request) {
         const location = await geocode(address);
         await logUsage(uid, 'google_maps', 'geocoding', 1, { query: address });
 
-        // Execute search for EACH profile independently to maximize results
-        // and prevent one category from drowning out another
         const allCombinedResults: GooglePlaceResult[] = [];
         const processedIds = new Set<string>();
 
         for (const profileKey of profiles) {
-            // Determine radius based on profile type or custom param
-            // If custom radius is provided (in km), convert to meters.
-            // Otherwise fallback to defaults: 'agro_farm' gets 50km, others 20km
             const isFarm = profileKey === 'agro_farm';
             let radius = isFarm ? 50000 : 20000;
 
             if (radiusParam) {
                 const customRadiusKm = parseInt(radiusParam);
                 if (!isNaN(customRadiusKm) && customRadiusKm > 0) {
-                    radius = customRadiusKm * 1000; // Convert km to meters
+                    radius = customRadiusKm * 1000;
                 }
             }
 
-            console.log(`[Search] Profile: ${profileKey}, IsFarm: ${isFarm}, Radius: ${radius}m`);
-
             const results = await searchForProfile(address, location, radius, profileKey, uid);
 
-            // Add unique results
             for (const place of results) {
                 if (!processedIds.has(place.place_id)) {
                     processedIds.add(place.place_id);
@@ -222,26 +197,21 @@ export async function GET(request: Request) {
             }
         }
 
-        // Fetch details for all results (no ranking/sorting)
-        const detailedResults = await Promise.all(allCombinedResults.map(async (place: GooglePlaceResult) => {
-            const details = await getPlaceDetails(place.place_id, uid);
-            return {
-                id: place.place_id,
-                name: place.name,
-                address: place.formatted_address || place.vicinity,
-                location: place.geometry.location,
-                rating: place.rating,
-                user_ratings_total: place.user_ratings_total,
-                types: place.types,
-                phone: details.formatted_phone_number,
-                website: details.website,
-                summary: details.editorial_summary?.overview
-            };
+        // Return basic results directly (Details on Demand model)
+        const simplifiedResults = allCombinedResults.map(place => ({
+            id: place.place_id,
+            name: place.name,
+            address: place.formatted_address || place.vicinity,
+            location: place.geometry.location,
+            rating: place.rating,
+            user_ratings_total: place.user_ratings_total,
+            types: place.types,
+            // Details (phone, website, summary) are now fetched via /api/place-details
         }));
 
         return NextResponse.json({
             center: location,
-            results: detailedResults
+            results: simplifiedResults
         });
     } catch (error: unknown) {
         console.error(error);

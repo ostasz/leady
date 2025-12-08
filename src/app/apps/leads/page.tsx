@@ -52,6 +52,37 @@ export default function Home() {
 
 
 
+  // New function to fetch details on demand
+  const handleGetDetails = async (id: string) => {
+    // Optimistically update to loading state if needed, but we'll use a local loading state in the button
+    // Or simpler: update results directly
+    try {
+      const headers = await getAuthHeaders();
+      const res = await fetch(`/api/place-details?placeId=${id}`, { headers });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch details');
+
+      // Update the specific result in the state
+      setResults(prev => prev.map(r => {
+        if (r.id === id) {
+          return {
+            ...r,
+            phone: data.phone,
+            website: data.website,
+            summary: data.summary, // Update summary as well if available
+            detailsFetched: true // dynamic flag to show we have details
+          };
+        }
+        return r;
+      }));
+
+    } catch (e: any) {
+      console.error(e);
+      alert('Nie udało się pobrać szczegółów: ' + e.message);
+    }
+  };
+
   const handleSaveLead = async (place: any) => {
     setSavingLead(prev => ({ ...prev, [place.id]: true }));
     try {
@@ -905,7 +936,30 @@ export default function Home() {
                   </a>
                 </h3>
                 <p className="text-sm text-gray-800 mt-1">{place.address}</p>
-
+                <div className="flex gap-2">
+                  {!place.detailsFetched && !place.phone && !place.website ? (
+                    <button
+                      onClick={() => handleGetDetails(place.id)}
+                      className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors font-semibold flex items-center gap-1"
+                    >
+                      <Sparkles size={12} />
+                      Pokaż dane kontaktowe
+                    </button>
+                  ) : (
+                    <>
+                      {place.website && (
+                        <a href={place.website} target="_blank" rel="noopener noreferrer" className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 truncate max-w-[150px]">
+                          {new URL(place.website).hostname.replace('www.', '')}
+                        </a>
+                      )}
+                      {place.phone && (
+                        <a href={`tel:${place.phone}`} className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded hover:bg-green-100 whitespace-nowrap">
+                          {place.phone}
+                        </a>
+                      )}
+                    </>
+                  )}
+                </div>
                 {place.nip && (
                   <div className="flex items-center gap-1 mt-2 text-xs font-mono text-purple-700 bg-purple-50 px-2 py-1 rounded w-fit border border-purple-100">
                     <span className="font-bold">NIP:</span>
