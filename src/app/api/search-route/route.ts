@@ -1,32 +1,42 @@
 import { NextResponse } from 'next/server';
 import { decode } from '@googlemaps/polyline-codec';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { logUsage } from '@/lib/usage';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-async function getDirections(origin: string, destination: string) {
+async function getDirections(origin: string, destination: string, uid: string) {
     const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&key=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
+
+    await logUsage(uid, 'google_maps', 'directions', 1, { origin, destination });
+
     if (data.status !== 'OK' || !data.routes[0]) {
         throw new Error(`Directions failed: ${data.status}`);
     }
     return data.routes[0];
 }
 
-async function searchNearby(location: { lat: number; lng: number }, radius: number) {
+async function searchNearby(location: { lat: number; lng: number }, radius: number, uid: string) {
     const keyword = 'manufacturing|factory|industrial';
     const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=${radius}&keyword=${encodeURIComponent(keyword)}&key=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
+
+    await logUsage(uid, 'google_maps', 'nearby_search', 1, { location, radius });
+
     return data.results || [];
 }
 
-async function getPlaceDetails(placeId: string) {
+async function getPlaceDetails(placeId: string, uid: string) {
     const fields = 'formatted_phone_number,website,editorial_summary';
     const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
+
+    await logUsage(uid, 'google_maps', 'place_details', 1, { placeId });
+
     return data.result || {};
 }
 
@@ -76,7 +86,8 @@ export async function GET(request: Request) {
         }
 
         const token = authHeader.split('Bearer ')[1];
-        await adminAuth.verifyIdToken(token);
+        const decodedToken = await adminAuth.verifyIdToken(token);
+        const uid = decodedToken.uid; // Extract UID
 
         const { searchParams } = new URL(request.url);
         const origin = searchParams.get('origin');
@@ -86,13 +97,13 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Origin and destination required' }, { status: 400 });
         }
 
-        const route = await getDirections(origin, destination);
+        const route = await getDirections(origin, destination, uid);
         const polyline = route.overview_polyline.points;
         const path = decode(polyline).map(([lat, lng]) => ({ lat, lng }));
         const samples = samplePath(path, 10000);
         const limitedSamples = samples.slice(0, 20);
 
-        const resultsPromises = limitedSamples.map(p => searchNearby(p, 5000));
+        const resultsPromises = limitedSamples.map(p => searchNearby(p, 5000, uid));
         const resultsArrays = await Promise.all(resultsPromises);
 
         const allPlaces = new Map();
@@ -107,7 +118,7 @@ export async function GET(request: Request) {
         const top20 = uniquePlaces.slice(0, 20);
 
         const detailedResults = await Promise.all(top20.map(async (place: any) => {
-            const details = await getPlaceDetails(place.place_id);
+            const details = await getPlaceDetails(place.place_id, uid);
             return {
                 id: place.place_id,
                 name: place.name,

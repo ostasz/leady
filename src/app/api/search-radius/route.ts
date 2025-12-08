@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { logUsage } from '@/lib/usage';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -50,7 +51,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
 
 // Modified to search for a SINGLE profile to ensure separation of concerns
-async function searchForProfile(address: string, location: { lat: number; lng: number }, radius: number, profileKey: string) {
+async function searchForProfile(address: string, location: { lat: number; lng: number }, radius: number, profileKey: string, uid: string) {
     if (!LEAD_PROFILES[profileKey as ProfileKey]) return [];
 
     const profile = LEAD_PROFILES[profileKey as ProfileKey];
@@ -72,6 +73,9 @@ async function searchForProfile(address: string, location: { lat: number; lng: n
 
             const res = await fetch(url);
             const data = await res.json();
+
+            // Log Text Search Usage
+            await logUsage(uid, 'google_maps', 'text_search', 1, { query: queryStr, page: i + 1 });
 
             if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
                 console.error(`[${profile.label}] Page ${i + 1} failed: ${data.status}`);
@@ -145,11 +149,14 @@ async function searchForProfile(address: string, location: { lat: number; lng: n
     return combinedResults;
 }
 
-async function getPlaceDetails(placeId: string) {
+async function getPlaceDetails(placeId: string, uid: string) {
     const fields = 'formatted_phone_number,website,editorial_summary';
     const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${API_KEY}`;
     const res = await fetch(url);
     const data = await res.json();
+
+    await logUsage(uid, 'google_maps', 'place_details', 1, { placeId });
+
     return data.result || {};
 }
 
@@ -181,6 +188,7 @@ export async function GET(request: Request) {
         }
 
         const location = await geocode(address);
+        await logUsage(uid, 'google_maps', 'geocoding', 1, { query: address });
 
         // Execute search for EACH profile independently to maximize results
         // and prevent one category from drowning out another
@@ -203,7 +211,7 @@ export async function GET(request: Request) {
 
             console.log(`[Search] Profile: ${profileKey}, IsFarm: ${isFarm}, Radius: ${radius}m`);
 
-            const results = await searchForProfile(address, location, radius, profileKey);
+            const results = await searchForProfile(address, location, radius, profileKey, uid);
 
             // Add unique results
             for (const place of results) {
@@ -216,7 +224,7 @@ export async function GET(request: Request) {
 
         // Fetch details for all results (no ranking/sorting)
         const detailedResults = await Promise.all(allCombinedResults.map(async (place: GooglePlaceResult) => {
-            const details = await getPlaceDetails(place.place_id);
+            const details = await getPlaceDetails(place.place_id, uid);
             return {
                 id: place.place_id,
                 name: place.name,

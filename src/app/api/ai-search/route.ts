@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { scrapeCompanyData } from '@/utils/scraper';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { logUsage } from '@/lib/usage';
 
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -12,6 +13,7 @@ export async function POST(request: Request) {
         if (!authHeader?.startsWith('Bearer ')) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
+
 
         const token = authHeader.split('Bearer ')[1];
         const decodedToken = await adminAuth.verifyIdToken(token);
@@ -102,6 +104,10 @@ WAŻNE: Zwróć TYLKO czysty JSON.
 `;
 
         const searchResult = await searchChat.sendMessage(searchPrompt);
+
+        // Log Gemini Usage
+        await logUsage(uid, 'gemini', 'generate_content', 1, { query: address });
+
         const searchResponse = searchResult.response;
         const responseText = searchResponse.text();
 
@@ -154,6 +160,9 @@ WAŻNE: Zwróć TYLKO czysty JSON.
                             const detailsData = await detailsRes.json();
 
                             if (detailsData.status === 'OK') {
+                                // Log Place Details Usage
+                                await logUsage(uid, 'google_maps', 'place_details', 1, { placeId });
+
                                 const place = detailsData.result;
                                 const matchingCompany = companiesFromModel.find(c =>
                                     c.name && place.name &&
@@ -219,6 +228,9 @@ WAŻNE: Zwróć TYLKO czysty JSON.
 
                         const res = await fetch(textSearchUrl);
                         const data = await res.json();
+
+                        // Log Text Search Usage
+                        await logUsage(uid, 'google_maps', 'text_search', 1, { query });
 
                         if (data.results && data.results.length > 0) {
                             const location = data.results[0].geometry.location;

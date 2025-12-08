@@ -3,7 +3,7 @@
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Trash2, Shield, User } from 'lucide-react';
+import { Trash2, Shield, User, DollarSign, Sparkles } from 'lucide-react';
 
 export default function AdminPage() {
     const { user, userData, loading: authLoading, getAuthHeaders } = useAuth();
@@ -88,6 +88,20 @@ export default function AdminPage() {
                         Panel Administratora
                     </h1>
                     <div className="flex gap-4">
+                        <button
+                            onClick={() => router.push('/admin/costs')}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                        >
+                            <DollarSign size={18} />
+                            Koszty API
+                        </button>
+                        <button
+                            onClick={() => router.push('/admin/ai-assistant')}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+                        >
+                            <Sparkles size={18} />
+                            Asystent AI
+                        </button>
                         <button
                             onClick={() => router.push('/admin/ceny-energii')}
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"

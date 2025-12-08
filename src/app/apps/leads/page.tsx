@@ -904,7 +904,7 @@ export default function Home() {
                     {place.name}
                   </a>
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">{place.address}</p>
+                <p className="text-sm text-gray-800 mt-1">{place.address}</p>
 
                 {place.nip && (
                   <div className="flex items-center gap-1 mt-2 text-xs font-mono text-purple-700 bg-purple-50 px-2 py-1 rounded w-fit border border-purple-100">
@@ -914,14 +914,14 @@ export default function Home() {
                 )}
 
                 {place.summary && (
-                  <p className="text-xs text-gray-500 mt-2 italic border-l-2 border-gray-300 pl-2">
+                  <p className="text-xs text-gray-700 mt-2 italic border-l-2 border-gray-300 pl-2">
                     {place.summary}
                   </p>
                 )}
 
                 <div className="flex items-center mt-2 gap-2 mb-3">
                   <span className="text-yellow-500 text-sm font-medium">★ {place.rating || 'N/A'}</span>
-                  <span className="text-gray-400 text-xs">({place.user_ratings_total || 0} opinii)</span>
+                  <span className="text-gray-600 text-xs">({place.user_ratings_total || 0} opinii)</span>
                 </div>
 
                 <div className="flex gap-2 mt-3 border-t pt-3 flex-wrap">
@@ -983,7 +983,7 @@ export default function Home() {
                     ) : (
                       <div className="space-y-2">
                         {deepSearchResults[place.id].description && (
-                          <p className="text-gray-700 italic">{deepSearchResults[place.id].description}</p>
+                          <p className="text-gray-900 italic">{deepSearchResults[place.id].description}</p>
                         )}
 
                         {deepSearchResults[place.id].nip && (
@@ -996,13 +996,13 @@ export default function Home() {
                         <div className="grid grid-cols-2 gap-2 mt-2">
                           {deepSearchResults[place.id].revenue && (
                             <div className="bg-white p-2 rounded border border-indigo-100">
-                              <span className="block text-xs text-gray-500">Przychody</span>
+                              <span className="block text-xs text-gray-700">Przychody</span>
                               <span className="font-medium text-indigo-800">{deepSearchResults[place.id].revenue}</span>
                             </div>
                           )}
                           {deepSearchResults[place.id].employees && (
                             <div className="bg-white p-2 rounded border border-indigo-100">
-                              <span className="block text-xs text-gray-500">Pracownicy</span>
+                              <span className="block text-xs text-gray-700">Pracownicy</span>
                               <span className="font-medium text-indigo-800">{deepSearchResults[place.id].employees}</span>
                             </div>
                           )}
@@ -1010,7 +1010,7 @@ export default function Home() {
 
                         {deepSearchResults[place.id].keyPeople && deepSearchResults[place.id].keyPeople.length > 0 && (
                           <div className="mt-2">
-                            <span className="block text-xs text-gray-500 mb-1">Kluczowe Osoby:</span>
+                            <span className="block text-xs text-gray-700 mb-1">Kluczowe Osoby:</span>
                             <ul className="list-disc list-inside text-gray-800">
                               {deepSearchResults[place.id].keyPeople.map((person: string, idx: number) => (
                                 <li key={idx}>{person}</li>
@@ -1041,11 +1041,11 @@ export default function Home() {
                         <h5 className="font-bold text-indigo-800 text-xs uppercase mb-2">Dane Rejestrowe (GUS/CEIDG)</h5>
                         <div className="grid grid-cols-1 gap-2 text-xs">
                           {deepSearchResults[place.id].gus.regon && (
-                            <div><span className="text-gray-500">REGON:</span> <span className="font-mono">{deepSearchResults[place.id].gus.regon}</span></div>
+                            <div><span className="text-gray-700">REGON:</span> <span className="font-mono">{deepSearchResults[place.id].gus.regon}</span></div>
                           )}
                           {deepSearchResults[place.id].gus.pkd && deepSearchResults[place.id].gus.pkd.length > 0 && (
                             <div className="mt-1">
-                              <span className="text-gray-500 block mb-1">PKD:</span>
+                              <span className="text-gray-700 block mb-1">PKD:</span>
                               <ul className="list-disc list-inside pl-1 text-gray-700 space-y-0.5">
                                 {deepSearchResults[place.id].gus.pkd.slice(0, 3).map((code: string, i: number) => (
                                   <li key={i} className="truncate">{code}</li>

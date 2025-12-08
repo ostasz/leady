@@ -25,60 +25,64 @@ export default function DashboardWidgets() {
     ];
 
     useEffect(() => {
-        // 1. Get Location
+        // Function to fetch weather for a given point
+        const fetchWeatherForLocation = async (lat: number, lng: number, nameFallback: string) => {
+            try {
+                // Fetch Weather
+                const weatherPromise = fetch(
+                    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,precipitation,weather_code&daily=sunrise,sunset&timezone=auto`
+                ).then(res => res.json());
+
+                // Reverse Geocode (Google Maps) only if exact location
+                const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+                const geocodePromise = (apiKey && nameFallback === "Twoja lokalizacja")
+                    ? fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`)
+                        .then(res => res.json())
+                    : Promise.resolve(null);
+
+                const [weatherData, geocodeData] = await Promise.all([weatherPromise, geocodePromise]);
+
+                setWeather({
+                    temp: weatherData.current.temperature_2m,
+                    code: weatherData.current.weather_code,
+                    sunrise: weatherData.daily.sunrise[0],
+                    sunset: weatherData.daily.sunset[0]
+                });
+
+                if (geocodeData && geocodeData.results && geocodeData.results[0]) {
+                    // Try to find locality or administrative_area_level_1
+                    const addressComponents = geocodeData.results[0].address_components;
+                    const city = addressComponents.find((c: any) => c.types.includes('locality'))?.long_name
+                        || addressComponents.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name
+                        || nameFallback;
+                    setLocationName(city);
+                } else {
+                    setLocationName(nameFallback);
+                }
+            } catch (err) {
+                console.error('Data fetch error:', err);
+                setError('Nie udało się pobrać danych');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // 1. Try Geolocation
         if (!navigator.geolocation) {
-            setError('Brak wsparcia geolokalizacji');
-            setLoading(false);
+            // Fallback to Warsaw
+            fetchWeatherForLocation(52.2297, 21.0122, "Warszawa (Domyślna)");
             return;
         }
 
         navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                try {
-                    const { latitude, longitude } = position.coords;
-
-                    // 2. Fetch Weather
-                    const weatherPromise = fetch(
-                        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,precipitation,weather_code&daily=sunrise,sunset&timezone=auto`
-                    ).then(res => res.json());
-
-                    // 3. Reverse Geocode (Google Maps)
-                    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-                    const geocodePromise = apiKey
-                        ? fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`)
-                            .then(res => res.json())
-                        : Promise.resolve(null);
-
-                    const [weatherData, geocodeData] = await Promise.all([weatherPromise, geocodePromise]);
-
-                    setWeather({
-                        temp: weatherData.current.temperature_2m,
-                        code: weatherData.current.weather_code,
-                        sunrise: weatherData.daily.sunrise[0],
-                        sunset: weatherData.daily.sunset[0]
-                    });
-
-                    if (geocodeData && geocodeData.results && geocodeData.results[0]) {
-                        // Try to find locality or administrative_area_level_1
-                        const addressComponents = geocodeData.results[0].address_components;
-                        const city = addressComponents.find((c: any) => c.types.includes('locality'))?.long_name
-                            || addressComponents.find((c: any) => c.types.includes('administrative_area_level_1'))?.long_name
-                            || "Twoja lokalizacja";
-                        setLocationName(city);
-                    } else {
-                        setLocationName(`${latitude.toFixed(2)}, ${longitude.toFixed(2)}`);
-                    }
-
-                } catch (err) {
-                    console.error('Data fetch error:', err);
-                    setError('Nie udało się pobrać danych');
-                } finally {
-                    setLoading(false);
-                }
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                fetchWeatherForLocation(latitude, longitude, "Twoja lokalizacja");
             },
             () => {
-                setError('Brak dostępu do lokalizacji');
-                setLoading(false);
+                // Fallback to Warsaw on error/deny
+                console.log("Geolocation denied or failed, falling back to Warsaw");
+                fetchWeatherForLocation(52.2297, 21.0122, "Warszawa (Domyślna)");
             }
         );
 
@@ -153,20 +157,9 @@ export default function DashboardWidgets() {
     if (loading) return <div className="animate-pulse h-24 bg-gray-100 rounded-xl mb-8"></div>;
 
     // Fallback if no weather data (e.g. error)
-    if (error || !weather) return (
-        <div className="mb-8 p-6 bg-white rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
-            <div className="flex items-center gap-4">
-                <Sparkles className="w-8 h-8 text-primary" />
-                <div>
-                    <h2 className="text-xl font-bold text-gray-900">Do dzieła!</h2>
-                    <p className="text-gray-600 italic">"{quote}"</p>
-                </div>
-            </div>
-        </div>
-    );
+    // removed early return to allow energy tickers to show
 
-    const weatherInfo = getWeatherContent(weather.code);
-
+    const weatherInfo = weather ? getWeatherContent(weather.code) : null;
 
     return (
         <div className="mb-8">
@@ -176,39 +169,52 @@ export default function DashboardWidgets() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Weather Widget */}
-                <Link href="/apps/weather" className={`p-6 rounded-xl shadow-sm border flex items-center gap-4 ${weatherInfo.color} transition-all hover:shadow-md cursor-pointer`}>
-                    <div className="bg-white p-3 rounded-full shadow-sm">
-                        {weatherInfo.icon}
-                    </div>
-                    <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                                <span className="text-2xl font-bold text-gray-900">{weather.temp}°C</span>
-                                <div className="hidden sm:flex items-center gap-1">
-                                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/50 border border-gray-200 text-gray-600">Teraz</span>
-                                    {locationName && <span className="text-xs font-bold text-gray-500">{locationName}</span>}
+                {weather && weatherInfo ? (
+                    <Link href="/apps/weather" className={`p-6 rounded-xl shadow-sm border flex items-center gap-4 ${weatherInfo.color} transition-all hover:shadow-md cursor-pointer`}>
+                        <div className="bg-white p-3 rounded-full shadow-sm">
+                            {weatherInfo.icon}
+                        </div>
+                        <div className="flex-1">
+                            <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl font-bold text-gray-900">{weather.temp}°C</span>
+                                    <div className="hidden sm:flex items-center gap-1">
+                                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/50 border border-gray-200 text-gray-600">Teraz</span>
+                                        {locationName && <span className="text-xs font-bold text-gray-500">{locationName}</span>}
+                                    </div>
+                                </div>
+                                {/* Sunrise/Sunset */}
+                                <div className="flex gap-3 text-xs text-gray-500 font-medium">
+                                    <div className="flex items-center gap-1" title="Wschód słońca">
+                                        <Sunrise size={14} className="text-orange-400" />
+                                        {formatTime(weather.sunrise)}
+                                    </div>
+                                    <div className="flex items-center gap-1" title="Zachód słońca">
+                                        <Sunset size={14} className="text-indigo-400" />
+                                        {formatTime(weather.sunset)}
+                                    </div>
                                 </div>
                             </div>
-                            {/* Sunrise/Sunset */}
-                            <div className="flex gap-3 text-xs text-gray-500 font-medium">
-                                <div className="flex items-center gap-1" title="Wschód słońca">
-                                    <Sunrise size={14} className="text-orange-400" />
-                                    {formatTime(weather.sunrise)}
-                                </div>
-                                <div className="flex items-center gap-1" title="Zachód słońca">
-                                    <Sunset size={14} className="text-indigo-400" />
-                                    {formatTime(weather.sunset)}
-                                </div>
+                            <div className="sm:hidden mb-2">
+                                {locationName && <span className="text-xs font-bold text-gray-500">{locationName}</span>}
                             </div>
+                            <p className="text-gray-700 font-medium leading-tight text-sm sm:text-base">
+                                {weatherInfo.text}
+                            </p>
                         </div>
-                        <div className="sm:hidden mb-2">
-                            {locationName && <span className="text-xs font-bold text-gray-500">{locationName}</span>}
+                    </Link>
+                ) : (
+                    <div className="p-6 rounded-xl shadow-sm border border-gray-100 bg-gray-50 flex items-center justify-center text-center relative overflow-hidden h-full">
+                        <div className="absolute inset-0 bg-gray-50 flex items-center justify-center opacity-50">
+                            <Cloud className="w-32 h-32 text-gray-200" />
                         </div>
-                        <p className="text-gray-700 font-medium leading-tight text-sm sm:text-base">
-                            {weatherInfo.text}
-                        </p>
+                        <div className="relative z-10">
+                            <Cloud className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                            <p className="text-gray-500 text-sm font-medium">Pogoda niedostępna</p>
+                            <p className="text-xs text-gray-400 mt-1">{error || 'Brak uprawnień lokalizacji'}</p>
+                        </div>
                     </div>
-                </Link>
+                )}
 
                 {/* Motivation Widget */}
                 <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-sm text-white flex items-center gap-4 relative overflow-hidden group">

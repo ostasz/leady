@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
 import { GusClient } from '@/lib/gus-client';
+import { logUsage } from '@/lib/usage';
 
 const API_KEY = process.env.GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -90,6 +91,7 @@ WAŻNE: Zwróć TYLKO czysty JSON, bez markdown.
 `;
 
         const result = await searchChat.sendMessage(prompt);
+        await logUsage(uid, 'gemini', 'generate_content', 1, { query: name }); // Log Gemini usage
         const response = result.response;
         const text = response.text();
 
@@ -115,6 +117,7 @@ WAŻNE: Zwróć TYLKO czysty JSON, bez markdown.
             if (cleanNip.length === 10) {
                 console.log(`[DeepSearch] Searching GUS by NIP: ${cleanNip}`);
                 gusData = await gusClient.searchByNip(cleanNip);
+                await logUsage(uid, 'gus', 'search', 1, { type: 'nip', query: cleanNip });
             }
         }
 
@@ -123,6 +126,7 @@ WAŻNE: Zwróć TYLKO czysty JSON, bez markdown.
             const city = extractCity(address);
             console.log(`[DeepSearch] Searching GUS by Name: "${name}", City: "${city}"`);
             gusData = await gusClient.searchByName(name, city);
+            await logUsage(uid, 'gus', 'search', 1, { type: 'name', query: name });
         }
 
         // Merge GUS data

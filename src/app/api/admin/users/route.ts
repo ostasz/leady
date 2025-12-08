@@ -34,7 +34,8 @@ export async function GET(request: Request) {
                 isBlocked: data.isBlocked,
                 searchCount: data.searchCount,
                 lastLogin: data.lastLogin?.toDate?.()?.toISOString() || null,
-                createdAt: data.createdAt?.toDate?.()?.toISOString() || null
+                createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
+                usageStats: data.usageStats
             };
         });
 
