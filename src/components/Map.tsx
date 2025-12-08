@@ -1,6 +1,6 @@
 'use client';
 
-import { Map as GoogleMap, Marker, useMap, MapMouseEvent } from '@vis.gl/react-google-maps';
+import { Map as GoogleMap, AdvancedMarker, Pin, useMap, MapMouseEvent } from '@vis.gl/react-google-maps';
 import { useEffect } from 'react';
 
 interface MapProps {
@@ -52,9 +52,10 @@ export default function Map({ center, markers, routePath, onMapClick, onMarkerCl
             disableDefaultUI={false}
             className="w-full h-full"
             onClick={onMapClick}
+            mapId={'DEMO_MAP_ID'} // Required for AdvancedMarker
         >
             {markers.map(marker => (
-                <Marker
+                <AdvancedMarker
                     key={marker.id}
                     position={marker.location}
                     title={marker.name}
@@ -63,13 +64,12 @@ export default function Map({ center, markers, routePath, onMapClick, onMarkerCl
                 />
             ))}
             {selectedLocation && (
-                <Marker
+                <AdvancedMarker
                     position={selectedLocation}
                     title="Wybrany punkt"
-                    icon={{
-                        url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
-                    }}
-                />
+                >
+                    <Pin background={'#22ccff'} borderColor={'#1e88e5'} glyphColor={'#0044ff'} />
+                </AdvancedMarker>
             )}
         </GoogleMap>
     );

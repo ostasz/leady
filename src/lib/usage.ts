@@ -16,17 +16,12 @@ export interface UsageLog {
 // Pricing Table (Approximate USD micros)
 const PRICE_TABLE: Record<string, number> = {
     // Google Maps
-    'google_maps:text_search': 35000, // $35.00 / 1000 = $0.035
-    'google_maps:place_details': 17000, // $17.00 / 1000 = $0.017
+    'google_maps:text_search': 32000, // $32.00 / 1000 = $0.032 (Text Search ID Only)
+    'google_maps:place_details': 17000, // $17.00 / 1000 = $0.017 (Contact Data)
     'google_maps:nearby_search': 32000, // $32.00 / 1000 = $0.032
     'google_maps:geocoding': 5000,    // $5.00 / 1000 = $0.005
     'google_maps:directions': 5000,   // $5.00 / 1000 = $0.005 (Basic)
 
-    // Gemini (Flash) - Per 1k tokens approx
-    // Input: $0.075 / 1M = $0.000075 / 1k tokens = 0.075 micros / token
-    // Output: $0.30 / 1M = $0.0003 / 1k tokens = 0.3 micros / token
-    // Let's use simplified per-call cost for now if token counts aren't easy, 
-    // or per-token if we pass quantity as tokens.
     // Assuming 'quantity' for Gemini is "1 call" for now to simplify, or we can be precise.
     // Let's assume average call is ~1000 input + ~500 output tokens.
     // Cost ~= 75 micros + 150 micros = 225 micros.
