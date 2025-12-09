@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from './AuthProvider';
 import { useEffect, useState } from 'react';
-import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts'; // Use Recharts like FuturesTicker
+import { AreaChart, Area, YAxis } from 'recharts'; // Use Recharts like FuturesTicker
 import { Activity, TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, ExternalLink } from 'lucide-react';
 import { EnergyPriceEntry } from '@/types/energy-prices';
 
@@ -101,25 +101,23 @@ export default function RDNTicker() {
 
                 {/* Sparkline */}
                 <div className="h-16 w-32">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={graphData}>
-                            <defs>
-                                <linearGradient id="gradient-rdn" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor={chartColor} stopOpacity={0.5} />
-                                    <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <Area
-                                type="monotone"
-                                dataKey="price"
-                                stroke={chartColor}
-                                strokeWidth={2}
-                                fill="url(#gradient-rdn)"
-                                isAnimationActive={false}
-                            />
-                            <YAxis domain={['dataMin', 'dataMax']} hide />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                    <AreaChart width={128} height={64} data={graphData}>
+                        <defs>
+                            <linearGradient id="gradient-rdn" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={chartColor} stopOpacity={0.5} />
+                                <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <Area
+                            type="monotone"
+                            dataKey="price"
+                            stroke={chartColor}
+                            strokeWidth={2}
+                            fill="url(#gradient-rdn)"
+                            isAnimationActive={false}
+                        />
+                        <YAxis domain={['dataMin', 'dataMax']} hide />
+                    </AreaChart>
                 </div>
             </div>
 

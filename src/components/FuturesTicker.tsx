@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, Minus, Zap, ExternalLink } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
+import { AreaChart, Area, YAxis } from 'recharts';
 
 interface FutureData {
     date: string;
@@ -107,25 +107,23 @@ export default function FuturesTicker() {
 
                                 {/* Sparkline */}
                                 <div className="h-16 w-24">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <AreaChart data={history}>
-                                            <defs>
-                                                <linearGradient id={`gradient-${year}`} x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="0%" stopColor={chartColor} stopOpacity={0.5} />
-                                                    <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <Area
-                                                type="monotone"
-                                                dataKey="price"
-                                                stroke={chartColor}
-                                                strokeWidth={2}
-                                                fill={`url(#gradient-${year})`}
-                                                isAnimationActive={false}
-                                            />
-                                            <YAxis domain={['dataMin', 'dataMax']} hide />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
+                                    <AreaChart width={96} height={64} data={history}>
+                                        <defs>
+                                            <linearGradient id={`gradient-${year}`} x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor={chartColor} stopOpacity={0.5} />
+                                                <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <Area
+                                            type="monotone"
+                                            dataKey="price"
+                                            stroke={chartColor}
+                                            strokeWidth={2}
+                                            fill={`url(#gradient-${year})`}
+                                            isAnimationActive={false}
+                                        />
+                                        <YAxis domain={['dataMin', 'dataMax']} hide />
+                                    </AreaChart>
                                 </div>
                             </div>
                         </div>
