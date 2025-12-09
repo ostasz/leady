@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { TrendingUp, TrendingDown, Minus, Zap, ExternalLink } from 'lucide-react';
-import { AreaChart, Area, YAxis, Tooltip, Line } from 'recharts';
-import { addTrendLine } from '@/lib/trend';
+import { AreaChart, Area, YAxis, Tooltip } from 'recharts';
 
 interface FutureData {
     date: string;
@@ -84,9 +83,6 @@ export default function FuturesTicker() {
                     if (change > 0) chartColor = '#22c55e'; // Green
                     if (change < 0) chartColor = '#ef4444'; // Red
 
-                    // Calculate trend data
-                    const chartData = addTrendLine(history);
-
                     return (
                         <div key={year} className="relative">
                             <div className="flex justify-between items-end mb-2">
@@ -111,7 +107,7 @@ export default function FuturesTicker() {
 
                                 {/* Sparkline */}
                                 <Link href="/apps/futures" className="h-16 w-24 cursor-pointer hover:opacity-80 transition-opacity">
-                                    <AreaChart width={96} height={64} data={chartData}>
+                                    <AreaChart width={96} height={64} data={history}>
                                         <defs>
                                             <linearGradient id={`gradient-${year}`} x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="0%" stopColor={chartColor} stopOpacity={0.5} />
@@ -126,14 +122,12 @@ export default function FuturesTicker() {
                                             fill={`url(#gradient-${year})`}
                                             isAnimationActive={false}
                                         />
-                                        <Line type="monotone" dataKey="trend" stroke="#f59e0b" strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
                                         <Tooltip
                                             content={({ active, payload }) => {
                                                 if (active && payload && payload.length) {
                                                     return (
-                                                        <div className="bg-gray-950/90 px-1.5 py-0.5 rounded text-[10px] text-gray-200 font-mono border border-gray-800 shadow-sm leading-none flex flex-col gap-0.5">
-                                                            <span style={{ color: chartColor }}>{Number(payload[0].value).toFixed(1)}</span>
-                                                            {payload[1] && <span className="text-amber-500 text-[9px] opacity-80">Trend: {Number(payload[1].value).toFixed(1)}</span>}
+                                                        <div className="bg-gray-950/90 px-1.5 py-0.5 rounded text-[10px] text-gray-200 font-mono border border-gray-800 shadow-sm leading-none">
+                                                            {Number(payload[0].value).toFixed(1)}
                                                         </div>
                                                     );
                                                 }
