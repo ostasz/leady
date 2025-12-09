@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
         const genAI = new GoogleGenerativeAI(API_KEY || '');
         const searchModel = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash-exp",
+            model: "gemini-2.5-flash-lite",
             // @ts-ignore
             tools: [{ googleSearch: {} }],
         });

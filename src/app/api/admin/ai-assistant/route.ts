@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         }
 
         const genAI = new GoogleGenerativeAI(API_KEY || '');
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-exp" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
         // Construct history from previous messages, excluding the last one which is the new prompt
         const history = messages.slice(0, -1).map((msg: any) => ({
