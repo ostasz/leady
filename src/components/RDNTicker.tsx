@@ -100,7 +100,7 @@ export default function RDNTicker() {
                 </div>
 
                 {/* Sparkline */}
-                <div className="h-16 w-32">
+                <Link href="/apps/rdn" className="h-16 w-32 cursor-pointer hover:opacity-80 transition-opacity">
                     <AreaChart width={128} height={64} data={graphData}>
                         <defs>
                             <linearGradient id="gradient-rdn" x1="0" y1="0" x2="0" y2="1">
@@ -131,7 +131,7 @@ export default function RDNTicker() {
                         />
                         <YAxis domain={['dataMin', 'dataMax']} hide />
                     </AreaChart>
-                </div>
+                </Link>
             </div>
 
             {/* Decor */}

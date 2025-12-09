@@ -106,7 +106,7 @@ export default function FuturesTicker() {
                                 </div>
 
                                 {/* Sparkline */}
-                                <div className="h-16 w-24">
+                                <Link href="/apps/futures" className="h-16 w-24 cursor-pointer hover:opacity-80 transition-opacity">
                                     <AreaChart width={96} height={64} data={history}>
                                         <defs>
                                             <linearGradient id={`gradient-${year}`} x1="0" y1="0" x2="0" y2="1">
@@ -137,7 +137,7 @@ export default function FuturesTicker() {
                                         />
                                         <YAxis domain={['dataMin', 'dataMax']} hide />
                                     </AreaChart>
-                                </div>
+                                </Link>
                             </div>
                         </div>
                     );
