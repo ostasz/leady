@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useAuth } from './AuthProvider';
 import { useEffect, useState } from 'react';
-import { AreaChart, Area, YAxis, Tooltip } from 'recharts'; // Use Recharts like FuturesTicker
+import { AreaChart, Area, YAxis, Tooltip, Line } from 'recharts'; // Use Recharts like FuturesTicker
+import { addTrendLine } from '@/lib/trend';
 import { Activity, TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, ExternalLink } from 'lucide-react';
 import { EnergyPriceEntry } from '@/types/energy-prices';
 
@@ -56,10 +57,12 @@ export default function RDNTicker() {
 
     // Prepare graph data
     // Take last 30 data points (or whatever is available if less)
-    const graphData = data.slice(-30).map(d => ({
+    const graphDataRaw = data.slice(-30).map(d => ({
         date: d.date,
         price: (d as any).avgPrice || d.price
     }));
+
+    const graphData = addTrendLine(graphDataRaw);
 
     return (
         <div className="bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-800 relative overflow-hidden text-white h-full flex flex-col justify-between">
@@ -116,12 +119,14 @@ export default function RDNTicker() {
                             fill="url(#gradient-rdn)"
                             isAnimationActive={false}
                         />
+                        <Line type="monotone" dataKey="trend" stroke="#f59e0b" strokeWidth={1} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
                         <Tooltip
                             content={({ active, payload }) => {
                                 if (active && payload && payload.length) {
                                     return (
-                                        <div className="bg-gray-950/90 px-1.5 py-0.5 rounded text-[10px] text-gray-200 font-mono border border-gray-800 shadow-sm leading-none">
-                                            {Number(payload[0].value).toFixed(1)}
+                                        <div className="bg-gray-950/90 px-1.5 py-0.5 rounded text-[10px] text-gray-200 font-mono border border-gray-800 shadow-sm leading-none flex flex-col gap-0.5">
+                                            <span style={{ color: chartColor }}>{Number(payload[0].value).toFixed(1)}</span>
+                                            {payload[1] && <span className="text-amber-500 text-[9px] opacity-80">Trend: {Number(payload[1].value).toFixed(1)}</span>}
                                         </div>
                                     );
                                 }
