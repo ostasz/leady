@@ -27,6 +27,23 @@ interface GooglePlaceResult {
     [key: string]: any;
 }
 
+
+
+// Exclusion List (Retail Chains, Petrol Stations, Fast Food, etc.)
+const EXCLUDED_CHAINS = [
+    /biedronka/i, /lidl/i, /dino/i, /zabka/i, /żabka/i, /aldi/i, /netto/i, /kaufland/i, /carrefour/i, /auchan/i, /stokrotka/i, /polomarket/i, /lewiatan/i,
+    /castorama/i, /leroy merlin/i, /obi/i, /bricomarche/i, /jula/i, /e\.leclerc/i,
+    /rossmann/i, /hebe/i, /super-pharm/i,
+    /orlen/i, /bp /i, /shell/i, /circle k/i, /moya/i, /amic/i, /lotos/i,
+    /mcdonald/i, /kfc/i, /burger king/i, /max burgers/i, /subway/i, /starbucks/i, /costa coffee/i,
+    /paczkomat/i, /inpost/i, /dpd pickup/i, /dhl pop/i,
+    /szpital/i, /przychodnia/i, /centrum medyczne/i, /apteka/i
+];
+
+function isExcluded(name: string): boolean {
+    return EXCLUDED_CHAINS.some(regex => regex.test(name));
+}
+
 // Helper for delays
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -198,16 +215,18 @@ export async function GET(request: Request) {
         }
 
         // Return basic results directly (Details on Demand model)
-        const simplifiedResults = allCombinedResults.map(place => ({
-            id: place.place_id,
-            name: place.name,
-            address: place.formatted_address || place.vicinity,
-            location: place.geometry.location,
-            rating: place.rating,
-            user_ratings_total: place.user_ratings_total,
-            types: place.types,
-            // Details (phone, website, summary) are now fetched via /api/place-details
-        }));
+        const simplifiedResults = allCombinedResults
+            .filter(place => !isExcluded(place.name)) // Apply exclusions
+            .map(place => ({
+                id: place.place_id,
+                name: place.name,
+                address: place.formatted_address || place.vicinity,
+                location: place.geometry.location,
+                rating: place.rating,
+                user_ratings_total: place.user_ratings_total,
+                types: place.types,
+                // Details (phone, website, summary) are now fetched via /api/place-details
+            }));
 
         return NextResponse.json({
             center: location,
