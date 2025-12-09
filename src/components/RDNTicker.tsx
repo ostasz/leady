@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from './AuthProvider';
 import { useEffect, useState } from 'react';
-import { AreaChart, Area, YAxis } from 'recharts'; // Use Recharts like FuturesTicker
+import { AreaChart, Area, YAxis, Tooltip } from 'recharts'; // Use Recharts like FuturesTicker
 import { Activity, TrendingUp, TrendingDown, Minus, ArrowUpRight, ArrowDownRight, ExternalLink } from 'lucide-react';
 import { EnergyPriceEntry } from '@/types/energy-prices';
 
@@ -115,6 +115,19 @@ export default function RDNTicker() {
                             strokeWidth={2}
                             fill="url(#gradient-rdn)"
                             isAnimationActive={false}
+                        />
+                        <Tooltip
+                            content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                    return (
+                                        <div className="bg-gray-950/90 px-1.5 py-0.5 rounded text-[10px] text-gray-200 font-mono border border-gray-800 shadow-sm leading-none">
+                                            {Number(payload[0].value).toFixed(1)}
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }}
+                            cursor={{ stroke: chartColor, strokeWidth: 1, opacity: 0.5 }}
                         />
                         <YAxis domain={['dataMin', 'dataMax']} hide />
                     </AreaChart>
