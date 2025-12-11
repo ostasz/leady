@@ -17,7 +17,7 @@ export default function FuturesKPI({ year, data, label }: KPIProps) {
     if (!data || data.length === 0) return null;
 
     const latest = data[data.length - 1];
-    const prev = data.length > 1 ? data[data.length - 2] : latest;
+    const prev = data[0];
 
     // Price Stats
     const change = latest.price - prev.price;
@@ -40,8 +40,8 @@ export default function FuturesKPI({ year, data, label }: KPIProps) {
                     <h2 className="text-3xl font-bold">{latest.price.toFixed(2)} <span className="text-base font-normal text-gray-500">PLN</span></h2>
                 </div>
                 <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-sm font-bold ${change > 0 ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
-                        change < 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                            'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                    change < 0 ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                        'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
                     }`}>
                     {change > 0 ? <TrendingUp size={16} /> :
                         change < 0 ? <TrendingDown size={16} /> : <Minus size={16} />}
@@ -66,7 +66,7 @@ export default function FuturesKPI({ year, data, label }: KPIProps) {
 
             {/* Decor */}
             <div className={`absolute -right-6 -top-6 w-32 h-32 rounded-full blur-3xl opacity-20 ${change > 0 ? 'bg-green-500' :
-                    change < 0 ? 'bg-red-500' : 'bg-cyan-500'
+                change < 0 ? 'bg-red-500' : 'bg-cyan-500'
                 }`}></div>
         </div>
     );

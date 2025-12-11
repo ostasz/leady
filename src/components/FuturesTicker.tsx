@@ -74,7 +74,7 @@ export default function FuturesTicker() {
                     if (!history || history.length === 0) return null;
 
                     const latest = history[history.length - 1];
-                    const prev = history.length > 1 ? history[history.length - 2] : latest;
+                    const prev = history[0];
                     const change = latest.price - prev.price;
                     const changePercent = prev.price ? (change / prev.price) * 100 : 0;
 
