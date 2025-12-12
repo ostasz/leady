@@ -40,6 +40,7 @@ export default function LeadDetailPage() {
     const [statusValue, setStatusValue] = useState('');
     const [priorityValue, setPriorityValue] = useState('');
     const [notes, setNotes] = useState('');
+    const [nipValue, setNipValue] = useState('');
 
     useEffect(() => {
         if (authLoading) return;
@@ -62,6 +63,7 @@ export default function LeadDetailPage() {
             setStatusValue(data.lead.status);
             setPriorityValue(data.lead.priority);
             setNotes(data.lead.notes || '');
+            setNipValue(data.lead.nip || '');
         } catch (error) {
             console.error('Error fetching lead:', error);
             alert('Błąd przy pobieraniu leada');
@@ -81,7 +83,8 @@ export default function LeadDetailPage() {
                 body: JSON.stringify({
                     status: statusValue,
                     priority: priorityValue,
-                    notes: notes || null
+                    notes: notes || null,
+                    nip: nipValue || null
                 })
             });
 
@@ -171,9 +174,15 @@ export default function LeadDetailPage() {
                                 {lead.nip && (
                                     <div className="flex items-center gap-3">
                                         <Building2 size={20} className="text-gray-400 dark:text-gray-500" />
-                                        <div>
+                                        <div className="w-full">
                                             <p className="text-sm text-gray-600 dark:text-gray-400">NIP</p>
-                                            <p className="font-medium font-mono text-gray-900 dark:text-gray-100">{lead.nip}</p>
+                                            <input
+                                                type="text"
+                                                value={nipValue}
+                                                onChange={(e) => setNipValue(e.target.value)}
+                                                className="font-medium font-mono text-gray-900 dark:text-gray-100 bg-transparent border-b border-dashed border-gray-300 dark:border-gray-600 focus:border-indigo-500 outline-none w-full"
+                                                placeholder="Brak NIP"
+                                            />
                                         </div>
                                     </div>
                                 )}
@@ -306,14 +315,17 @@ export default function LeadDetailPage() {
                         </div>
 
                         {/* Notes */}
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm transition-colors">
-                            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Notatki</h2>
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg shadow-sm transition-colors border border-yellow-100 dark:border-yellow-800/30">
+                            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+                                Notatki
+                                <span className="text-xs font-normal bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded-full">Notatka</span>
+                            </h2>
                             <textarea
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 rows={8}
                                 placeholder="Dodaj notatki o tym leadzie..."
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                                className="w-full px-3 py-2 border border-yellow-200 dark:border-yellow-800/50 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-transparent resize-none bg-yellow-100/50 dark:bg-yellow-900/40 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                             />
                         </div>
                     </div>

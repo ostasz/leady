@@ -117,34 +117,46 @@ WAŻNE: Zwróć TYLKO czysty JSON.
         const searchResponse = searchResult.response;
         const responseText = searchResponse.text();
 
+        console.log(`[AI Search] Raw response length: ${responseText.length}`);
+
         let companiesFromModel: any[] = [];
         let summary = '';
 
         try {
-            const cleanJson = responseText
-                .replace(/```json\n?/g, '')
-                .replace(/```\n?/g, '')
-                .trim();
+            // Helper to extract JSON from potentially messy output
+            const extractJson = (text: string) => {
+                const firstOpen = text.indexOf('{');
+                const lastClose = text.lastIndexOf('}');
+                if (firstOpen !== -1 && lastClose !== -1) {
+                    return text.substring(firstOpen, lastClose + 1);
+                }
+                return text;
+            };
+
+            const cleanJson = extractJson(responseText);
+            console.log(`[AI Search] JSON Candidate length: ${cleanJson.length}`);
 
             const parsed = JSON.parse(cleanJson);
             companiesFromModel = parsed.companies || [];
             summary = parsed.summary || '';
 
+            console.log(`[AI Search] Parsed companies: ${companiesFromModel.length}`);
+
             // Backend Filtering (Double Check)
+            const initialCount = companiesFromModel.length;
             companiesFromModel = companiesFromModel.filter(company => {
                 const score = company.energy_intensity_score || 0;
                 const fit = company.lead_fit_score || 0;
 
-                // Filter out duplicates based on name (simple normalization)
-                // This is a basic check, ideally we'd check against DB or more complex logic
-
-                // Filter by score as requested (reject 3 and lower means keep >= 4)
+                // Allow slightly lower threshold if we have very few results, or strictly adhere?
+                // Adhering strictly as per prompt instructions
                 return score >= 4 && fit >= 50;
             });
+            console.log(`[AI Search] Filtered companies: ${companiesFromModel.length} (out of ${initialCount})`);
 
         } catch (e) {
-            console.error('Cannot parse model JSON', e);
-            console.log('Response text:', responseText);
+            console.error('[AI Search] Cannot parse model JSON', e);
+            console.log('[AI Search] Failed Response text:', responseText);
             companiesFromModel = [];
         }
 
