@@ -4,6 +4,7 @@ import { APIProvider, Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.g
 import { format, addDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { MapPin, Sparkles, Navigation } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
@@ -14,6 +15,7 @@ interface MapViewProps {
 
 // Internal component that consumes the APIProvider context
 const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
+    const { user } = useAuth();
     // Determine which day to show.
     // Logic: Default to "Today" if it falls within the current week view (Mon-Fri).
     // Otherwise (e.g. weekend or different week), default to Monday of that week.
@@ -55,69 +57,97 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
     const [startLocation, setStartLocation] = useState('Biuro (Warszawa)');
     const [endLocation, setEndLocation] = useState('Biuro (Warszawa)');
 
-    // Load settings from local storage on mount (both settings and order)
+    const [startLocation, setStartLocation] = useState('Biuro (Warszawa)');
+    const [endLocation, setEndLocation] = useState('Biuro (Warszawa)');
+
+    // Fetch settings from API when date changes
     useEffect(() => {
-        const savedSettings = localStorage.getItem('planner_route_settings');
-        if (savedSettings) {
+        if (!user) return;
+
+        let isMounted = true;
+
+        async function fetchSettings() {
             try {
-                setDailyRouteSettings(JSON.parse(savedSettings));
+                const token = await user?.getIdToken();
+                const res = await fetch(`/api/planner/settings?date=${selectedDateKey}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (isMounted) {
+                        setStartLocation(data.start || 'Biuro (Warszawa)');
+                        setEndLocation(data.end || 'Biuro (Warszawa)');
+
+                        // Update order if present
+                        if (data.order && Array.isArray(data.order)) {
+                            setDailyRouteOrder(prev => ({ ...prev, [selectedDateKey]: data.order }));
+                        } else {
+                            // Clear order if not found (or empty) so we default to raw leads
+                            setDailyRouteOrder(prev => {
+                                const next = { ...prev };
+                                delete next[selectedDateKey];
+                                return next;
+                            });
+                        }
+                    }
+                }
             } catch (e) {
-                console.error('Failed to parse route settings', e);
+                console.error('Failed to fetch settings', e);
             }
         }
 
-        const savedOrder = localStorage.getItem('planner_route_order');
-        if (savedOrder) {
-            try {
-                setDailyRouteOrder(JSON.parse(savedOrder));
-            } catch (e) {
-                console.error('Failed to parse route order', e);
-            }
-        }
-    }, []);
+        fetchSettings();
 
-    // Save settings to local storage whenever they change
-    useEffect(() => {
-        if (Object.keys(dailyRouteSettings).length > 0) {
-            localStorage.setItem('planner_route_settings', JSON.stringify(dailyRouteSettings));
-        }
-    }, [dailyRouteSettings]);
+        // Check auth only
+    }, [selectedDateKey, user]);
 
-    // Save order to local storage whenever it changes
-    useEffect(() => {
-        if (Object.keys(dailyRouteOrder).length > 0) {
-            localStorage.setItem('planner_route_order', JSON.stringify(dailyRouteOrder));
+    // Save settings to API (debounced)
+    const saveSettings = async (date: string, start: string, end: string, order?: string[]) => {
+        if (!user) return;
+        try {
+            const token = await user.getIdToken();
+            await fetch('/api/planner/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ date, start, end, order })
+            });
+        } catch (e) {
+            console.error('Failed to save settings', e);
         }
-    }, [dailyRouteOrder]);
+    };
 
     // Update local input state when selected date changes
-    useEffect(() => {
-        const settings = dailyRouteSettings[selectedDateKey];
-        if (settings) {
-            setStartLocation(settings.start);
-            setEndLocation(settings.end);
-        } else {
-            // Defaults
-            setStartLocation('Biuro (Warszawa)');
-            setEndLocation('Biuro (Warszawa)');
-        }
-    }, [selectedDateKey, dailyRouteSettings]);
+    // Remove old useEffect for local syncing
+    // useEffect(() => {
+    //     const settings = dailyRouteSettings[selectedDateKey];
+    //     if (settings) {
+    //         setStartLocation(settings.start);
+    //         setEndLocation(settings.end);
+    //     } else {
+    //         // Defaults
+    //         setStartLocation('Biuro (Warszawa)');
+    //         setEndLocation('Biuro (Warszawa)');
+    //     }
+    // }, [selectedDateKey, dailyRouteSettings]);
 
     // Handlers to update specific day settings
     const handleStartChange = (val: string) => {
         setStartLocation(val);
-        setDailyRouteSettings(prev => ({
-            ...prev,
-            [selectedDateKey]: { start: val, end: prev[selectedDateKey]?.end || endLocation }
-        }));
+        // Save immediately (or debounced, here implicitly by logic)
+        // We'll use a timer or just save. For input fields, usually debounce is better,
+        // but for simplicity let's save on blur or with a small delay if possible.
+        // Actually, let's just trigger save.
+        const currentOrder = dailyRouteOrder[selectedDateKey];
+        saveSettings(selectedDateKey, val, endLocation, currentOrder);
     };
 
     const handleEndChange = (val: string) => {
         setEndLocation(val);
-        setDailyRouteSettings(prev => ({
-            ...prev,
-            [selectedDateKey]: { start: prev[selectedDateKey]?.start || startLocation, end: val }
-        }));
+        const currentOrder = dailyRouteOrder[selectedDateKey];
+        saveSettings(selectedDateKey, startLocation, val, currentOrder);
     };
 
     const [optimizedLeads, setOptimizedLeads] = useState<Lead[]>([]);
@@ -302,6 +332,10 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
             ...prev,
             [selectedDateKey]: optimized.map(l => l.id)
         }));
+
+        // Persist to Cloud
+        const orderIds = optimized.map(l => l.id);
+        saveSettings(selectedDateKey, startLocation, endLocation, orderIds);
 
         setOptimizationSuccess(true);
         setTimeout(() => setOptimizationSuccess(false), 3000);
