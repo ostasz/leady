@@ -112,45 +112,40 @@ export default function DashboardWidgets() {
 
         if (code >= 51 && code <= 67 || code >= 80 && code <= 82) { // Rain
             return {
-                icon: <CloudRain className="w-8 h-8 text-blue-500" />,
+                icon: <CloudRain className="w-8 h-8" />,
                 text: "Opady deszczu. Weź parasol!",
-                color: "bg-blue-50 border-blue-100"
             };
         }
 
         if (code <= 3) { // Sun/Clear
             return {
                 icon: isNight
-                    ? <Moon className="w-8 h-8 text-indigo-300" />
-                    : <Sun className="w-8 h-8 text-yellow-500" />,
+                    ? <Moon className="w-8 h-8" />
+                    : <Sun className="w-8 h-8" />,
                 text: isNight
                     ? "Spokojna noc. Odpocznij przed jutrem."
                     : "Słonecznie i pogodnie. Miłego dnia!",
-                color: isNight ? "bg-indigo-50 border-indigo-100" : "bg-yellow-50 border-yellow-100"
             };
         }
 
         if (code >= 71 && code <= 77) { // Snow
             return {
-                icon: <Snowflake className="w-8 h-8 text-cyan-500" />,
+                icon: <Snowflake className="w-8 h-8" />,
                 text: "Opady śniegu. Uwaga na drogach!",
-                color: "bg-cyan-50 border-cyan-100"
             };
         }
 
         if (code >= 95) { // Thunderstorm
             return {
-                icon: <CloudLightning className="w-8 h-8 text-purple-500" />,
+                icon: <CloudLightning className="w-8 h-8" />,
                 text: "Możliwe burze. Zachowaj ostrożność.",
-                color: "bg-purple-50 border-purple-100"
             };
         }
 
         // Default
         return {
-            icon: <Cloud className="w-8 h-8 text-gray-500" />,
+            icon: <Cloud className="w-8 h-8" />,
             text: "Pochmurno, ale stabilnie.",
-            color: "bg-gray-50 border-gray-100"
         };
     };
 
@@ -170,8 +165,8 @@ export default function DashboardWidgets() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Weather Widget */}
                 {weather && weatherInfo ? (
-                    <Link href="/apps/weather" className={`p-6 rounded-xl shadow-sm border flex items-center gap-4 ${weatherInfo.color} transition-all hover:shadow-md cursor-pointer`}>
-                        <div className="bg-white p-3 rounded-full shadow-sm">
+                    <Link href="/apps/weather" className="group p-6 rounded-xl shadow-sm border border-gray-100 hover:border-primary/20 bg-white flex items-center gap-4 transition-all hover:shadow-md cursor-pointer">
+                        <div className="bg-gray-100 p-3 rounded-lg shadow-sm text-gray-600 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             {weatherInfo.icon}
                         </div>
                         <div className="flex-1">

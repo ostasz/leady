@@ -89,7 +89,7 @@ export default function Dashboard() {
                         href="/apps/leads"
                         className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             <Search size={24} />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Leady Sprzedażowe</h3>
@@ -101,9 +101,9 @@ export default function Dashboard() {
                     {/* My Leads Card */}
                     <Link
                         href="/my-leads"
-                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-indigo-500/20"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 mb-4 group-hover:scale-110 transition-transform">
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             <Briefcase size={24} />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Moje Leady</h3>
@@ -115,10 +115,10 @@ export default function Dashboard() {
                     {/* Route Planner Card */}
                     <Link
                         href="/apps/planner"
-                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-green-500/20"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
                         <div className="flex justify-between items-start">
-                            <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform">
+                            <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                                 <MapIcon size={24} />
                             </div>
                             {leadStats.total > 0 && (
@@ -143,9 +143,9 @@ export default function Dashboard() {
                     {userData?.role === 'admin' && (
                         <Link
                             href="/admin"
-                            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-purple/20"
+                            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                         >
-                            <div className="h-12 w-12 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600 mb-4 group-hover:scale-110 transition-transform">
+                            <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                                 <Shield size={24} />
                             </div>
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">Panel Administratora</h3>
@@ -159,9 +159,9 @@ export default function Dashboard() {
                     {/* Energy Prices Card (Visible to everyone) */}
                     <Link
                         href="/apps/ceny-energii"
-                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-yellow-500/20"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-yellow-50 rounded-lg flex items-center justify-center text-yellow-600 mb-4 group-hover:scale-110 transition-transform">
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             <Zap size={24} />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Obliczenie kosztu energii po RDN (FLEX)</h3>
@@ -176,9 +176,9 @@ export default function Dashboard() {
                     {userData?.role === 'admin' && (
                         <Link
                             href="/gus"
-                            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-blue-500/20"
+                            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                         >
-                            <div className="h-12 w-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 mb-4 group-hover:scale-110 transition-transform">
+                            <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                                 <Building2 size={24} />
                             </div>
                             <h3 className="text-lg font-semibold text-gray-900 mb-2">GUS Data Checker</h3>
@@ -191,9 +191,9 @@ export default function Dashboard() {
                     {/* Weather App Card (Visible to everyone) */}
                     <Link
                         href="/apps/weather"
-                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-cyan-500/20"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-cyan-50 rounded-lg flex items-center justify-center text-cyan-600 mb-4 group-hover:scale-110 transition-transform">
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             <Cloud size={24} />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Prognoza Pogody</h3>
