@@ -8,7 +8,7 @@ import { APIProvider, MapMouseEvent } from '@vis.gl/react-google-maps';
 import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
 import Link from 'next/link';
 import Map from '@/components/Map';
-import { Search, MapPin, Navigation, Sparkles, Locate, BookmarkPlus, ArrowLeft } from 'lucide-react';
+import { Search, MapPin, Navigation, Sparkles, Locate, BookmarkPlus, ArrowLeft, Route } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
@@ -497,14 +497,23 @@ export default function Home() {
             </button>
           </div>
 
-          {/* My Leads Button */}
-          <Link
-            href="/my-leads"
-            className="block w-full mb-6 bg-primary text-white py-3 px-4 rounded-lg text-center font-semibold hover:bg-primary-dark transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-          >
-            <BookmarkPlus size={18} />
-            Moje Leady
-          </Link>
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <Link
+              href="/my-leads"
+              className="bg-primary text-white py-3 px-2 rounded-lg text-center font-semibold hover:bg-primary-dark transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-sm"
+            >
+              <BookmarkPlus size={18} />
+              Moje Leady
+            </Link>
+            <Link
+              href="/apps/planner"
+              className="bg-white text-gray-800 border border-gray-200 py-3 px-2 rounded-lg text-center font-semibold hover:bg-gray-50 hover:text-primary transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 text-sm"
+            >
+              <Route size={18} />
+              Planer Tras
+            </Link>
+          </div>
 
           {/* Search Form */}
           <form onSubmit={handleSearch} className="space-y-4 mb-8">

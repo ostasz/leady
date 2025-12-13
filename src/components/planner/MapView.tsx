@@ -3,7 +3,7 @@ import { Lead } from './types';
 import { APIProvider, Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { format, addDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { MapPin, Wand2, ExternalLink } from 'lucide-react';
+import { MapPin, Sparkles, Navigation } from 'lucide-react';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
@@ -388,18 +388,18 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                     <div className="flex gap-2">
                         <button
                             onClick={handleOptimize}
-                            className="flex-1 bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-2 rounded-lg font-medium shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2"
+                            className="flex-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white py-2 rounded-lg font-medium shadow-lg shadow-purple-500/50 hover:shadow-xl transition-all flex items-center justify-center gap-2"
                         >
-                            <Wand2 size={18} />
-                            Optimize
+                            <Sparkles size={18} />
+                            Ułóż z AI
                         </button>
 
                         <button
                             onClick={handleExportToGoogleMaps}
-                            className="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center"
+                            className="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg shadow-sm hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 transition-all flex items-center justify-center transform hover:scale-105"
                             title="Eksportuj do Google Maps"
                         >
-                            <ExternalLink size={18} />
+                            <Navigation size={18} />
                         </button>
                     </div>
                 </div>
@@ -512,8 +512,8 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                 {/* Optimization Success Toast */}
                 {optimizationSuccess && (
                     <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-2 animate-pulse">
-                        <Wand2 size={16} className="text-blue-400" />
-                        Trasa została zoptymalizowana
+                        <Sparkles size={16} className="text-purple-400" />
+                        Trasa została ułożona z AI
                     </div>
                 )}
             </div>

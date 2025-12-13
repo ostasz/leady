@@ -289,13 +289,13 @@ export default function MyLeadsPage() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {/* Search */}
                         <div className="relative">
-                            <Search className="absolute left-3 top-3 text-gray-600" size={18} />
+                            <Search className="absolute left-3 top-3 text-gray-400" size={18} />
                             <input
                                 type="text"
                                 placeholder="Szukaj firmy..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-500"
                             />
                         </div>
 
@@ -303,7 +303,7 @@ export default function MyLeadsPage() {
                         <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                         >
                             <option value="all">Wszystkie statusy</option>
                             <option value="new">Nowy</option>
@@ -316,7 +316,7 @@ export default function MyLeadsPage() {
                         <select
                             value={priorityFilter}
                             onChange={(e) => setPriorityFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                         >
                             <option value="all">Wszystkie priorytety</option>
                             <option value="high">Wysoki</option>
@@ -329,7 +329,7 @@ export default function MyLeadsPage() {
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value as any)}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
                             >
                                 <option value="date">Data</option>
                                 <option value="name">Nazwa</option>
@@ -337,7 +337,7 @@ export default function MyLeadsPage() {
                             </select>
                             <button
                                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-gray-900"
                                 title={sortOrder === 'asc' ? 'Rosnąco' : 'Malejąco'}
                             >
                                 <ArrowUpDown size={18} />

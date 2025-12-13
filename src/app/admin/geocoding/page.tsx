@@ -133,7 +133,8 @@ const GeocodingContent = () => {
     };
 
     const leadsMissingCoords = leads.filter(l => !l.latitude || !l.longitude);
-    const leadsWithAddressOnly = leadsMissingCoords.filter(l => l.address);
+    const leadsWithAddressOnly = leadsMissingCoords.filter(l => l.address && l.address.trim().length > 0);
+    const leadsMissingAddress = leadsMissingCoords.filter(l => !l.address || l.address.trim().length === 0);
 
     return (
         <div className="min-h-screen bg-gray-50 p-8">
@@ -165,10 +166,21 @@ const GeocodingContent = () => {
                                 <div className="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-100">
                                     <div className="flex items-center gap-2 text-red-700">
                                         <AlertCircle size={18} />
-                                        <span>Bez współrzędnych</span>
+                                        <span>Bez współrzędnych (Suma)</span>
                                     </div>
                                     <span className="font-bold text-red-700">{leadsMissingCoords.length}</span>
                                 </div>
+
+                                {leadsMissingAddress.length > 0 && (
+                                    <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg border border-orange-100">
+                                        <div className="flex items-center gap-2 text-orange-700">
+                                            <AlertCircle size={18} />
+                                            <span>Brak adresu (Do uzupełnienia)</span>
+                                        </div>
+                                        <span className="font-bold text-orange-700">{leadsMissingAddress.length}</span>
+                                    </div>
+                                )}
+
                                 <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg border border-blue-100">
                                     <div className="flex items-center gap-2 text-blue-700">
                                         <CheckCircle size={18} />
@@ -239,7 +251,7 @@ const GeocodingContent = () => {
                 {/* List of Missing Coords */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-                        <h3 className="font-semibold text-gray-700">Leady wymagające aktualizacji ({leadsWithAddressOnly.length})</h3>
+                        <h3 className="font-semibold text-gray-700">Lead'y wymagające uwagi ({leadsMissingCoords.length})</h3>
                     </div>
                     <div className="max-h-[400px] overflow-y-auto">
                         <table className="w-full text-sm text-left">
@@ -251,18 +263,26 @@ const GeocodingContent = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
-                                {leadsWithAddressOnly.map(lead => (
+                                {[...leadsMissingAddress, ...leadsWithAddressOnly].map(lead => (
                                     <tr key={lead.id} className="hover:bg-gray-50">
                                         <td className="px-6 py-3 font-medium text-gray-900">{lead.companyName}</td>
-                                        <td className="px-6 py-3 text-gray-600">{lead.address}</td>
+                                        <td className="px-6 py-3 text-gray-600">
+                                            {lead.address ? lead.address : <span className="text-red-400 italic">Brak adresu</span>}
+                                        </td>
                                         <td className="px-6 py-3">
-                                            <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                                                Do pobrania
-                                            </span>
+                                            {lead.address ? (
+                                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                                                    Do pobrania
+                                                </span>
+                                            ) : (
+                                                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-bold">
+                                                    Wymaga adresu
+                                                </span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
-                                {leadsWithAddressOnly.length === 0 && (
+                                {leadsMissingCoords.length === 0 && (
                                     <tr>
                                         <td colSpan={3} className="px-6 py-8 text-center text-gray-400">
                                             Wszystkie leady mają poprawne współrzędne.

@@ -174,7 +174,7 @@ export default function PlannerPage() {
                         onClick={() => setViewMode('calendar')}
                         className={`
                             flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all
-                            ${viewMode === 'calendar' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}
+                            ${viewMode === 'calendar' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}
                         `}
                     >
                         <Calendar size={16} />
@@ -184,7 +184,7 @@ export default function PlannerPage() {
                         onClick={() => setViewMode('map')}
                         className={`
                             flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all
-                            ${viewMode === 'map' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}
+                            ${viewMode === 'map' ? 'bg-white text-primary shadow-sm' : 'text-gray-500 hover:text-gray-700'}
                         `}
                     >
                         <MapIcon size={16} />
@@ -222,7 +222,7 @@ export default function PlannerPage() {
                 {mounted && createPortal(
                     <DragOverlay>
                         {activeDragLead && (
-                            <div className="bg-white p-3 rounded-lg shadow-xl border-2 border-blue-500 opacity-90 w-[250px] rotate-3 cursor-grabbing">
+                            <div className="bg-white p-3 rounded-lg shadow-xl border-2 border-primary opacity-90 w-[250px] rotate-3 cursor-grabbing">
                                 <div className="font-medium text-sm text-gray-900">{activeDragLead.companyName}</div>
                                 <div className="text-xs text-gray-500">{activeDragLead.address}</div>
                             </div>
