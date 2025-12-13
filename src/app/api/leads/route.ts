@@ -137,7 +137,10 @@ export async function POST(request: Request) {
             socials,
             description,
             technologies = [],
-            openingHours
+            openingHours,
+            scheduledDate,
+            latitude,
+            longitude
         } = body;
 
         if (!companyName) {
@@ -163,6 +166,9 @@ export async function POST(request: Request) {
             description: description || null,
             technologies,
             openingHours: openingHours || null,
+            scheduledDate: scheduledDate || null,
+            latitude: latitude || null,
+            longitude: longitude || null,
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now()
         };

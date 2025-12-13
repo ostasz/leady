@@ -4,7 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { Search, Shield, LogOut, User, Building2, Zap, Cloud, Briefcase } from 'lucide-react';
+import { Search, Shield, LogOut, User, Building2, Zap, Cloud, Briefcase, Map as MapIcon } from 'lucide-react';
 import DashboardWidgets from '@/components/DashboardWidgets';
 
 export default function Dashboard() {
@@ -87,6 +87,20 @@ export default function Dashboard() {
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Moje Leady</h3>
                         <p className="text-gray-500 text-sm">
                             Baza zapisanych klientów, statusy i notatki.
+                        </p>
+                    </Link>
+
+                    {/* Route Planner Card */}
+                    <Link
+                        href="/apps/planner"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-green-500/20"
+                    >
+                        <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform">
+                            <MapIcon size={24} />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Planer Tras</h3>
+                        <p className="text-gray-500 text-sm">
+                            Kalendarz spotkań, optymalizacja trasy i mapa.
                         </p>
                     </Link>
 

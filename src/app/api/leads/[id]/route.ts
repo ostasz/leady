@@ -128,6 +128,7 @@ export async function PATCH(
                         if (body.phone !== undefined) updateData.phone = body.phone;
                         if (body.website !== undefined) updateData.website = body.website;
                         if (body.nip !== undefined) updateData.nip = body.nip;
+                        if (body.scheduledDate !== undefined) updateData.scheduledDate = body.scheduledDate;
 
                         await adminLeadRef.update(updateData);
 
@@ -160,6 +161,7 @@ export async function PATCH(
         if (body.phone !== undefined) updateData.phone = body.phone;
         if (body.website !== undefined) updateData.website = body.website;
         if (body.nip !== undefined) updateData.nip = body.nip;
+        if (body.scheduledDate !== undefined) updateData.scheduledDate = body.scheduledDate; // Allow clearing with null
 
         await leadRef.update(updateData);
 

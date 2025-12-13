@@ -140,6 +140,8 @@ export default function Home() {
         address: placeDetails.address,
         phone: placeDetails.phone,
         website: placeDetails.website,
+        latitude: placeDetails.geometry?.location?.lat || placeDetails.location?.lat,
+        longitude: placeDetails.geometry?.location?.lng || placeDetails.location?.lng,
         nip: deepData?.nip,
         regon: deepData?.gus?.regon,
         pkd: deepData?.gus?.pkd,
