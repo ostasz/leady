@@ -531,13 +531,10 @@ export default function Home() {
                         e.preventDefault();
                         if (filteredProfiles.length > 0) {
                           setSelectedProfiles([filteredProfiles[0].id]);
-                          // Optional: Clear search or keep it? Keeping it lets user see what they typed.
-                          // But maybe better to clear if they want to search again?
-                          // Let's keep it for now, user can clear.
                         }
                       }
                     }}
-                    className="w-full p-2 pl-8 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary"
+                    className="w-full p-2 pl-8 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary text-gray-900"
                   />
                   <Search className="absolute left-2 top-2.5 text-gray-400" size={14} />
                 </div>
@@ -546,11 +543,11 @@ export default function Home() {
                   <select
                     value={selectedProfiles[0] || ''}
                     onChange={(e) => setSelectedProfiles([e.target.value as ProfileKey])}
-                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm"
+                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm text-gray-900 bg-white"
                     size={5} // Show multiple options to make it easier to browse
                   >
                     {filteredProfiles.map((profile) => (
-                      <option key={profile.id} value={profile.id} className="py-1">
+                      <option key={profile.id} value={profile.id} className="py-1 text-gray-900">
                         {profile.label}
                       </option>
                     ))}

@@ -15,7 +15,7 @@ export const PlannerSidebar: React.FC<PlannerSidebarProps> = ({ leads }) => {
     return (
         <div
             ref={setNodeRef}
-            className={`w-64 bg-gray-50 border-r border-gray-200 flex flex-col shrink-0 transition-colors h-[calc(100vh-64px)] overflow-hidden hidden lg:flex ${isOver ? 'bg-blue-50 ring-2 ring-inset ring-blue-300' : ''}`}
+            className={`w-full lg:w-64 bg-gray-50 border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col shrink-0 transition-colors h-48 lg:h-[calc(100vh-64px)] overflow-hidden ${isOver ? 'bg-blue-50 ring-2 ring-inset ring-blue-300' : ''}`}
         >
             <div className="p-4 border-b border-gray-200 bg-white">
                 <h2 className="font-semibold text-gray-700">Nieprzypisane Lead'y</h2>

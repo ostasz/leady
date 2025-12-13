@@ -129,6 +129,8 @@ export async function PATCH(
                         if (body.website !== undefined) updateData.website = body.website;
                         if (body.nip !== undefined) updateData.nip = body.nip;
                         if (body.scheduledDate !== undefined) updateData.scheduledDate = body.scheduledDate;
+                        if (body.latitude !== undefined) updateData.latitude = body.latitude;
+                        if (body.longitude !== undefined) updateData.longitude = body.longitude;
 
                         await adminLeadRef.update(updateData);
 
@@ -162,6 +164,8 @@ export async function PATCH(
         if (body.website !== undefined) updateData.website = body.website;
         if (body.nip !== undefined) updateData.nip = body.nip;
         if (body.scheduledDate !== undefined) updateData.scheduledDate = body.scheduledDate; // Allow clearing with null
+        if (body.latitude !== undefined) updateData.latitude = body.latitude;
+        if (body.longitude !== undefined) updateData.longitude = body.longitude;
 
         await leadRef.update(updateData);
 

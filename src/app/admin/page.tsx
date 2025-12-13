@@ -3,7 +3,7 @@
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Trash2, Shield, User, DollarSign, Sparkles, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, Shield, User, DollarSign, Sparkles, ArrowUpDown, ArrowUp, ArrowDown, MapPin } from 'lucide-react';
 
 export default function AdminPage() {
     const { user, userData, loading: authLoading, getAuthHeaders } = useAuth();
@@ -144,6 +144,13 @@ export default function AdminPage() {
                         >
                             <Shield size={18} />
                             Upload Ceny Energii
+                        </button>
+                        <button
+                            onClick={() => router.push('/admin/geocoding')}
+                            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2"
+                        >
+                            <MapPin size={18} />
+                            Geokodowanie
                         </button>
                         <button
                             onClick={() => router.push('/')}

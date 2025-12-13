@@ -199,7 +199,7 @@ export default function PlannerPage() {
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <div className="flex flex-1 overflow-hidden">
+                <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
                     {/* Sidebar (Always visible in Calendar mode, maybe hidden in Map mode if not needed? 
                         Prompt says: "Left sidebar (20%) showing a list titled 'Unscheduled Leads'".
                         In Map mode, Prompt says: "Left side (sidebar panel): Itinerary".

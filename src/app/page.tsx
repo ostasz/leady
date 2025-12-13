@@ -3,19 +3,41 @@
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Shield, LogOut, User, Building2, Zap, Cloud, Briefcase, Map as MapIcon } from 'lucide-react';
 import DashboardWidgets from '@/components/DashboardWidgets';
 
 export default function Dashboard() {
     const { user, userData, loading, signOut } = useAuth();
     const router = useRouter();
+    const [leadStats, setLeadStats] = useState({ total: 0, unscheduled: 0 });
 
     useEffect(() => {
         if (!loading && !user) {
             router.push('/login');
         }
+        if (user) {
+            fetchLeadStats();
+        }
     }, [user, loading, router]);
+
+    const fetchLeadStats = async () => {
+        try {
+            const res = await fetch('/api/leads', {
+                headers: {
+                    'Authorization': `Bearer ${await user?.getIdToken()}`
+                }
+            });
+            const data = await res.json();
+            if (data.leads) {
+                const total = data.leads.length;
+                const unscheduled = data.leads.filter((l: any) => !l.scheduledDate).length;
+                setLeadStats({ total, unscheduled });
+            }
+        } catch (e) {
+            console.error('Failed to fetch lead stats', e);
+        }
+    };
 
     if (loading) {
         return (
@@ -95,8 +117,21 @@ export default function Dashboard() {
                         href="/apps/planner"
                         className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-green-500/20"
                     >
-                        <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform">
-                            <MapIcon size={24} />
+                        <div className="flex justify-between items-start">
+                            <div className="h-12 w-12 bg-green-50 rounded-lg flex items-center justify-center text-green-600 mb-4 group-hover:scale-110 transition-transform">
+                                <MapIcon size={24} />
+                            </div>
+                            {leadStats.total > 0 && (
+                                <div className="flex flex-col items-end">
+                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Leady</span>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-lg font-bold text-green-600">{leadStats.total}</span>
+                                        <span className="text-xs text-gray-400">/</span>
+                                        <span className="text-sm font-medium text-orange-500" title="Nie zaplanowane">{leadStats.unscheduled}</span>
+                                    </div>
+                                    <span className="text-[10px] text-gray-400">zapisane / do planowania</span>
+                                </div>
+                            )}
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Planer Tras</h3>
                         <p className="text-gray-500 text-sm">
