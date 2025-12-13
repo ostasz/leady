@@ -71,6 +71,7 @@ export default function Home() {
             phone: data.phone,
             website: data.website,
             summary: data.summary, // Update summary as well if available
+            openingHours: data.openingHours,
             detailsFetched: true // dynamic flag to show we have details
           };
         }
@@ -86,7 +87,34 @@ export default function Home() {
   const handleSaveLead = async (place: any) => {
     setSavingLead(prev => ({ ...prev, [place.id]: true }));
     try {
-      // First, run Deep Search if not already done
+      // 1. Ensure we have details (Opening Hours, Website, Phone)
+      let placeDetails = { ...place }; // Clone to avoid mutating state directly unless we update it
+
+      // If we don't have openingHours or other details, fetch them now
+      // We check 'detailsFetched' flag or presence of specific fields
+      if (!place.detailsFetched) {
+        try {
+          const headers = await getAuthHeaders();
+          // Fetch details on demand
+          const detailsRes = await fetch(`/api/place-details?placeId=${place.id}`, { headers });
+          if (detailsRes.ok) {
+            const detailsData = await detailsRes.json();
+            placeDetails = {
+              ...placeDetails,
+              phone: detailsData.phone || place.phone,
+              website: detailsData.website || place.website,
+              summary: detailsData.summary || place.summary,
+              openingHours: detailsData.openingHours
+            };
+            // We could also update the UI/state here, but not strictly necessary for saving
+          }
+        } catch (detailsErr) {
+          console.error("Failed to fetch details during save", detailsErr);
+          // Proceed with what we have
+        }
+      }
+
+      // 2. Run Deep Search if not already done
       let deepData = deepSearchResults[place.id];
       if (!deepData || deepData.error) {
         const headers = await getAuthHeaders();
@@ -94,9 +122,9 @@ export default function Home() {
           method: 'POST',
           headers,
           body: JSON.stringify({
-            name: place.name,
-            address: place.address,
-            website: place.website
+            name: placeDetails.name,
+            address: placeDetails.address,
+            website: placeDetails.website
           })
         });
         const searchData = await res.json();
@@ -106,12 +134,12 @@ export default function Home() {
         }
       }
 
-      // Now save to leads
+      // 3. Save to leads
       const leadData = {
-        companyName: place.name,
-        address: place.address,
-        phone: place.phone,
-        website: place.website,
+        companyName: placeDetails.name,
+        address: placeDetails.address,
+        phone: placeDetails.phone,
+        website: placeDetails.website,
         nip: deepData?.nip,
         regon: deepData?.gus?.regon,
         pkd: deepData?.gus?.pkd,
@@ -119,8 +147,9 @@ export default function Home() {
         revenue: deepData?.revenue,
         employees: deepData?.employees,
         socials: deepData?.socials,
-        description: deepData?.description || place.summary,
-        technologies: deepData?.technologies || []
+        description: deepData?.description || placeDetails.summary,
+        technologies: deepData?.technologies || [],
+        openingHours: placeDetails.openingHours || null
       };
 
       const headers = await getAuthHeaders();

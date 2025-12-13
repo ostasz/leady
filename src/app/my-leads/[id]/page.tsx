@@ -21,6 +21,7 @@ type Lead = {
     employees: string | null;
     description: string | null;
     technologies: string[];
+    openingHours: string[] | null;
     socials: any;
     createdAt: string;
     updatedAt: string;
@@ -186,6 +187,16 @@ export default function LeadDetailPage() {
                                         </div>
                                     </div>
                                 )}
+                                {lead.openingHours && lead.openingHours.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                                        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-300 mb-2">Godziny otwarcia</h3>
+                                        <ul className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
+                                            {lead.openingHours.map((hour, idx) => (
+                                                <li key={idx}>{hour}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -331,6 +342,6 @@ export default function LeadDetailPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

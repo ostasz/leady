@@ -136,7 +136,8 @@ export async function POST(request: Request) {
             employees,
             socials,
             description,
-            technologies = []
+            technologies = [],
+            openingHours
         } = body;
 
         if (!companyName) {
@@ -161,6 +162,7 @@ export async function POST(request: Request) {
             socials: socials || null,
             description: description || null,
             technologies,
+            openingHours: openingHours || null,
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now()
         };

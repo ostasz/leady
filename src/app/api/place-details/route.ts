@@ -27,7 +27,7 @@ export async function GET(request: Request) {
         }
 
         // Fetch details specifically requested by user
-        const fields = 'formatted_phone_number,website,editorial_summary';
+        const fields = 'formatted_phone_number,website,editorial_summary,opening_hours';
         const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=${fields}&key=${API_KEY}&language=pl`;
 
         const res = await fetch(url);
@@ -46,7 +46,8 @@ export async function GET(request: Request) {
         return NextResponse.json({
             phone: result.formatted_phone_number,
             website: result.website,
-            summary: result.editorial_summary?.overview
+            summary: result.editorial_summary?.overview,
+            openingHours: result.opening_hours?.weekday_text
         });
 
     } catch (error: unknown) {
