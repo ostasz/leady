@@ -51,66 +51,55 @@ export const DraggableLead: React.FC<DraggableLeadProps> = ({ lead }) => {
             {...listeners}
             {...attributes}
             className={`
-                bg-white p-3 rounded-lg shadow-sm border border-gray-100 cursor-grab hover:shadow-md transition-all
+                bg-white p-3 rounded-xl shadow-sm border border-gray-100 cursor-grab hover:shadow-md transition-all relative overflow-hidden group
                 ${isDragging ? 'opacity-50 border-blue-400 rotate-2' : ''}
             `}
         >
-            <div className="font-medium text-sm text-gray-800 truncate" title={lead.companyName}>
-                {lead.companyName}
-            </div>
-
-            <div className="mt-1 flex flex-col gap-0.5">
-                {/* Street (Truncated) */}
-                <div className="text-[11px] text-gray-500 truncate" title={lead.address || ''}>
-                    {lead.address?.split(',')[0]}
-                </div>
-
-                {/* City (Bolded/Highlighted per user request) */}
-                {city && city !== lead.address?.split(',')[0] && (
-                    <div className="text-[11px] font-semibold text-gray-700">
-                        {city}
+            <div className="flex justify-between items-start gap-2">
+                {/* Left Side: Name & Address */}
+                <div className="flex flex-col min-w-0 flex-1">
+                    <div className="font-bold text-sm text-gray-900 truncate leading-tight" title={lead.companyName}>
+                        {lead.companyName}
                     </div>
-                )}
-
-                {/* Opening Hours (Monday) */}
-                <div className="text-[10px] mt-1">
-                    {(() => {
-                        if (!lead.openingHours || lead.openingHours.length === 0) {
-                            return <span className="text-gray-900 font-medium">Brak danych</span>;
-                        }
-
-                        // Google Places weekday_text usually starts with Monday at index 0
-                        // Format: "Monday: 09:00 – 17:00" or similar
-                        const mondayText = lead.openingHours[0];
-
-                        if (!mondayText) return <span className="text-gray-900 font-medium">Brak danych</span>;
-
-                        if (mondayText.toLowerCase().includes('zamknięte') || mondayText.toLowerCase().includes('closed')) {
-                            return <span className="text-red-600 font-bold">Zamknięte</span>;
-                        }
-
-                        // Extract time part: Remove "Poniedziałek: " or "Monday: " prefix
-                        // Simple heuristic: split by first colon, take rest? Or just regex for digits.
-                        // Example: "Poniedziałek: 08:00–16:00" -> "08:00–16:00"
-                        const timePart = mondayText.split(/:\s+/).slice(1).join(': ').trim();
-
-                        // If split didn't work (unexpected format), return whole string or fallback
-                        const displayTime = timePart || mondayText;
-
-                        return <span className="text-green-600 font-medium">{displayTime}</span>;
-                    })()}
+                    <div className="text-[11px] text-gray-500 truncate mt-0.5" title={lead.address || ''}>
+                        {lead.address?.split(',')[0]}
+                    </div>
                 </div>
 
-                {/* Priority Badge */}
-                <div className="flex justify-end mt-1">
-                    <span className={`
-                        text-[10px] px-1.5 py-0.5 rounded-full uppercase font-semibold
-                        ${lead.priority === 'high' ? 'bg-red-100 text-red-700' : 'bg-blue-50 text-blue-600'}
-                    `}>
-                        {lead.priority}
-                    </span>
+                {/* Right Side: City, Status & Badge */}
+                <div className="flex flex-col items-end shrink-0 gap-0.5">
+                    {/* City */}
+                    {city && (
+                        <div className="text-xs font-bold text-gray-800">
+                            {city}
+                        </div>
+                    )}
+
+                    {/* Opening Hours Info */}
+                    <div className="text-[10px] font-medium">
+                        {(() => {
+                            if (!lead.openingHours || lead.openingHours.length === 0) {
+                                return <span className="text-gray-400">Brak danych</span>;
+                            }
+                            const mondayText = lead.openingHours[0];
+                            if (!mondayText) return <span className="text-gray-400">Brak danych</span>;
+
+                            if (mondayText.toLowerCase().includes('zamknięte') || mondayText.toLowerCase().includes('closed')) {
+                                return <span className="text-red-600">Zamknięte</span>;
+                            }
+
+                            const timePart = mondayText.split(/:\s+/).slice(1).join(': ').trim();
+                            return <span className="text-green-600">{timePart || 'Otwarte'}</span>;
+                        })()}
+                    </div>
                 </div>
             </div>
+
+            {/* Priority Indicator Dot */}
+            <div className={`
+                absolute top-2 right-2 w-1.5 h-1.5 rounded-full
+                ${lead.priority === 'high' ? 'bg-red-500' : 'hidden'}
+            `} />
         </div>
     );
 };

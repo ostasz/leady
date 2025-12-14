@@ -649,7 +649,7 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                 {/* Mobile Back Button (Only on mobile map view) */}
                 <button
                     onClick={() => setShowMobileMap(false)}
-                    className="md:hidden absolute top-4 left-4 bg-white p-3 rounded-full shadow-lg text-gray-700 z-50"
+                    className="md:hidden absolute top-4 right-4 bg-white p-3 rounded-full shadow-lg text-gray-600 hover:text-primary transition-colors z-50"
                 >
                     <List size={24} />
                 </button>
