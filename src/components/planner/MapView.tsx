@@ -3,7 +3,7 @@ import { Lead } from './types';
 import { APIProvider, Map, AdvancedMarker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps';
 import { format, addDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { MapPin, Sparkles, Navigation } from 'lucide-react';
+import { MapPin, Sparkles, Navigation, Locate, Map as MapIcon, List, ChevronUp, ChevronDown, Edit2 } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
@@ -51,6 +51,8 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
 
     const [isLoading, setIsLoading] = useState(false);
     const [dailyRouteOrder, setDailyRouteOrder] = useState<Record<string, string[]>>({});
+    const [showMobileMap, setShowMobileMap] = useState(false);
+    const [isSettingsCollapsed, setIsSettingsCollapsed] = useState(false);
 
     const [startLocation, setStartLocation] = useState('Biuro (Warszawa)');
     const [endLocation, setEndLocation] = useState('Biuro (Warszawa)');
@@ -388,6 +390,32 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
         }
     };
 
+    const handleUseCurrentLocation = (setter: (val: string) => void) => {
+        if (!navigator.geolocation) {
+            alert('Geolokalizacja nie jest wspierana przez Twoją przeglądarkę.');
+            return;
+        }
+
+        setIsLoading(true);
+        navigator.geolocation.getCurrentPosition(async (position) => {
+            const { latitude, longitude } = position.coords;
+            try {
+                const geocoder = new google.maps.Geocoder();
+                const res = await geocoder.geocode({ location: { lat: latitude, lng: longitude } });
+                if (res.results[0]) {
+                    setter(res.results[0].formatted_address);
+                }
+            } catch (e) {
+                console.error('Reverse geocoding failed', e);
+            } finally {
+                setIsLoading(false);
+            }
+        }, (err) => {
+            console.error('Geolocation error', err);
+            setIsLoading(false);
+        });
+    };
+
     const handleExportToGoogleMaps = () => {
         const validLeads = optimizedLeads.filter(l => (l.latitude && l.longitude) || l.address);
         if (validLeads.length === 0 && !startLocation && !endLocation) return;
@@ -412,11 +440,14 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
     const defaultCenter = { lat: 52.2297, lng: 21.0122 };
 
     return (
-        <div className="flex flex-1 h-[calc(100vh-64px)] overflow-hidden">
-            {/* Left Sidebar: Itinerary */}
-            <div className="w-1/3 min-w-[350px] bg-white border-r border-gray-200 flex flex-col">
-                {/* Day Selector */}
-                <div className="flex overflow-x-auto border-b border-gray-100 scrollbar-hide">
+        <div className="flex flex-1 h-[calc(100vh-64px)] overflow-hidden relative">
+            {/* Left Sidebar: Itinerary - Full width on mobile when map hidden */}
+            <div className={`
+                flex flex-col bg-white border-r border-gray-200 transition-all duration-300
+                ${showMobileMap ? 'hidden md:flex' : 'w-full md:w-1/3 md:min-w-[350px]'}
+            `}>
+                {/* Day Selector - Compact */}
+                <div className="flex overflow-x-auto border-b border-gray-100 scrollbar-hide py-1">
                     {days.map(date => {
                         const dateKey = format(date, 'yyyy-MM-dd');
                         const isSelected = dateKey === selectedDateKey;
@@ -426,67 +457,116 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                                 key={dateKey}
                                 onClick={() => setSelectedDateKey(dateKey)}
                                 className={`
-                                    flex-1 py-3 text-center min-w-[70px] border-b-2 transition-colors
+                                    flex-1 py-2 text-center min-w-[60px] border-b-2 transition-colors
                                     ${isSelected ? 'border-blue-600 bg-blue-50/50' : 'border-transparent hover:bg-gray-50'}
                                 `}
                             >
-                                <div className="text-xs font-medium text-gray-500 uppercase">{format(date, 'EEE', { locale: pl })}</div>
-                                <div className={`font-bold ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
+                                <div className="text-[10px] font-medium text-gray-400 uppercase leading-none mb-1">{format(date, 'EEE', { locale: pl })}</div>
+                                <div className={`text-sm font-bold leading-none ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
                                     {format(date, 'd.MM')}
                                 </div>
-                                {count > 0 && (
-                                    <div className="text-[10px] text-gray-400 mt-1">{count} pkt</div>
+                                {count > 0 && isSelected && (
+                                    <div className="w-1 h-1 rounded-full bg-blue-500 mx-auto mt-1" />
                                 )}
                             </button>
                         )
                     })}
                 </div>
 
-                {/* Route Controls */}
-                <div className="p-4 space-y-4 border-b border-gray-100">
-                    <div className="space-y-3">
-                        <div className="space-y-1">
-                            <label className="text-[10px] uppercase font-bold text-gray-500">Początek trasy</label>
-                            <input
-                                type="text"
-                                value={startLocation}
-                                onChange={(e) => handleStartChange(e.target.value)}
-                                className="w-full text-sm font-medium text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                            />
-                        </div>
-
-                        <div className="space-y-1">
-                            <label className="text-[10px] uppercase font-bold text-gray-500">Koniec trasy</label>
-                            <input
-                                type="text"
-                                value={endLocation}
-                                onChange={(e) => handleEndChange(e.target.value)}
-                                className="w-full text-sm font-medium text-gray-900 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                        <button
-                            onClick={handleOptimize}
-                            className="flex-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white py-2 rounded-lg font-medium shadow-lg shadow-purple-500/50 hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                <div className="border-b border-gray-100 bg-white z-10 shadow-sm">
+                    {/* Collapsed Header */}
+                    {isSettingsCollapsed ? (
+                        <div
+                            className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                            onClick={() => setIsSettingsCollapsed(false)}
                         >
-                            <Sparkles size={18} />
-                            Ułóż z AI
-                        </button>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] uppercase text-gray-400 font-bold tracking-wider">Trasa</span>
+                                <div className="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                                    <span className="truncate max-w-[120px]">{startLocation.split(',')[0]}</span>
+                                    <span className="text-gray-400">→</span>
+                                    <span className="truncate max-w-[120px]">{endLocation.split(',')[0]}</span>
+                                </div>
+                            </div>
+                            <button className="p-2 text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100">
+                                <Edit2 size={16} />
+                            </button>
+                        </div>
+                    ) : (
+                        /* Expanded Controls */
+                        <div className="p-4 space-y-4 relative">
+                            <button
+                                onClick={() => setIsSettingsCollapsed(true)}
+                                className="absolute top-2 right-4 text-gray-400 hover:text-gray-600"
+                            >
+                                <ChevronUp size={20} />
+                            </button>
 
-                        <button
-                            onClick={handleExportToGoogleMaps}
-                            className="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg shadow-sm hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 transition-all flex items-center justify-center transform hover:scale-105"
-                            title="Eksportuj do Google Maps"
-                        >
-                            <Navigation size={18} />
-                        </button>
-                    </div>
+                            <div className="space-y-3 pt-2">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] uppercase font-bold text-gray-500">Początek trasy</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={startLocation}
+                                            onChange={(e) => handleStartChange(e.target.value)}
+                                            className="w-full text-sm font-medium text-gray-900 border border-gray-300 rounded-lg pl-3 pr-10 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                            placeholder="Wpisz adres lub użyj lokalizacji..."
+                                        />
+                                        <button
+                                            onClick={() => handleUseCurrentLocation(setStartLocation)}
+                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors p-1"
+                                            title="Użyj mojej lokalizacji"
+                                        >
+                                            <Locate size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] uppercase font-bold text-gray-500">Koniec trasy</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={endLocation}
+                                            onChange={(e) => handleEndChange(e.target.value)}
+                                            className="w-full text-sm font-medium text-gray-900 border border-gray-300 rounded-lg pl-3 pr-10 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                            placeholder="Wpisz adres lub użyj lokalizacji..."
+                                        />
+                                        <button
+                                            onClick={() => handleUseCurrentLocation(setEndLocation)}
+                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors p-1"
+                                            title="Użyj mojej lokalizacji"
+                                        >
+                                            <Locate size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={handleOptimize}
+                                    className="flex-1 bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white py-2.5 rounded-xl font-bold shadow-lg shadow-purple-500/30 hover:shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Sparkles size={18} />
+                                    Ułóż z AI
+                                </button>
+
+                                <button
+                                    onClick={handleExportToGoogleMaps}
+                                    className="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl shadow-sm hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 transition-all flex items-center justify-center"
+                                    title="Eksportuj do Google Maps"
+                                >
+                                    <Navigation size={20} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Itinerary List */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50">
                     {currentLeads.length === 0 ? (
                         <div className="text-center text-gray-400 mt-10">
                             <p>Brak zaplanowanych spotkań na ten dzień.</p>
@@ -494,67 +574,40 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                         </div>
                     ) : (
                         currentLeads.map((lead, idx) => (
-                            <div key={lead.id} className="flex gap-3 items-start">
-                                <div className="flex flex-col items-center">
-                                    <div className="w-6 h-6 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-sm">
+                            <div key={lead.id} className="group bg-white rounded-xl p-3 border border-gray-100 shadow-sm hover:shadow-md transition-all flex gap-3 items-start">
+                                <div className="flex flex-col items-center pt-1">
+                                    <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-md ring-2 ring-blue-100 group-hover:ring-blue-200 transition-all">
                                         {idx + 1}
                                     </div>
-                                    {idx < currentLeads.length - 1 && <div className="w-0.5 flex-1 bg-gray-200 my-1 min-h-[20px]" />}
                                 </div>
-                                <div className="pb-4 pt-0.5 w-full">
-                                    <div className="font-semibold text-gray-800 text-sm leading-tight">{lead.companyName}</div>
-
-                                    <div className="mt-1 flex flex-col gap-0.5">
-                                        <div className="text-xs text-gray-500 truncate">{lead.address}</div>
-                                        {/* City Logic - Inline for MapView since it's just display */}
-                                        {(() => {
-                                            if (!lead.address) return null;
-                                            const zipMatch = lead.address.match(/\d{2}-\d{3}\s+([^\,]+)/);
-                                            let city = '';
-                                            if (zipMatch && zipMatch[1]) city = zipMatch[1].trim();
-                                            else {
-                                                const parts = lead.address.split(',');
-                                                if (parts.length > 1) {
-                                                    const last = parts[parts.length - 1].trim();
-                                                    if ((last.toLowerCase() === 'polska' || last.toLowerCase() === 'poland') && parts.length > 2) {
-                                                        city = parts[parts.length - 2].trim();
-                                                    } else {
-                                                        city = last;
-                                                    }
-                                                }
-                                            }
-
-                                            // Only show if different from first part of address (simple heuristic check)
-                                            if (city && !lead.address.startsWith(city)) {
-                                                return <div className="text-[11px] font-semibold text-gray-700">{city}</div>;
-                                            }
-                                            return null;
-                                        })()}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-gray-900 text-[15px] leading-tight truncate">{lead.companyName}</span>
+                                        <span className="text-xs text-gray-500 mt-1 truncate">{lead.address}</span>
                                     </div>
 
                                     {/* Opening Hours */}
-                                    <div className="text-[10px] mt-1">
+                                    <div className="text-[11px] mt-2 flex items-center gap-2">
                                         {(() => {
                                             if (!lead.openingHours || lead.openingHours.length === 0) {
-                                                return <span className="text-gray-900 font-medium">Brak danych</span>;
+                                                return <span className="text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">Brak godzin</span>;
                                             }
 
                                             const mondayText = lead.openingHours[0];
-                                            if (!mondayText) return <span className="text-gray-900 font-medium">Brak danych</span>;
+                                            if (!mondayText) return <span className="text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">Brak godzin</span>;
 
                                             if (mondayText.toLowerCase().includes('zamknięte') || mondayText.toLowerCase().includes('closed')) {
-                                                return <span className="text-red-600 font-bold">Zamknięte</span>;
+                                                return <span className="text-red-700 bg-red-50 font-bold px-2 py-0.5 rounded-full">Zamknięte</span>;
                                             }
 
                                             const timePart = mondayText.split(/:\s+/).slice(1).join(': ').trim();
                                             const displayTime = timePart || mondayText;
 
-                                            return <span className="text-green-600 font-medium">{displayTime}</span>;
+                                            return <span className="text-green-700 bg-green-50 font-bold px-2 py-0.5 rounded-full">{displayTime}</span>;
                                         })()}
-                                    </div>
 
-                                    {!lead.latitude && !geocodingErrors[lead.id] && <span className="text-[10px] text-orange-500 block mt-1">Brak współrzędnych (Geocodowanie...)</span>}
-                                    {geocodingErrors[lead.id] && <span className="text-[10px] text-red-500 block mt-1">Nie znaleziono adresu</span>}
+                                        {geocodingErrors[lead.id] && <span className="text-red-500 font-bold">! Adres</span>}
+                                    </div>
                                 </div>
                             </div>
                         ))
@@ -562,8 +615,11 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                 </div>
             </div>
 
-            {/* Map Area */}
-            <div className="flex-1 relative bg-gray-100">
+            {/* Map Area - Hidden on mobile if NOT active */}
+            <div className={`
+                relative bg-gray-100 transition-all duration-300
+                ${showMobileMap ? 'w-full h-full block fixed inset-0 z-50 md:static md:block md:w-auto' : 'hidden md:block md:flex-1'}
+            `}>
                 <Map
                     defaultCenter={currentLeads.find(l => l.latitude)?.latitude ? { lat: currentLeads.find(l => l.latitude)!.latitude!, lng: currentLeads.find(l => l.latitude)!.longitude! } : defaultCenter}
                     defaultZoom={currentLeads.length > 0 ? 10 : 6}
@@ -586,18 +642,36 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                 </Map>
 
                 {/* Floating Info */}
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-2 rounded-lg shadow-sm text-xs font-semibold text-gray-600">
+                <div className="absolute top-20 left-4 md:top-4 md:left-auto md:right-4 bg-white/90 backdrop-blur px-3 py-2 rounded-lg shadow-sm text-xs font-semibold text-gray-600 z-10">
                     Tryb Mapy
                 </div>
 
+                {/* Mobile Back Button (Only on mobile map view) */}
+                <button
+                    onClick={() => setShowMobileMap(false)}
+                    className="md:hidden absolute top-4 left-4 bg-white p-3 rounded-full shadow-lg text-gray-700 z-50"
+                >
+                    <List size={24} />
+                </button>
+
                 {/* Optimization Success Toast */}
                 {optimizationSuccess && (
-                    <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-2 animate-pulse">
+                    <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white px-4 py-2 rounded-full shadow-lg text-sm font-medium flex items-center gap-2 animate-pulse z-20">
                         <Sparkles size={16} className="text-purple-400" />
                         Trasa została ułożona z AI
                     </div>
                 )}
             </div>
+
+            {/* FAB: Floating Action Button for Mobile Map Toggle */}
+            {!showMobileMap && (
+                <button
+                    onClick={() => setShowMobileMap(true)}
+                    className="md:hidden absolute bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-xl hover:bg-blue-700 transition-all hover:scale-110 z-50 flex items-center justify-center"
+                >
+                    <MapIcon size={28} />
+                </button>
+            )}
         </div>
     );
 };
