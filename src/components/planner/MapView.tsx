@@ -144,6 +144,7 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
     const map = useMap();
     const maps = useMapsLibrary('maps');
     const geocoding = useMapsLibrary('geocoding');
+    const geometryLib = useMapsLibrary('geometry');
     const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService | null>(null);
     const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer | null>(null);
     const [routesLibrary, setRoutesLibrary] = useState<google.maps.RoutesLibrary | null>(null);
@@ -311,19 +312,80 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
     const [optimizationSuccess, setOptimizationSuccess] = useState(false);
 
     const handleOptimize = async () => {
-        // Mock optimization: Reverse for now, but imagine it doing smart things
-        const leads = [...(scheduledLeads[selectedDateKey] || [])];
-        const optimized = [...leads].reverse();
-        setOptimizedLeads(optimized);
+        if (!geometryLib || !startLocation || optimizedLeads.length === 0) return;
+        setIsLoading(true);
 
-        // Save the new order - this updates state, which triggers the auto-save effect
-        setDailyRouteOrder(prev => ({
-            ...prev,
-            [selectedDateKey]: optimized.map(l => l.id)
-        }));
+        try {
+            const geocoder = new google.maps.Geocoder();
+            let startCoords: google.maps.LatLng | null = null;
 
-        setOptimizationSuccess(true);
-        setTimeout(() => setOptimizationSuccess(false), 3000);
+            // 1. Geocode Start Location
+            try {
+                const res = await geocoder.geocode({ address: startLocation });
+                if (res.results[0]) {
+                    startCoords = res.results[0].geometry.location;
+                }
+            } catch (e) {
+                console.warn('Geocoding start location failed', e);
+            }
+
+            // Fallback: If start geocoding fails, try to use first lead or default
+            if (!startCoords) {
+                console.warn('Could not geocode start, using Warsaw center as fallback fallback');
+                startCoords = new google.maps.LatLng(52.2297, 21.0122);
+            }
+
+            // 2. Sort using Nearest Neighbor
+            const leadsToProcess = [...optimizedLeads];
+            const sortedLeads: Lead[] = [];
+            let currentPos = startCoords;
+
+            while (leadsToProcess.length > 0) {
+                let nearestIdx = -1;
+                let minDist = Infinity;
+
+                // Find nearest unvisited lead
+                leadsToProcess.forEach((lead, idx) => {
+                    if (lead.latitude && lead.longitude) {
+                        const leadPos = new google.maps.LatLng(lead.latitude, lead.longitude);
+                        const dist = google.maps.geometry.spherical.computeDistanceBetween(currentPos, leadPos);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            nearestIdx = idx;
+                        }
+                    } else {
+                        // If no coords, treat as infinite distance (push to end)
+                    }
+                });
+
+                if (nearestIdx !== -1) {
+                    const nearest = leadsToProcess[nearestIdx];
+                    sortedLeads.push(nearest);
+                    currentPos = new google.maps.LatLng(nearest.latitude!, nearest.longitude!);
+                    leadsToProcess.splice(nearestIdx, 1);
+                } else {
+                    // Remaining leads have no coordinates
+                    sortedLeads.push(...leadsToProcess);
+                    break;
+                }
+            }
+
+            setOptimizedLeads(sortedLeads);
+
+            // Save the new order
+            setDailyRouteOrder(prev => ({
+                ...prev,
+                [selectedDateKey]: sortedLeads.map(l => l.id)
+            }));
+
+            setOptimizationSuccess(true);
+            setTimeout(() => setOptimizationSuccess(false), 3000);
+
+        } catch (e) {
+            console.error('Optimization failed', e);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleExportToGoogleMaps = () => {
