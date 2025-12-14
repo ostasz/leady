@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { EnergyPriceEntry, DailyPriceSummary, groupPricesByDate, calculateDailySummary } from '@/types/energy-prices';
 import EnergyPriceChart from '@/components/EnergyPriceChart';
 import PriceStatistics from '@/components/PriceStatistics';
-import { ArrowLeft, Calendar, Lightbulb, Upload } from 'lucide-react';
+import { ArrowLeft, Calendar, Lightbulb, Upload, Home } from 'lucide-react';
 import Link from 'next/link';
 import PriceHistoryChart from '@/components/PriceHistoryChart';
 import AverageHourlyProfileChart from '@/components/AverageHourlyProfileChart';
@@ -154,8 +154,8 @@ export default function EnergyPricesDashboard() {
             <header className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link href="/" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                            <ArrowLeft size={20} />
+                        <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-primary transition-colors" title="Wróć do Portalu">
+                            <Home size={20} />
                         </Link>
                         <h1 className="text-xl font-semibold text-gray-900">
                             Ceny Energii - Rynek Dnia Następnego

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { Search, MapPin, Calendar, Wind, Droplets, Sun, Moon, CloudRain, Cloud, CloudLightning, Snowflake, ArrowLeft, CloudSun, CloudFog } from 'lucide-react';
+import { Search, MapPin, Calendar, Wind, Droplets, Sun, Moon, CloudRain, Cloud, CloudLightning, Snowflake, CloudSun, CloudFog, Home } from 'lucide-react';
 import Link from 'next/link';
 
 export default function WeatherApp() {
@@ -191,11 +191,12 @@ export default function WeatherApp() {
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-6xl mx-auto">
                 <div className="mb-6 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors">
-                        <ArrowLeft size={20} />
-                        Wróć do Panelu
-                    </Link>
-                    <h1 className="text-2xl font-bold text-gray-800">Prognoza Pogody</h1>
+                    <div className="flex items-center gap-4">
+                        <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-primary transition-colors" title="Wróć do Portalu">
+                            <Home size={20} />
+                        </Link>
+                        <h1 className="text-2xl font-bold text-gray-800">Prognoza Pogody</h1>
+                    </div>
                 </div>
 
                 {/* Search */}
