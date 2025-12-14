@@ -8,12 +8,12 @@ import { APIProvider, MapMouseEvent } from '@vis.gl/react-google-maps';
 import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
 import Link from 'next/link';
 import Map from '@/components/Map';
-import { Search, MapPin, Navigation, Sparkles, Locate, BookmarkPlus, ArrowLeft, Route } from 'lucide-react';
+import { Search, MapPin, Navigation, Sparkles, Locate, BookmarkPlus, ArrowLeft, Route, Home as HomeIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
-export default function Home() {
+export default function LeadsPage() {
   const { user, userData, loading: authLoading, signOut, getAuthHeaders } = useAuth();
   const [mode, setMode] = useState<'radius' | 'route' | 'ai'>('radius');
   const [address1, setAddress1] = useState('');
@@ -436,31 +436,30 @@ export default function Home() {
             </div>
           )}
 
-          <div className="flex flex-col mb-6">
-            <Link href="/" className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4 text-sm font-medium transition-colors">
-              <ArrowLeft size={16} />
-              Wróć do Portalu
-            </Link>
-            <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-800">Wyszukiwanie leadów</h1>
-              {user && (
-                <div className="flex flex-col items-end">
-                  <span className="text-xs text-gray-700 font-medium">Zalogowany jako:</span>
-                  <span className="text-sm font-semibold text-gray-900">{user.displayName || user.email}</span>
-                  {userData?.role === 'admin' && (
-                    <Link href="/admin" className="text-xs text-primary hover:text-primary-dark mt-1 font-bold">
-                      Panel Administratora
-                    </Link>
-                  )}
-                  <button
-                    onClick={() => signOut()}
-                    className="text-xs text-red-500 hover:text-red-700 mt-1 underline"
-                  >
-                    Wyloguj
-                  </button>
-                </div>
-              )}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-primary transition-colors" title="Wróć do Portalu">
+                <HomeIcon size={20} />
+              </Link>
+              <h1 className="text-xl font-bold text-gray-800">Wyszukiwanie leadów</h1>
             </div>
+            {user && (
+              <div className="flex flex-col items-end">
+                <span className="text-xs text-gray-700 font-medium">Zalogowany jako:</span>
+                <span className="text-sm font-semibold text-gray-900">{user.displayName || user.email}</span>
+                {userData?.role === 'admin' && (
+                  <Link href="/admin" className="text-xs text-primary hover:text-primary-dark mt-1 font-bold">
+                    Panel Administratora
+                  </Link>
+                )}
+                <button
+                  onClick={() => signOut()}
+                  className="text-xs text-red-500 hover:text-red-700 mt-1 underline"
+                >
+                  Wyloguj
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Mode Toggle */}

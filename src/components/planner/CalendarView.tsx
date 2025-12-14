@@ -90,7 +90,10 @@ const DayColumn: React.FC<DayColumnProps> = ({ date, id, leads }) => {
 // Actually, it MUST be draggable to move between days. using same Draggable logic but styled differently?
 import { useDraggable } from '@dnd-kit/core';
 
+import { useRouter } from 'next/navigation';
+
 const ScheduledLeadItem: React.FC<{ lead: Lead }> = ({ lead }) => {
+    const router = useRouter();
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: lead.id,
         data: { ...lead, type: 'lead' }, // Same type, so we can drop anywhere
@@ -121,20 +124,27 @@ const ScheduledLeadItem: React.FC<{ lead: Lead }> = ({ lead }) => {
 
     const city = getCityFromAddress(lead.address);
 
+    const handleClick = (e: React.MouseEvent) => {
+        // Prevent navigation if we are finishing a drag - though dnd-kit usually handles this by not firing click.
+        // But for safety or if dnd-kit allows it, we can just rely on standard behavior first.
+        router.push(`/my-leads/${lead.id}?source=planner`);
+    };
+
     return (
         <div
             ref={setNodeRef}
             style={style}
             {...listeners}
             {...attributes}
+            onClick={handleClick}
             className={`
-                bg-white p-2.5 rounded shadow-sm border border-l-4 border-gray-100 cursor-grab hover:shadow-md group
+                bg-white p-2.5 rounded shadow-sm border border-l-4 border-gray-100 cursor-pointer hover:shadow-md group transition-all
                 ${isDragging ? 'opacity-30' : ''}
                 ${lead.priority === 'high' ? 'border-l-red-500' : 'border-l-primary'}
             `}
         >
             <div className="flex justify-between items-start">
-                <div className="font-semibold text-sm text-gray-800 leading-tight">{lead.companyName}</div>
+                <div className="font-semibold text-sm text-gray-800 leading-tight group-hover:text-primary transition-colors">{lead.companyName}</div>
             </div>
 
             <div className="mt-1 flex flex-col gap-0.5">

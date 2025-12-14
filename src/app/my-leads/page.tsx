@@ -19,7 +19,9 @@ import {
     Trash2,
     ArrowUpDown,
     FileText,
-    ArrowLeft
+    ArrowLeft,
+    Home,
+    MapPin
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -241,206 +243,257 @@ export default function MyLeadsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-8">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-2">
-                            <BookmarkCheck className="text-green-600" />
-                            Moje Leady
-                        </h1>
-                        <p className="text-gray-700 mt-1 font-medium">{filteredLeads.length} leadów</p>
-                    </div>
-                    <div className="flex gap-3">
-                        <Link
-                            href="/"
-                            className="flex items-center gap-2 bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-                        >
-                            <ArrowLeft size={18} />
-                            Wróć
-                        </Link>
+        <div className="flex flex-col min-h-screen bg-gray-50">
+            {/* Header - Matching Planner Style */}
+            <header className="h-16 border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 bg-white shrink-0 z-10 sticky top-0">
+                <div className="flex items-center gap-4">
+                    <Link
+                        href="/"
+                        className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
+                        title="Strona główna"
+                    >
+                        <Home size={20} />
+                    </Link>
+                    <div className="h-6 w-px bg-gray-200 hidden lg:block"></div>
+                    <h1 className="text-lg lg:text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <BookmarkCheck className="text-primary hidden lg:block" size={24} />
+                        Moje Leady
+                        <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full ml-2">
+                            {filteredLeads.length}
+                        </span>
+                    </h1>
+                </div>
+
+                <div className="flex items-center gap-2 lg:gap-3">
+                    <div className="hidden md:flex gap-2">
                         <button
                             onClick={handleExport}
-                            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                            className="p-2 text-gray-600 hover:text-primary hover:bg-green-50 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                            title="Eksportuj do CSV"
                         >
                             <Download size={18} />
-                            CSV
+                            <span className="hidden lg:inline">CSV</span>
                         </button>
                         <button
                             onClick={handleExportPDF}
-                            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                            title="Eksportuj do PDF"
                         >
                             <FileText size={18} />
-                            PDF
+                            <span className="hidden lg:inline">PDF</span>
                         </button>
-                        <Link
-                            href="/"
-                            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-                        >
-                            <Plus size={18} />
-                            Dodaj
-                        </Link>
                     </div>
+
+                    <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
+
+                    <Link
+                        href="/"
+                        className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm hover:shadow"
+                    >
+                        <Plus size={18} />
+                        <span className="hidden sm:inline">Dodaj Lead</span>
+                    </Link>
                 </div>
+            </header>
 
-                {/* Filters */}
-                <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        {/* Search */}
-                        <div className="relative">
-                            <Search className="absolute left-3 top-3 text-gray-400" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Szukaj firmy..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                            />
-                        </div>
+            {/* Main Content */}
+            <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+                <div className="max-w-7xl mx-auto space-y-6">
 
-                        {/* Status Filter */}
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                        >
-                            <option value="all">Wszystkie statusy</option>
-                            <option value="new">Nowy</option>
-                            <option value="contacted">Skontaktowany</option>
-                            <option value="interested">Zainteresowany</option>
-                            <option value="closed">Zamknięty</option>
-                        </select>
-
-                        {/* Priority Filter */}
-                        <select
-                            value={priorityFilter}
-                            onChange={(e) => setPriorityFilter(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                        >
-                            <option value="all">Wszystkie priorytety</option>
-                            <option value="high">Wysoki</option>
-                            <option value="medium">Średni</option>
-                            <option value="low">Niski</option>
-                        </select>
-
-                        {/* Sort */}
-                        <div className="flex gap-2">
-                            <select
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value as any)}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-900"
-                            >
-                                <option value="date">Data</option>
-                                <option value="name">Nazwa</option>
-                                <option value="priority">Priorytet</option>
-                            </select>
-                            <button
-                                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600 hover:text-gray-900"
-                                title={sortOrder === 'asc' ? 'Rosnąco' : 'Malejąco'}
-                            >
-                                <ArrowUpDown size={18} />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Leads List */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredLeads.map((lead) => (
-                        <div key={lead.id} className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                            {/* Header */}
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex-1">
-                                    <h3 className="text-lg font-bold text-gray-800 mb-2">{lead.companyName}</h3>
-                                    <div className="flex gap-2 mb-3">
-                                        {getStatusBadge(lead.status)}
-                                        {getPriorityBadge(lead.priority)}
-                                    </div>
-                                </div>
+                    {/* Filters - Cleaner Look */}
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                            {/* Search - Larger Area */}
+                            <div className="md:col-span-12 lg:col-span-5 relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                <input
+                                    type="text"
+                                    placeholder="Szukaj po nazwie firmy..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border-0 rounded-lg focus:ring-2 focus:ring-primary focus:bg-white transition-all text-sm"
+                                />
                             </div>
 
-                            {/* Details */}
-                            <div className="space-y-2 text-sm text-gray-700 mb-4">
-                                {lead.address && (
-                                    <div className="flex items-start gap-2">
-                                        <Building2 size={16} className="mt-0.5 flex-shrink-0" />
-                                        <span className="break-words">{lead.address}</span>
-                                    </div>
-                                )}
-                                {lead.phone && (
-                                    <div className="flex items-center gap-2">
-                                        <Phone size={16} />
-                                        <a href={`tel:${lead.phone}`} className="text-indigo-600 hover:underline">
-                                            {lead.phone}
-                                        </a>
-                                    </div>
-                                )}
-                                {lead.website && (
-                                    <div className="flex items-center gap-2">
-                                        <Globe size={16} />
-                                        <a href={lead.website} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline truncate">
-                                            {lead.website}
-                                        </a>
-                                    </div>
-                                )}
-                                {lead.nip && (
-                                    <div className="text-xs bg-purple-50 px-2 py-1 rounded inline-block">
-                                        <span className="font-semibold">NIP:</span> {lead.nip}
-                                    </div>
-                                )}
-                                {/* Show owner for admin */}
-                                {userData?.role === 'admin' && lead.ownerEmail && (
-                                    <div className="text-xs bg-blue-50 px-2 py-1 rounded inline-block mt-2">
-                                        <span className="font-semibold">Właściciel:</span> {lead.ownerEmail}
-                                    </div>
-                                )}
-                            </div>
+                            {/* Filters Group */}
+                            <div className="md:col-span-12 lg:col-span-7 flex flex-wrap gap-2 lg:justify-end">
+                                <select
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="px-3 py-2 bg-gray-50 border-0 rounded-lg text-sm focus:ring-2 focus:ring-primary cursor-pointer hover:bg-gray-100 transition-colors"
+                                >
+                                    <option value="all">Status: Wszystkie</option>
+                                    <option value="new">Nowy</option>
+                                    <option value="contacted">Skontaktowany</option>
+                                    <option value="interested">Zainteresowany</option>
+                                    <option value="closed">Zamknięty</option>
+                                </select>
 
-                            {/* Footer */}
-                            <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                                <span className="text-xs text-gray-700 font-medium">
-                                    {new Date(lead.createdAt).toLocaleDateString('pl-PL')}
-                                </span>
-                                <div className="flex gap-2">
-                                    <Link
-                                        href={`/my-leads/${lead.id}`}
-                                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
-                                        title="Edytuj"
-                                    >
-                                        <Edit size={16} />
-                                    </Link>
+                                <select
+                                    value={priorityFilter}
+                                    onChange={(e) => setPriorityFilter(e.target.value)}
+                                    className="px-3 py-2 bg-gray-50 border-0 rounded-lg text-sm focus:ring-2 focus:ring-primary cursor-pointer hover:bg-gray-100 transition-colors"
+                                >
+                                    <option value="all">Priorytet: Wszystkie</option>
+                                    <option value="high">Wysoki</option>
+                                    <option value="medium">Średni</option>
+                                    <option value="low">Niski</option>
+                                </select>
+
+                                <div className="h-8 w-px bg-gray-200 mx-1 self-center hidden sm:block"></div>
+
+                                <div className="flex bg-gray-50 rounded-lg p-1">
                                     <button
-                                        onClick={() => handleDelete(lead.id)}
-                                        className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                        title="Usuń"
+                                        onClick={() => setSortBy('date')}
+                                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${sortBy === 'date' ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'}`}
                                     >
-                                        <Trash2 size={16} />
+                                        Data
+                                    </button>
+                                    <button
+                                        onClick={() => setSortBy('name')}
+                                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${sortBy === 'name' ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        Nazwa
+                                    </button>
+                                    <button
+                                        onClick={() => setSortBy('priority')}
+                                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${sortBy === 'priority' ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                                    >
+                                        Priorytet
                                     </button>
                                 </div>
+
+                                <button
+                                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                                    className="p-2 bg-gray-50 hover:bg-white hover:text-primary rounded-lg transition-all shadow-sm"
+                                    title={sortOrder === 'asc' ? 'Rosnąco' : 'Malejąco'}
+                                >
+                                    <ArrowUpDown size={16} />
+                                </button>
                             </div>
                         </div>
-                    ))}
-                </div>
-
-                {/* Empty State */}
-                {filteredLeads.length === 0 && (
-                    <div className="text-center py-16">
-                        <BookmarkCheck size={64} className="mx-auto text-gray-300 mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                            {search || statusFilter !== 'all' || priorityFilter !== 'all'
-                                ? 'Brak leadów spełniających kryteria'
-                                : 'Brak zapisanych leadów'}
-                        </h3>
-                        <p className="text-gray-500">
-                            {search || statusFilter !== 'all' || priorityFilter !== 'all'
-                                ? 'Spróbuj zmienić filtry'
-                                : 'Zacznij zapisywać ciekawe firmy podczas wyszukiwania'}
-                        </p>
                     </div>
-                )}
-            </div>
+
+                    {/* Leads List */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filteredLeads.map((lead) => (
+                            <div key={lead.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/20 transition-all group">
+                                {/* Header */}
+                                <div className="flex justify-between items-start mb-3">
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="text-base font-bold text-gray-800 truncate group-hover:text-primary transition-colors cursor-pointer" onClick={() => router.push(`/my-leads/${lead.id}`)}>
+                                            {lead.companyName}
+                                        </h3>
+                                        <div className="flex gap-2 mt-1.5">
+                                            {getStatusBadge(lead.status)}
+                                            {getPriorityBadge(lead.priority)}
+                                        </div>
+                                    </div>
+                                    {userData?.role === 'admin' && lead.ownerEmail && (
+                                        <div className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100" title={`Właściciel: ${lead.ownerEmail}`}>
+                                            {lead.ownerEmail.split('@')[0]}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Details */}
+                                <div className="space-y-2 text-sm text-gray-600 mb-4 min-h-[80px]">
+                                    {lead.address ? (
+                                        <div className="flex items-start gap-2">
+                                            <MapPin size={15} className="mt-0.5 flex-shrink-0 text-gray-400" />
+                                            <span className="break-words line-clamp-2 text-xs">{lead.address}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-gray-400">
+                                            <MapPin size={15} />
+                                            <span className="text-xs italic">Brak adresu</span>
+                                        </div>
+                                    )}
+
+                                    <div className="flex items-center gap-3 pt-1">
+                                        {lead.phone ? (
+                                            <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-primary transition-colors bg-gray-50 px-2 py-1 rounded-md">
+                                                <Phone size={12} />
+                                                {lead.phone}
+                                            </a>
+                                        ) : (
+                                            <span className="flex items-center gap-1.5 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md opacity-50 cursor-not-allowed">
+                                                <Phone size={12} />
+                                                -
+                                            </span>
+                                        )}
+                                        {lead.website ? (
+                                            <a href={lead.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-primary transition-colors bg-gray-50 px-2 py-1 rounded-md max-w-[140px] truncate">
+                                                <Globe size={12} />
+                                                WWW
+                                            </a>
+                                        ) : (
+                                            <span className="flex items-center gap-1.5 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md opacity-50 cursor-not-allowed">
+                                                <Globe size={12} />
+                                                -
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Footer */}
+                                <div className="flex justify-between items-center pt-3 border-t border-gray-50 mt-auto">
+                                    <span className="text-[10px] text-gray-400 font-medium flex items-center gap-1">
+                                        <Calendar size={10} />
+                                        {new Date(lead.createdAt).toLocaleDateString('pl-PL')}
+                                    </span>
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Link
+                                            href={`/my-leads/${lead.id}`}
+                                            className="p-1.5 text-gray-500 hover:text-primary hover:bg-green-50 rounded-lg transition-colors"
+                                            title="Edytuj"
+                                        >
+                                            <Edit size={16} />
+                                        </Link>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(lead.id);
+                                            }}
+                                            className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Usuń"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Empty State */}
+                    {filteredLeads.length === 0 && (
+                        <div className="text-center py-20 flex flex-col items-center justify-center bg-white rounded-xl border border-dashed border-gray-200">
+                            <div className="bg-green-50 p-4 rounded-full mb-4">
+                                <BookmarkCheck size={40} className="text-primary" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-800 mb-2">
+                                {search || statusFilter !== 'all' || filteredLeads.length > 0
+                                    ? 'Nie znaleziono leadów'
+                                    : 'Twoja lista leadów jest pusta'}
+                            </h3>
+                            <p className="text-gray-500 text-sm max-w-md mx-auto mb-6">
+                                {search || statusFilter !== 'all'
+                                    ? 'Spróbuj zmienić kryteria wyszukiwania lub filtry, aby znaleźć to, czego szukasz.'
+                                    : 'Zacznij budować swoją bazę klientów! Wyszukaj firmy na mapie lub dodaj je ręcznie.'}
+                            </p>
+                            {filteredLeads.length === 0 && !search && statusFilter === 'all' && (
+                                <Link
+                                    href="/"
+                                    className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-green-200"
+                                >
+                                    Znajdź firmy na mapie
+                                </Link>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </main>
         </div>
     );
 }

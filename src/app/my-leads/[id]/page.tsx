@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Building2, Phone, Globe, MapPin, Users, DollarSign, Code } from 'lucide-react';
+import { ArrowLeft, Save, Building2, Phone, Globe, MapPin, Users, DollarSign, Code, Home } from 'lucide-react';
 
 type Lead = {
     id: string;
@@ -31,7 +31,11 @@ export default function LeadDetailPage() {
     const { user, loading: authLoading, getAuthHeaders } = useAuth();
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const id = params?.id as string;
+    const source = searchParams?.get('source');
+
+    const backLink = source === 'planner' ? '/apps/planner' : '/my-leads';
 
     const [lead, setLead] = useState<Lead | null>(null);
     const [loading, setLoading] = useState(true);
@@ -112,12 +116,21 @@ export default function LeadDetailPage() {
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">
-                    <Link
-                        href="/my-leads"
-                        className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors text-gray-600 dark:text-gray-300"
-                    >
-                        <ArrowLeft size={24} />
-                    </Link>
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href={backLink}
+                            className="p-3 bg-primary hover:bg-primary-dark rounded-xl text-white shadow-sm transition-all hover:shadow-md hover:scale-105 active:scale-95 flex items-center justify-center"
+                        >
+                            <ArrowLeft size={24} />
+                        </Link>
+                        <Link
+                            href="/"
+                            className="p-3 bg-white border border-gray-200 hover:border-primary hover:text-primary rounded-xl text-gray-500 shadow-sm transition-all hover:shadow-md hover:scale-105 active:scale-95 flex items-center justify-center"
+                            title="Strona główna"
+                        >
+                            <Home size={24} />
+                        </Link>
+                    </div>
                     <div className="flex-1">
                         <h1 className="text-3xl font-bold text-gray-800 dark:text-white">{lead.companyName}</h1>
                         <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">

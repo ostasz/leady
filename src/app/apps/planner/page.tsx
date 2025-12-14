@@ -205,26 +205,25 @@ export default function PlannerPage() {
                 onDragEnd={handleDragEnd}
             >
                 <div className="flex flex-col lg:flex-row flex-1 overflow-hidden pb-[calc(env(safe-area-inset-bottom)+64px)] lg:pb-0">
-                    {/* Sidebar rules:
-                        - Desktop: Always visible (handled by CSS in components)
-                        - Mobile: 
-                          - Calendar Mode: Visible
-                          - Map Mode: Hidden (handled by MapView internal logic)
+                    {/* Sidebar: 
+                        - Desktop: Always visible (Unassigned Leads are useful for both views)
+                        - Mobile: Visible ONLY in Calendar mode
                     */}
-
-                    {/* We render both and control visibility via CSS/State inside components or here if strictly separated */}
-                    {/* Actually, MapView handles its own internal structure for mobile (list/map toggle). 
-                       But 'CalendarView' + 'PlannerSidebar' is for the 'Planer' tab.
-                    */}
-
-                    <div className={`${viewMode === 'calendar' ? 'flex flex-col lg:flex-row flex-1 overflow-hidden' : 'hidden lg:flex lg:flex-row lg:flex-1 lg:overflow-hidden'}`}>
+                    <div className={`${viewMode === 'calendar' ? 'contents' : 'hidden lg:contents'}`}>
                         <PlannerSidebar leads={unscheduledLeads} />
-                        <CalendarView weekStart={weekStart} scheduledLeads={scheduledLeads} />
                     </div>
 
-                    <div className={`${viewMode === 'map' ? 'flex-1 flex overflow-hidden' : 'hidden'}`}>
-                        <MapView weekStart={weekStart} scheduledLeads={scheduledLeads} />
-                    </div>
+                    {/* Calendar View */}
+                    {viewMode === 'calendar' && (
+                        <CalendarView weekStart={weekStart} scheduledLeads={scheduledLeads} />
+                    )}
+
+                    {/* Map View */}
+                    {viewMode === 'map' && (
+                        <div className="flex-1 flex overflow-hidden">
+                            <MapView weekStart={weekStart} scheduledLeads={scheduledLeads} />
+                        </div>
+                    )}
                 </div>
 
                 {/* Drag Overlay */}
