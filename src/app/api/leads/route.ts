@@ -25,85 +25,118 @@ export async function GET(request: Request) {
         const status = searchParams.get('status');
         const priority = searchParams.get('priority');
         const search = searchParams.get('search');
+        const limit = parseInt(searchParams.get('limit') || '50');
+        const lastDocId = searchParams.get('lastDocId');
 
-        // Build query
-        let leadsQuery;
+        console.log('API: leads/GET called. Params:', { status, priority, search, limit, lastDocId });
+
+        let query: FirebaseFirestore.Query;
 
         if (userData?.role === 'admin') {
-            // Admin can see all leads from all users
-            const usersSnapshot = await adminDb.collection('users').get();
-            const allLeads: any[] = [];
-
-            for (const userDoc of usersSnapshot.docs) {
-                const userLeadsRef = adminDb.collection('users').doc(userDoc.id).collection('leads');
-                let userLeadsQuery: any = userLeadsRef;
-
-                // Apply filters
-                if (status) userLeadsQuery = userLeadsQuery.where('status', '==', status);
-                if (priority) userLeadsQuery = userLeadsQuery.where('priority', '==', priority);
-
-                const userLeadsSnapshot = await userLeadsQuery.orderBy('createdAt', 'desc').get();
-
-                // Get user email
-                const ownerEmail = userDoc.data()?.email || 'Unknown';
-
-                userLeadsSnapshot.docs.forEach((doc: any) => {
-                    const leadData = doc.data();
-                    allLeads.push({
-                        id: doc.id,
-                        ...leadData,
-                        createdAt: leadData.createdAt?.toDate().toISOString(),
-                        updatedAt: leadData.updatedAt?.toDate().toISOString(),
-                        ownerEmail: ownerEmail, // Add owner email for admin
-                        ownerId: userDoc.id
-                    });
-                });
-            }
-
-            // Filter by search if needed
-            const filteredLeads = search
-                ? allLeads.filter(lead =>
-                    lead.companyName?.toLowerCase().includes(search.toLowerCase())
-                )
-                : allLeads;
-
-            return NextResponse.json({ leads: filteredLeads });
+            // OPTIMIZATION 1: Use collectionGroup for Admin
+            // This fetches from ALL 'leads' collections across the database in one query
+            query = adminDb.collectionGroup('leads');
         } else {
             // Regular users see only their own leads
-            const uid = decodedToken.uid;
-            const userRef = adminDb.collection('users').doc(uid);
-            const userLeadsRef = userRef.collection('leads');
-            let userLeadsQuery: any = userLeadsRef;
-
-            // Apply filters
-            if (status) userLeadsQuery = userLeadsQuery.where('status', '==', status);
-            if (priority) userLeadsQuery = userLeadsQuery.where('priority', '==', priority);
-
-            const leadsSnapshot = await userLeadsQuery.orderBy('createdAt', 'desc').get();
-
-            const leads: any[] = [];
-            leadsSnapshot.docs.forEach((doc: any) => {
-                const data = doc.data();
-                leads.push({
-                    id: doc.id,
-                    ...data,
-                    createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : null,
-                    updatedAt: data.updatedAt ? data.updatedAt.toDate().toISOString() : null
-                });
-            });
-
-            // Filter by search if needed (Firestore doesn't support case-insensitive search)
-            const filteredLeads = search
-                ? leads.filter((lead: any) =>
-                    lead.companyName?.toLowerCase().includes(search.toLowerCase())
-                )
-                : leads;
-
-            return NextResponse.json({ leads: filteredLeads });
+            query = adminDb.collection('users').doc(uid).collection('leads');
         }
+
+        // TEMPORARY FIX: Remove server-side filters to avoid "Missing Index" errors 
+        // until indexes are created in Firebase Console.
+        // if (status && status !== 'all') query = query.where('status', '==', status);
+        // if (priority && priority !== 'all') query = query.where('priority', '==', priority);
+
+        // Sorting
+        query = query.orderBy('createdAt', 'desc');
+
+        // Note: Searching for 'companyName' via simple query is limited in Firestore. 
+        // We might need to filter manually if search term is provided, OR rely on a dedicated search index (Algolia/Typesense)
+        // For now, we will fetch and filter on server if search is present, potentially breaking pagination consistency.
+        // A better approach for scalability is a dedicated search solution.
+        // If no search is present, we use native pagination.
+
+        // OPTIMIZATION 2: Pagination
+        if (!search) {
+            if (lastDocId && lastDocId !== 'null') {
+                // We need to get the actual document snapshot to start after
+                // Trying to start after ID directly requires finding that doc first or using values
+                // For simplified cursor pagination if we sort by createdAt + ID:
+                // However, getting the doc snapshot is safer.
+
+                // Optimized approach: Use the document snapshot if possible, or fetch it.
+                // Since this is a server environemnt, fetching the single doc for cursor is fast.
+                // BUT collectionGroup cursors are tricky because we don't know the path easily.
+                // We'll rely on the frontend sending the *full* data needed for cursor if complex,
+                // or just efficient fetching.
+
+                // Simplest robust method for 'startAfter' with ID for an arbitrary query is tricky without the snapshot.
+                // Let's assume the client sends the last createdAt string if we sort by that.
+                // But simplified: We'll implement basic limit for now, and if cursor needed we fetch it.
+                // Given we are refactoring, let's try to keep it simple first.
+                // If we have lastDocId, we need to find that doc to use as cursor.
+                // If it's a collectionGroup query, `doc(lastDocId)` won't work directly without path.
+
+                // Let's stick to 'limit' for now to solve the "load ALL" problem.
+                // True infinite scroll requires holding the 'lastVisible' snapshot on the client (not possible with API) 
+                // or passing sort values (createdAt).
+                const lastCreatedAt = searchParams.get('lastCreatedAt');
+                if (lastCreatedAt && lastCreatedAt !== 'null') {
+                    query = query.startAfter(Timestamp.fromDate(new Date(lastCreatedAt)));
+                }
+            }
+            query = query.limit(limit);
+        }
+
+        const snapshot = await query.get();
+
+        // If searching, we currently have to do it in memory if we don't have a search engine
+        // This negates the pagination benefit if search is active on a huge dataset, 
+        // but solves the main "dashboard load" use case.
+        let results: any[] = [];
+
+        snapshot.docs.forEach((doc: any) => {
+            const data = doc.data();
+            results.push({
+                id: doc.id,
+                ...data,
+                createdAt: data.createdAt?.toDate().toISOString(),
+                updatedAt: data.updatedAt?.toDate().toISOString(),
+                // If admin, we might want owner info. collectionGroup docs have `.ref.parent.parent` which is the user doc.
+                ownerId: userData?.role === 'admin' ? doc.ref.path.split('/')[1] : uid
+            });
+        });
+
+        // Client-side filtering (Server filters disabled for stability)
+        if (status && status !== 'all') results = results.filter(l => l.status === status);
+        if (priority && priority !== 'all') results = results.filter(l => l.priority === priority);
+
+        if (search) {
+            results = results.filter(lead =>
+                lead.companyName?.toLowerCase().includes(search.toLowerCase())
+            );
+        }
+
+        const lastVisible = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+        let nextCreatedAt = null;
+        if (lastVisible) {
+            const data = lastVisible.data();
+            nextCreatedAt = data.createdAt?.toDate().toISOString();
+        }
+
+        return NextResponse.json({
+            leads: results,
+            lastDocId: lastVisible ? lastVisible.id : null,
+            lastCreatedAt: nextCreatedAt,
+            hasMore: snapshot.docs.length === limit // Rough estimate
+        });
+
     } catch (error: any) {
-        console.error('Error fetching leads:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        console.error('SERVER ERROR fetching leads:', error);
+        // Return 500 but with message
+        return NextResponse.json({
+            error: error.message,
+            details: error.code === 9 ? 'Missing Firestore Index. Check server terminal for link.' : 'Unknown error'
+        }, { status: 500 });
     }
 }
 

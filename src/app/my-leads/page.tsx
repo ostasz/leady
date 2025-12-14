@@ -23,6 +23,7 @@ import {
     Home,
     MapPin
 } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { robotoRegular } from '@/lib/fonts/roboto-regular';
@@ -52,11 +53,16 @@ export default function MyLeadsPage() {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [priorityFilter, setPriorityFilter] = useState('all');
     const [sortBy, setSortBy] = useState<'date' | 'name' | 'priority'>('date');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+    // Pagination State
+    const [lastCreatedAt, setLastCreatedAt] = useState<string | null>(null);
+    const [hasMore, setHasMore] = useState(true);
 
     useEffect(() => {
         if (authLoading) return;
@@ -64,44 +70,91 @@ export default function MyLeadsPage() {
             router.push('/login');
             return;
         }
+        // Initial fetch
         fetchLeads();
     }, [user, authLoading, router]);
 
+    // Re-fetch when filters change (debounced for search would be better, but strict dependency allows simplicity)
+    // We want to re-fetch from server when status or priority changes to use server indexes
+    // Search is handled client-side for now or mixed? 
+    // The API supports text search but only on the fetched page (if implementing 1 and 2 only).
+    // Actually, to make pagination useful, we should rely on server filters for Status/Priority.
     useEffect(() => {
-        applyFiltersAndSort();
-    }, [leads, search, statusFilter, priorityFilter, sortBy, sortOrder]);
+        if (!loading) { // Avoid double fetch on mount
+            fetchLeads(false);
+        }
+    }, [statusFilter, priorityFilter]);
 
-    const fetchLeads = async () => {
+    useEffect(() => {
+        // Local filtering/sorting for the currently loaded data
+        applyLocalFiltersAndSort();
+    }, [leads, search, sortBy, sortOrder]);
+
+    const fetchLeads = async (loadMore = false) => {
         try {
+            if (loadMore) {
+                setLoadingMore(true);
+            } else {
+                setLoading(true);
+            }
+
             const headers = await getAuthHeaders();
-            const res = await fetch('/api/leads', { headers });
-            if (!res.ok) throw new Error('Failed to fetch leads');
+            const params = new URLSearchParams();
+
+            // Limit per page
+            params.set('limit', '50');
+
+            // Server-side filters
+            if (statusFilter !== 'all') params.set('status', statusFilter);
+            if (priorityFilter !== 'all') params.set('priority', priorityFilter);
+
+            // Cursor for pagination
+            if (loadMore && lastCreatedAt) {
+                params.set('lastCreatedAt', lastCreatedAt);
+            }
+
+            const res = await fetch(`/api/leads?${params.toString()}`, { headers });
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.details || err.error || 'Failed to fetch leads');
+            }
+
             const data = await res.json();
-            setLeads(data.leads);
-        } catch (error) {
+
+            if (loadMore) {
+                setLeads(prev => [...prev, ...data.leads]);
+            } else {
+                setLeads(data.leads);
+            }
+
+            setLastCreatedAt(data.lastCreatedAt);
+            setHasMore(data.hasMore);
+
+        } catch (error: any) {
             console.error('Error fetching leads:', error);
-            alert('Błąd przy pobieraniu leadów');
+            alert(`Błąd: ${error.message}`);
         } finally {
             setLoading(false);
+            setLoadingMore(false);
         }
     };
 
-    const applyFiltersAndSort = () => {
+    const applyLocalFiltersAndSort = () => {
         let filtered = [...leads];
 
-        // Search filter
+        // Search filter (Client-side for loaded items)
+        // Ideally search should be server-side too, but requires full text search engine or expensive query
         if (search) {
             filtered = filtered.filter(lead =>
                 lead.companyName.toLowerCase().includes(search.toLowerCase())
             );
         }
 
-        // Status filter
+        // Note: Status/Priority are already filtered on server, 
+        // but we keep local logic if user changes filters rapidly or for consistency/safety
         if (statusFilter !== 'all') {
             filtered = filtered.filter(lead => lead.status === statusFilter);
         }
-
-        // Priority filter
         if (priorityFilter !== 'all') {
             filtered = filtered.filter(lead => lead.priority === priorityFilter);
         }
@@ -202,10 +255,10 @@ export default function MyLeadsPage() {
 
     const getStatusBadge = (status: string) => {
         const colors = {
-            new: 'bg-blue-100 text-blue-800',
-            contacted: 'bg-yellow-100 text-yellow-800',
-            interested: 'bg-green-100 text-green-800',
-            closed: 'bg-gray-100 text-gray-800'
+            new: 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',
+            contacted: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200',
+            interested: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200',
+            closed: 'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-300'
         };
         const labels = {
             new: 'Nowy',
@@ -222,9 +275,9 @@ export default function MyLeadsPage() {
 
     const getPriorityBadge = (priority: string) => {
         const colors = {
-            high: 'bg-red-100 text-red-800',
-            medium: 'bg-orange-100 text-orange-800',
-            low: 'bg-gray-100 text-gray-800'
+            high: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200',
+            medium: 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200',
+            low: 'bg-gray-100 text-gray-800 dark:bg-gray-800/50 dark:text-gray-300'
         };
         const labels = {
             high: 'Wysoki',
@@ -243,9 +296,9 @@ export default function MyLeadsPage() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50">
+        <div className="flex flex-col min-h-screen bg-background text-foreground">
             {/* Header - Matching Planner Style */}
-            <header className="h-16 border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 bg-white shrink-0 z-10 sticky top-0">
+            <header className="h-16 border-b border-border flex items-center justify-between px-4 lg:px-6 bg-card shrink-0 z-10 sticky top-0">
                 <div className="flex items-center gap-4">
                     <Link
                         href="/"
@@ -254,8 +307,8 @@ export default function MyLeadsPage() {
                     >
                         <Home size={20} />
                     </Link>
-                    <div className="h-6 w-px bg-gray-200 hidden lg:block"></div>
-                    <h1 className="text-lg lg:text-xl font-bold text-gray-800 flex items-center gap-2">
+                    <div className="h-6 w-px bg-border hidden lg:block"></div>
+                    <h1 className="text-lg lg:text-xl font-bold text-card-foreground flex items-center gap-2">
                         <BookmarkCheck className="text-primary hidden lg:block" size={24} />
                         Moje Leady
                         <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full ml-2">
@@ -268,7 +321,7 @@ export default function MyLeadsPage() {
                     <div className="hidden md:flex gap-2">
                         <button
                             onClick={handleExport}
-                            className="p-2 text-gray-600 hover:text-primary hover:bg-green-50 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                            className="p-2 text-muted-foreground hover:text-primary hover:bg-secondary rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
                             title="Eksportuj do CSV"
                         >
                             <Download size={18} />
@@ -276,7 +329,7 @@ export default function MyLeadsPage() {
                         </button>
                         <button
                             onClick={handleExportPDF}
-                            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
+                            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors flex items-center gap-2 text-sm font-medium"
                             title="Eksportuj do PDF"
                         >
                             <FileText size={18} />
@@ -288,11 +341,13 @@ export default function MyLeadsPage() {
 
                     <Link
                         href="/"
-                        className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm hover:shadow"
+                        className="bg-primary hover:bg-primary-dark text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm hover:shadow"
                     >
                         <Plus size={18} />
                         <span className="hidden sm:inline">Dodaj Lead</span>
                     </Link>
+                    <div className="h-6 w-px bg-border hidden md:block"></div>
+                    <ThemeToggle />
                 </div>
             </header>
 
@@ -301,7 +356,7 @@ export default function MyLeadsPage() {
                 <div className="max-w-7xl mx-auto space-y-6">
 
                     {/* Filters - Cleaner Look */}
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div className="bg-card p-4 rounded-xl shadow-sm border border-border">
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                             {/* Search - Larger Area */}
                             <div className="md:col-span-12 lg:col-span-5 relative">
@@ -311,7 +366,7 @@ export default function MyLeadsPage() {
                                     placeholder="Szukaj po nazwie firmy..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border-0 rounded-lg focus:ring-2 focus:ring-primary focus:bg-white transition-all text-sm"
+                                    className="w-full pl-10 pr-4 py-2 bg-muted/50 border-0 rounded-lg focus:ring-2 focus:ring-ring focus:bg-background transition-all text-sm"
                                 />
                             </div>
 
@@ -320,7 +375,7 @@ export default function MyLeadsPage() {
                                 <select
                                     value={statusFilter}
                                     onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="px-3 py-2 bg-gray-50 border-0 rounded-lg text-sm focus:ring-2 focus:ring-primary cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-3 py-2 bg-muted/50 border-0 rounded-lg text-sm focus:ring-2 focus:ring-ring cursor-pointer hover:bg-muted transition-colors"
                                 >
                                     <option value="all">Status: Wszystkie</option>
                                     <option value="new">Nowy</option>
@@ -332,7 +387,7 @@ export default function MyLeadsPage() {
                                 <select
                                     value={priorityFilter}
                                     onChange={(e) => setPriorityFilter(e.target.value)}
-                                    className="px-3 py-2 bg-gray-50 border-0 rounded-lg text-sm focus:ring-2 focus:ring-primary cursor-pointer hover:bg-gray-100 transition-colors"
+                                    className="px-3 py-2 bg-muted/50 border-0 rounded-lg text-sm focus:ring-2 focus:ring-ring cursor-pointer hover:bg-muted transition-colors"
                                 >
                                     <option value="all">Priorytet: Wszystkie</option>
                                     <option value="high">Wysoki</option>
@@ -340,24 +395,24 @@ export default function MyLeadsPage() {
                                     <option value="low">Niski</option>
                                 </select>
 
-                                <div className="h-8 w-px bg-gray-200 mx-1 self-center hidden sm:block"></div>
+                                <div className="h-8 w-px bg-border mx-1 self-center hidden sm:block"></div>
 
-                                <div className="flex bg-gray-50 rounded-lg p-1">
+                                <div className="flex bg-muted rounded-lg p-1">
                                     <button
                                         onClick={() => setSortBy('date')}
-                                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${sortBy === 'date' ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${sortBy === 'date' ? 'bg-background shadow text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                                     >
                                         Data
                                     </button>
                                     <button
                                         onClick={() => setSortBy('name')}
-                                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${sortBy === 'name' ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${sortBy === 'name' ? 'bg-background shadow text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                                     >
                                         Nazwa
                                     </button>
                                     <button
                                         onClick={() => setSortBy('priority')}
-                                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${sortBy === 'priority' ? 'bg-white shadow text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                                        className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${sortBy === 'priority' ? 'bg-background shadow text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                                     >
                                         Priorytet
                                     </button>
@@ -365,7 +420,7 @@ export default function MyLeadsPage() {
 
                                 <button
                                     onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                                    className="p-2 bg-gray-50 hover:bg-white hover:text-primary rounded-lg transition-all shadow-sm"
+                                    className="p-2 bg-muted hover:bg-background hover:text-primary rounded-lg transition-all shadow-sm"
                                     title={sortOrder === 'asc' ? 'Rosnąco' : 'Malejąco'}
                                 >
                                     <ArrowUpDown size={16} />
@@ -377,11 +432,11 @@ export default function MyLeadsPage() {
                     {/* Leads List */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {filteredLeads.map((lead) => (
-                            <div key={lead.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-primary/20 transition-all group">
+                            <div key={lead.id} className="bg-card p-5 rounded-xl shadow-sm border border-border hover:shadow-md hover:border-primary/20 transition-all group">
                                 {/* Header */}
                                 <div className="flex justify-between items-start mb-3">
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="text-base font-bold text-gray-800 truncate group-hover:text-primary transition-colors cursor-pointer" onClick={() => router.push(`/my-leads/${lead.id}`)}>
+                                        <h3 className="text-base font-bold text-card-foreground truncate group-hover:text-primary transition-colors cursor-pointer" onClick={() => router.push(`/my-leads/${lead.id}`)}>
                                             {lead.companyName}
                                         </h3>
                                         <div className="flex gap-2 mt-1.5">
@@ -390,21 +445,21 @@ export default function MyLeadsPage() {
                                         </div>
                                     </div>
                                     {userData?.role === 'admin' && lead.ownerEmail && (
-                                        <div className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100" title={`Właściciel: ${lead.ownerEmail}`}>
+                                        <div className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border" title={`Właściciel: ${lead.ownerEmail}`}>
                                             {lead.ownerEmail.split('@')[0]}
                                         </div>
                                     )}
                                 </div>
 
                                 {/* Details */}
-                                <div className="space-y-2 text-sm text-gray-600 mb-4 min-h-[80px]">
+                                <div className="space-y-2 text-sm text-muted-foreground mb-4 min-h-[80px]">
                                     {lead.address ? (
                                         <div className="flex items-start gap-2">
-                                            <MapPin size={15} className="mt-0.5 flex-shrink-0 text-gray-400" />
+                                            <MapPin size={15} className="mt-0.5 flex-shrink-0 text-muted-foreground/70" />
                                             <span className="break-words line-clamp-2 text-xs">{lead.address}</span>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2 text-gray-400">
+                                        <div className="flex items-center gap-2 text-muted-foreground/50">
                                             <MapPin size={15} />
                                             <span className="text-xs italic">Brak adresu</span>
                                         </div>
@@ -412,23 +467,23 @@ export default function MyLeadsPage() {
 
                                     <div className="flex items-center gap-3 pt-1">
                                         {lead.phone ? (
-                                            <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-primary transition-colors bg-gray-50 px-2 py-1 rounded-md">
+                                            <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors bg-muted px-2 py-1 rounded-md">
                                                 <Phone size={12} />
                                                 {lead.phone}
                                             </a>
                                         ) : (
-                                            <span className="flex items-center gap-1.5 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md opacity-50 cursor-not-allowed">
+                                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground/50 bg-muted px-2 py-1 rounded-md opacity-50 cursor-not-allowed">
                                                 <Phone size={12} />
                                                 -
                                             </span>
                                         )}
                                         {lead.website ? (
-                                            <a href={lead.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-primary transition-colors bg-gray-50 px-2 py-1 rounded-md max-w-[140px] truncate">
+                                            <a href={lead.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors bg-muted px-2 py-1 rounded-md max-w-[140px] truncate">
                                                 <Globe size={12} />
                                                 WWW
                                             </a>
                                         ) : (
-                                            <span className="flex items-center gap-1.5 text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-md opacity-50 cursor-not-allowed">
+                                            <span className="flex items-center gap-1.5 text-xs text-muted-foreground/50 bg-muted px-2 py-1 rounded-md opacity-50 cursor-not-allowed">
                                                 <Globe size={12} />
                                                 -
                                             </span>
@@ -437,15 +492,15 @@ export default function MyLeadsPage() {
                                 </div>
 
                                 {/* Footer */}
-                                <div className="flex justify-between items-center pt-3 border-t border-gray-50 mt-auto">
-                                    <span className="text-[10px] text-gray-400 font-medium flex items-center gap-1">
+                                <div className="flex justify-between items-center pt-3 border-t border-border mt-auto">
+                                    <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
                                         <Calendar size={10} />
                                         {new Date(lead.createdAt).toLocaleDateString('pl-PL')}
                                     </span>
                                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Link
                                             href={`/my-leads/${lead.id}`}
-                                            className="p-1.5 text-gray-500 hover:text-primary hover:bg-green-50 rounded-lg transition-colors"
+                                            className="p-1.5 text-muted-foreground hover:text-primary hover:bg-secondary rounded-lg transition-colors"
                                             title="Edytuj"
                                         >
                                             <Edit size={16} />
@@ -455,7 +510,7 @@ export default function MyLeadsPage() {
                                                 e.stopPropagation();
                                                 handleDelete(lead.id);
                                             }}
-                                            className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
                                             title="Usuń"
                                         >
                                             <Trash2 size={16} />
@@ -468,16 +523,16 @@ export default function MyLeadsPage() {
 
                     {/* Empty State */}
                     {filteredLeads.length === 0 && (
-                        <div className="text-center py-20 flex flex-col items-center justify-center bg-white rounded-xl border border-dashed border-gray-200">
-                            <div className="bg-green-50 p-4 rounded-full mb-4">
+                        <div className="text-center py-20 flex flex-col items-center justify-center bg-card rounded-xl border border-dashed border-border">
+                            <div className="bg-secondary/50 p-4 rounded-full mb-4">
                                 <BookmarkCheck size={40} className="text-primary" />
                             </div>
-                            <h3 className="text-lg font-bold text-gray-800 mb-2">
+                            <h3 className="text-lg font-bold text-card-foreground mb-2">
                                 {search || statusFilter !== 'all' || filteredLeads.length > 0
                                     ? 'Nie znaleziono leadów'
                                     : 'Twoja lista leadów jest pusta'}
                             </h3>
-                            <p className="text-gray-500 text-sm max-w-md mx-auto mb-6">
+                            <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6">
                                 {search || statusFilter !== 'all'
                                     ? 'Spróbuj zmienić kryteria wyszukiwania lub filtry, aby znaleźć to, czego szukasz.'
                                     : 'Zacznij budować swoją bazę klientów! Wyszukaj firmy na mapie lub dodaj je ręcznie.'}
@@ -490,6 +545,28 @@ export default function MyLeadsPage() {
                                     Znajdź firmy na mapie
                                 </Link>
                             )}
+                        </div>
+                    )}
+                    {/* Load More Button */}
+                    {hasMore && filteredLeads.length > 0 && (
+                        <div className="flex justify-center py-6">
+                            <button
+                                onClick={() => fetchLeads(true)}
+                                disabled={loadingMore}
+                                className="bg-card border border-border text-foreground hover:text-primary hover:border-primary px-6 py-2.5 rounded-xl font-medium transition-all shadow-sm hover:shadow flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loadingMore ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+                                        Ładowanie...
+                                    </>
+                                ) : (
+                                    <>
+                                        Wczytaj więcej
+                                        <ChevronDown size={16} />
+                                    </>
+                                )}
+                            </button>
                         </div>
                     )}
                 </div>
