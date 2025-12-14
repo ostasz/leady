@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Search, Shield, LogOut, User, Building2, Zap, Cloud, Briefcase, Map as MapIcon } from 'lucide-react';
 import DashboardWidgets from '@/components/DashboardWidgets';
-import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function Dashboard() {
     const { user, userData, loading, signOut } = useAuth();
@@ -51,23 +50,22 @@ export default function Dashboard() {
     if (!user) return null;
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <header className="bg-card shadow-sm border-b border-border">
+            <header className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <img src="/ekovoltis-logo.png" alt="Ekovoltis" className="h-8" />
-                        <span className="text-xl font-semibold text-card-foreground">| Portal Handlowca</span>
+                        <span className="text-xl font-semibold text-gray-700">| Portal Handlowca</span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                        <div className="flex items-center gap-2 text-gray-600">
                             <User size={18} />
                             <span className="text-sm font-medium">{user.displayName || user.email}</span>
                         </div>
-                        <ThemeToggle />
                         <button
                             onClick={() => signOut()}
-                            className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+                            className="p-2 text-gray-500 hover:text-red-600 transition-colors"
                             title="Wyloguj"
                         >
                             <LogOut size={20} />
@@ -79,8 +77,8 @@ export default function Dashboard() {
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-foreground">Witaj, {user.displayName?.split(' ')[0] || user.email || 'Pracowniku'}! 👋</h1>
-                    <p className="text-muted-foreground mt-2">Wybierz aplikację, z której chcesz skorzystać.</p>
+                    <h1 className="text-3xl font-bold text-gray-900">Witaj, {user.displayName?.split(' ')[0] || user.email || 'Pracowniku'}! 👋</h1>
+                    <p className="text-gray-600 mt-2">Wybierz aplikację, z której chcesz skorzystać.</p>
                 </div>
 
                 <DashboardWidgets />
@@ -89,13 +87,13 @@ export default function Dashboard() {
                     {/* Sales App Card */}
                     <Link
                         href="/apps/leads"
-                        className="group bg-card p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-border hover:border-primary/20"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-secondary/50 rounded-lg flex items-center justify-center text-secondary-foreground mb-4 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300">
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             <Search size={24} />
                         </div>
-                        <h3 className="text-lg font-semibold text-card-foreground mb-2">Leady Sprzedażowe</h3>
-                        <p className="text-muted-foreground text-sm">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Leady Sprzedażowe</h3>
+                        <p className="text-gray-500 text-sm">
                             Wyszukiwanie potencjalnych klientów, analiza AI i zarządzanie bazą kontaktów.
                         </p>
                     </Link>
@@ -103,13 +101,13 @@ export default function Dashboard() {
                     {/* My Leads Card */}
                     <Link
                         href="/my-leads"
-                        className="group bg-card p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-border hover:border-primary/20"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-secondary/50 rounded-lg flex items-center justify-center text-secondary-foreground mb-4 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300">
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             <Briefcase size={24} />
                         </div>
-                        <h3 className="text-lg font-semibold text-card-foreground mb-2">Moje Leady</h3>
-                        <p className="text-muted-foreground text-sm">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Moje Leady</h3>
+                        <p className="text-gray-500 text-sm">
                             Baza zapisanych klientów, statusy i notatki.
                         </p>
                     </Link>
@@ -117,26 +115,26 @@ export default function Dashboard() {
                     {/* Route Planner Card */}
                     <Link
                         href="/apps/planner"
-                        className="group bg-card p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-border hover:border-primary/20"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
                         <div className="flex justify-between items-start">
-                            <div className="h-12 w-12 bg-secondary/50 rounded-lg flex items-center justify-center text-secondary-foreground mb-4 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300">
+                            <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                                 <MapIcon size={24} />
                             </div>
                             {leadStats.total > 0 && (
                                 <div className="flex flex-col items-end">
-                                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Leady</span>
+                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Leady</span>
                                     <div className="flex items-baseline gap-1">
-                                        <span className="text-lg font-bold text-green-600 dark:text-green-500">{leadStats.total}</span>
-                                        <span className="text-xs text-muted-foreground/50">/</span>
-                                        <span className="text-sm font-medium text-orange-500 dark:text-orange-400" title="Nie zaplanowane">{leadStats.unscheduled}</span>
+                                        <span className="text-lg font-bold text-green-600">{leadStats.total}</span>
+                                        <span className="text-xs text-gray-400">/</span>
+                                        <span className="text-sm font-medium text-orange-500" title="Nie zaplanowane">{leadStats.unscheduled}</span>
                                     </div>
-                                    <span className="text-[10px] text-muted-foreground/70">zapisane / do planowania</span>
+                                    <span className="text-[10px] text-gray-400">zapisane / do planowania</span>
                                 </div>
                             )}
                         </div>
-                        <h3 className="text-lg font-semibold text-card-foreground mb-2">Planer Tras</h3>
-                        <p className="text-muted-foreground text-sm">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Planer Tras</h3>
+                        <p className="text-gray-500 text-sm">
                             Kalendarz spotkań, optymalizacja trasy i mapa.
                         </p>
                     </Link>
@@ -145,13 +143,13 @@ export default function Dashboard() {
                     {userData?.role === 'admin' && (
                         <Link
                             href="/admin"
-                            className="group bg-card p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-border hover:border-primary/20"
+                            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                         >
-                            <div className="h-12 w-12 bg-secondary/50 rounded-lg flex items-center justify-center text-secondary-foreground mb-4 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300">
+                            <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                                 <Shield size={24} />
                             </div>
-                            <h3 className="text-lg font-semibold text-card-foreground mb-2">Panel Administratora</h3>
-                            <p className="text-muted-foreground text-sm">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">Panel Administratora</h3>
+                            <p className="text-gray-500 text-sm">
                                 Zarządzanie użytkownikami, uprawnieniami i ustawieniami systemu.
                             </p>
                         </Link>
@@ -161,13 +159,13 @@ export default function Dashboard() {
                     {/* Energy Prices Card (Visible to everyone) */}
                     <Link
                         href="/apps/ceny-energii"
-                        className="group bg-card p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-border hover:border-primary/20"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-secondary/50 rounded-lg flex items-center justify-center text-secondary-foreground mb-4 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300">
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             <Zap size={24} />
                         </div>
-                        <h3 className="text-lg font-semibold text-card-foreground mb-2">Obliczenie kosztu energii po RDN (FLEX)</h3>
-                        <p className="text-muted-foreground text-sm">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Obliczenie kosztu energii po RDN (FLEX)</h3>
+                        <p className="text-gray-500 text-sm">
                             Ceny energii na rynku dnia następnego. Analizy i rekomendacje dla klientów.
                         </p>
                     </Link>
@@ -178,13 +176,13 @@ export default function Dashboard() {
                     {userData?.role === 'admin' && (
                         <Link
                             href="/gus"
-                            className="group bg-card p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-border hover:border-primary/20"
+                            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                         >
-                            <div className="h-12 w-12 bg-secondary/50 rounded-lg flex items-center justify-center text-secondary-foreground mb-4 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300">
+                            <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                                 <Building2 size={24} />
                             </div>
-                            <h3 className="text-lg font-semibold text-card-foreground mb-2">GUS Data Checker</h3>
-                            <p className="text-muted-foreground text-sm">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2">GUS Data Checker</h3>
+                            <p className="text-gray-500 text-sm">
                                 Weryfikacja danych firm w bazie GUS (NIP/REGON).
                             </p>
                         </Link>
@@ -193,23 +191,23 @@ export default function Dashboard() {
                     {/* Weather App Card (Visible to everyone) */}
                     <Link
                         href="/apps/weather"
-                        className="group bg-card p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-border hover:border-primary/20"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-secondary/50 rounded-lg flex items-center justify-center text-secondary-foreground mb-4 group-hover:bg-primary group-hover:text-primary-foreground group-hover:scale-110 transition-all duration-300">
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
                             <Cloud size={24} />
                         </div>
-                        <h3 className="text-lg font-semibold text-card-foreground mb-2">Prognoza Pogody</h3>
-                        <p className="text-muted-foreground text-sm">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Prognoza Pogody</h3>
+                        <p className="text-gray-500 text-sm">
                             Szczegółowa prognoza pogody dla dowolnej lokalizacji.
                         </p>
                     </Link>
 
                     {/* Placeholder for future apps */}
-                    <div className="bg-muted p-6 rounded-xl border border-dashed border-muted-foreground/30 flex flex-col items-center justify-center text-center opacity-75">
-                        <div className="h-12 w-12 bg-muted/80 rounded-lg flex items-center justify-center text-muted-foreground/50 mb-4">
+                    <div className="bg-gray-50 p-6 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-center opacity-75">
+                        <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 mb-4">
                             <span className="text-xl font-bold">+</span>
                         </div>
-                        <h3 className="text-sm font-semibold text-muted-foreground">Wkrótce więcej aplikacji</h3>
+                        <h3 className="text-sm font-semibold text-gray-500">Wkrótce więcej aplikacji</h3>
                     </div>
                 </div>
             </main >
