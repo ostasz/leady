@@ -458,15 +458,15 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                                 onClick={() => setSelectedDateKey(dateKey)}
                                 className={`
                                     flex-1 py-2 text-center min-w-[60px] border-b-2 transition-colors
-                                    ${isSelected ? 'border-blue-600 bg-blue-50/50' : 'border-transparent hover:bg-gray-50'}
+                                    ${isSelected ? 'border-primary bg-primary-light/30' : 'border-transparent hover:bg-gray-50'}
                                 `}
                             >
                                 <div className="text-[10px] font-medium text-gray-400 uppercase leading-none mb-1">{format(date, 'EEE', { locale: pl })}</div>
-                                <div className={`text-sm font-bold leading-none ${isSelected ? 'text-blue-700' : 'text-gray-700'}`}>
+                                <div className={`text-sm font-bold leading-none ${isSelected ? 'text-primary-dark' : 'text-gray-700'}`}>
                                     {format(date, 'd.MM')}
                                 </div>
                                 {count > 0 && isSelected && (
-                                    <div className="w-1 h-1 rounded-full bg-blue-500 mx-auto mt-1" />
+                                    <div className="w-1 h-1 rounded-full bg-primary mx-auto mt-1" />
                                 )}
                             </button>
                         )
@@ -488,7 +488,7 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                                     <span className="truncate max-w-[120px]">{endLocation.split(',')[0]}</span>
                                 </div>
                             </div>
-                            <button className="p-2 text-blue-600 bg-blue-50 rounded-full hover:bg-blue-100">
+                            <button className="p-2 text-primary bg-primary-light rounded-full hover:bg-primary-light/80">
                                 <Edit2 size={16} />
                             </button>
                         </div>
@@ -510,12 +510,12 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                                             type="text"
                                             value={startLocation}
                                             onChange={(e) => handleStartChange(e.target.value)}
-                                            className="w-full text-sm font-medium text-gray-900 border border-gray-300 rounded-lg pl-3 pr-10 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                            className="w-full text-sm font-medium text-gray-900 border border-gray-300 rounded-lg pl-3 pr-10 py-2 focus:ring-2 focus:ring-primary focus:border-primary bg-white"
                                             placeholder="Wpisz adres lub użyj lokalizacji..."
                                         />
                                         <button
                                             onClick={() => handleUseCurrentLocation(setStartLocation)}
-                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors p-1"
+                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition-colors p-1"
                                             title="Użyj mojej lokalizacji"
                                         >
                                             <Locate size={16} />
@@ -530,12 +530,12 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                                             type="text"
                                             value={endLocation}
                                             onChange={(e) => handleEndChange(e.target.value)}
-                                            className="w-full text-sm font-medium text-gray-900 border border-gray-300 rounded-lg pl-3 pr-10 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                                            className="w-full text-sm font-medium text-gray-900 border border-gray-300 rounded-lg pl-3 pr-10 py-2 focus:ring-2 focus:ring-primary focus:border-primary bg-white"
                                             placeholder="Wpisz adres lub użyj lokalizacji..."
                                         />
                                         <button
                                             onClick={() => handleUseCurrentLocation(setEndLocation)}
-                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors p-1"
+                                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition-colors p-1"
                                             title="Użyj mojej lokalizacji"
                                         >
                                             <Locate size={16} />
@@ -555,7 +555,7 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
 
                                 <button
                                     onClick={handleExportToGoogleMaps}
-                                    className="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl shadow-sm hover:bg-gray-50 hover:text-blue-600 hover:border-blue-300 transition-all flex items-center justify-center"
+                                    className="px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl shadow-sm hover:bg-gray-50 hover:text-primary hover:border-primary-light transition-all flex items-center justify-center"
                                     title="Eksportuj do Google Maps"
                                 >
                                     <Navigation size={20} />
@@ -576,7 +576,7 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                         currentLeads.map((lead, idx) => (
                             <div key={lead.id} className="group bg-white rounded-xl p-3 border border-gray-100 shadow-sm hover:shadow-md transition-all flex gap-3 items-start">
                                 <div className="flex flex-col items-center pt-1">
-                                    <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-md ring-2 ring-blue-100 group-hover:ring-blue-200 transition-all">
+                                    <div className="w-7 h-7 rounded-full bg-primary text-white font-bold text-sm flex items-center justify-center shrink-0 shadow-md ring-2 ring-primary-light group-hover:ring-primary transition-all">
                                         {idx + 1}
                                     </div>
                                 </div>
@@ -633,7 +633,7 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
                                 key={lead.id}
                                 position={{ lat: lead.latitude, lng: lead.longitude }}
                             >
-                                <div className="w-8 h-8 rounded-full bg-blue-600 text-white border-2 border-white shadow-lg flex items-center justify-center font-bold text-sm transform transition-transform hover:scale-110">
+                                <div className="w-8 h-8 rounded-full bg-primary text-white border-2 border-white shadow-lg flex items-center justify-center font-bold text-sm transform transition-transform hover:scale-110">
                                     {idx + 1}
                                 </div>
                             </AdvancedMarker>
@@ -667,7 +667,7 @@ const MapContent: React.FC<MapViewProps> = ({ weekStart, scheduledLeads }) => {
             {!showMobileMap && (
                 <button
                     onClick={() => setShowMobileMap(true)}
-                    className="md:hidden absolute bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-xl hover:bg-blue-700 transition-all hover:scale-110 z-50 flex items-center justify-center"
+                    className="md:hidden absolute bottom-24 right-6 bg-primary text-white p-4 rounded-full shadow-xl hover:bg-primary-dark transition-all hover:scale-110 z-50 flex items-center justify-center animate-bounce-subtle"
                 >
                     <MapIcon size={28} />
                 </button>

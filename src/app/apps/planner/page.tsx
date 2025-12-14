@@ -141,35 +141,40 @@ export default function PlannerPage() {
     return (
         <div className="flex flex-col h-screen bg-white">
             {/* Header */}
-            <header className="h-16 border-b border-gray-200 flex items-center justify-between px-6 bg-white shrink-0 z-10">
-                <div className="flex items-center gap-4">
-                    <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
-                        <Home size={20} />
-                    </Link>
-                    <h1 className="text-xl font-bold text-gray-800">Planer Tras</h1>
+            <header className="h-16 border-b border-gray-200 flex items-center justify-between px-4 lg:px-6 bg-white shrink-0 z-10">
+                <div className="flex items-center gap-3 lg:gap-4 w-full lg:w-auto justify-between lg:justify-start">
+                    <div className="flex items-center gap-3">
+                        <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
+                            <Home size={20} />
+                        </Link>
+                        <h1 className="text-lg lg:text-xl font-bold text-gray-800 hidden lg:block">Planer Tras</h1>
+                    </div>
 
-                    {/* Date Nav */}
-                    <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 ml-8">
+                    {/* Date Nav - Centered on mobile, efficient space usage */}
+                    <div className="flex items-center gap-1 lg:gap-2 bg-gray-50 rounded-lg p-1 mx-auto lg:mx-0 lg:ml-8">
                         <button
                             onClick={handlePreviousWeek}
-                            className="p-1 hover:bg-white rounded shadow-sm text-gray-500 transition-colors"
+                            className="p-1.5 hover:bg-white rounded shadow-sm text-gray-500 transition-colors"
                         >
-                            <ChevronLeft size={18} />
+                            <ChevronLeft size={16} />
                         </button>
-                        <span className="text-sm font-medium px-2 text-gray-700 min-w-[200px] text-center capitalize">
-                            {format(weekStart, 'd MMMM', { locale: pl })} - {format(weekEnd, 'd MMMM yyyy', { locale: pl })}
+                        <span className="text-xs lg:text-sm font-medium px-2 text-gray-700 min-w-[140px] lg:min-w-[200px] text-center capitalize truncate">
+                            {format(weekStart, 'd MMMM', { locale: pl })} - {format(weekEnd, 'd MMMM', { locale: pl })}
                         </span>
                         <button
                             onClick={handleNextWeek}
-                            className="p-1 hover:bg-white rounded shadow-sm text-gray-500 transition-colors"
+                            className="p-1.5 hover:bg-white rounded shadow-sm text-gray-500 transition-colors"
                         >
-                            <ChevronRight size={18} />
+                            <ChevronRight size={16} />
                         </button>
                     </div>
+
+                    {/* Placeholder for balance/alignment on mobile if needed, or Profile/Settings in future */}
+                    <div className="w-10 lg:hidden"></div>
                 </div>
 
-                {/* View Switcher */}
-                <div className="flex bg-gray-100 p-1 rounded-lg">
+                {/* Desktop View Switcher */}
+                <div className="hidden lg:flex bg-gray-100 p-1 rounded-lg">
                     <button
                         onClick={() => setViewMode('calendar')}
                         className={`
@@ -193,29 +198,33 @@ export default function PlannerPage() {
                 </div>
             </header>
 
-            {/* Main Content */}
+            {/* Main Content - Added pb-20 for mobile bottom bar */}
             <DndContext
                 sensors={sensors}
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
-                    {/* Sidebar (Always visible in Calendar mode, maybe hidden in Map mode if not needed? 
-                        Prompt says: "Left sidebar (20%) showing a list titled 'Unscheduled Leads'".
-                        In Map mode, Prompt says: "Left side (sidebar panel): Itinerary".
-                        So Sidebar changes content based on View Mode.
+                <div className="flex flex-col lg:flex-row flex-1 overflow-hidden pb-[calc(env(safe-area-inset-bottom)+64px)] lg:pb-0">
+                    {/* Sidebar rules:
+                        - Desktop: Always visible (handled by CSS in components)
+                        - Mobile: 
+                          - Calendar Mode: Visible
+                          - Map Mode: Hidden (handled by MapView internal logic)
                     */}
 
-                    {viewMode === 'calendar' && (
-                        <>
-                            <PlannerSidebar leads={unscheduledLeads} />
-                            <CalendarView weekStart={weekStart} scheduledLeads={scheduledLeads} />
-                        </>
-                    )}
+                    {/* We render both and control visibility via CSS/State inside components or here if strictly separated */}
+                    {/* Actually, MapView handles its own internal structure for mobile (list/map toggle). 
+                       But 'CalendarView' + 'PlannerSidebar' is for the 'Planer' tab.
+                    */}
 
-                    {viewMode === 'map' && (
+                    <div className={`${viewMode === 'calendar' ? 'flex flex-col lg:flex-row flex-1 overflow-hidden' : 'hidden lg:flex lg:flex-row lg:flex-1 lg:overflow-hidden'}`}>
+                        <PlannerSidebar leads={unscheduledLeads} />
+                        <CalendarView weekStart={weekStart} scheduledLeads={scheduledLeads} />
+                    </div>
+
+                    <div className={`${viewMode === 'map' ? 'flex-1 flex overflow-hidden' : 'hidden'}`}>
                         <MapView weekStart={weekStart} scheduledLeads={scheduledLeads} />
-                    )}
+                    </div>
                 </div>
 
                 {/* Drag Overlay */}
@@ -231,6 +240,27 @@ export default function PlannerPage() {
                     document.body
                 )}
             </DndContext>
+
+            {/* Mobile Bottom Navigation Bar */}
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-[env(safe-area-inset-bottom)] z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.03)]">
+                <div className="flex justify-around items-center h-16">
+                    <button
+                        onClick={() => setViewMode('calendar')}
+                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${viewMode === 'calendar' ? 'text-primary' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        <Calendar size={24} strokeWidth={viewMode === 'calendar' ? 2.5 : 2} />
+                        <span className="text-[10px] font-medium">Planer</span>
+                    </button>
+
+                    <button
+                        onClick={() => setViewMode('map')}
+                        className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${viewMode === 'map' ? 'text-primary' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                        <MapIcon size={24} strokeWidth={viewMode === 'map' ? 2.5 : 2} />
+                        <span className="text-[10px] font-medium">Mapa</span>
+                    </button>
+                </div>
+            </nav>
         </div>
     );
 }

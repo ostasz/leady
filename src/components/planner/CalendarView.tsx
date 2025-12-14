@@ -61,7 +61,7 @@ const DayColumn: React.FC<DayColumnProps> = ({ date, id, leads }) => {
                 </span>
                 <span className={`
                     text-lg font-bold mt-1 h-8 w-8 flex items-center justify-center rounded-full
-                    ${isToday ? 'bg-blue-600 text-white' : 'text-gray-800'}
+                    ${isToday ? 'bg-primary text-white' : 'text-gray-800'}
                 `}>
                     {format(date, 'd')}
                 </span>
@@ -130,7 +130,7 @@ const ScheduledLeadItem: React.FC<{ lead: Lead }> = ({ lead }) => {
             className={`
                 bg-white p-2.5 rounded shadow-sm border border-l-4 border-gray-100 cursor-grab hover:shadow-md group
                 ${isDragging ? 'opacity-30' : ''}
-                ${lead.priority === 'high' ? 'border-l-red-500' : 'border-l-blue-500'}
+                ${lead.priority === 'high' ? 'border-l-red-500' : 'border-l-primary'}
             `}
         >
             <div className="flex justify-between items-start">
