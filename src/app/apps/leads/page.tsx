@@ -8,7 +8,7 @@ import { APIProvider, MapMouseEvent } from '@vis.gl/react-google-maps';
 import { LEAD_PROFILES, ProfileKey } from '@/config/lead-profiles';
 import Link from 'next/link';
 import Map from '@/components/Map';
-import { Search, MapPin, Navigation, Sparkles, Locate, BookmarkPlus, ArrowLeft, Route, Home as HomeIcon } from 'lucide-react';
+import { Search, MapPin, Navigation, Sparkles, Locate, BookmarkPlus, ArrowLeft, Route, Home as HomeIcon, List, Map as MapIcon } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
@@ -35,6 +35,7 @@ export default function LeadsPage() {
   const [clickedPos, setClickedPos] = useState<{ lat: number; lng: number } | null>(null);
   const router = useRouter();
   const [profileSearch, setProfileSearch] = useState('');
+  const [isMapOpen, setIsMapOpen] = useState(false);
 
   const sortedProfiles = Object.values(LEAD_PROFILES).sort((a, b) => a.label.localeCompare(b.label));
   const filteredProfiles = sortedProfiles.filter(p =>
@@ -423,252 +424,403 @@ export default function LeadsPage() {
 
   return (
     <APIProvider apiKey={API_KEY}>
-      <div className="flex h-screen flex-col md:flex-row">
-        {/* Sidebar */}
-        <div className="w-full md:w-1/3 bg-white p-6 shadow-xl z-10 overflow-y-auto relative">
-          {/* Success Toast - Fixed position */}
-          {saveSuccess && (
-            <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-fade-in-out">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              <span className="text-sm font-medium">Zapisano</span>
-            </div>
-          )}
-
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-primary transition-colors" title="Wróć do Portalu">
-                <HomeIcon size={20} />
-              </Link>
-              <h1 className="text-xl font-bold text-gray-800">Wyszukiwanie leadów</h1>
-            </div>
-            {user && (
-              <div className="flex flex-col items-end">
-                <span className="text-xs text-gray-700 font-medium">Zalogowany jako:</span>
-                <span className="text-sm font-semibold text-gray-900">{user.displayName || user.email}</span>
-                {userData?.role === 'admin' && (
-                  <Link href="/admin" className="text-xs text-primary hover:text-primary-dark mt-1 font-bold">
-                    Panel Administratora
-                  </Link>
-                )}
-                <button
-                  onClick={() => signOut()}
-                  className="text-xs text-red-500 hover:text-red-700 mt-1 underline"
-                >
-                  Wyloguj
-                </button>
+      <div className="flex h-screen relative overflow-hidden">
+        {/* Sidebar / List View */}
+        <div className={`w-full md:w-1/3 bg-white shadow-xl z-20 flex flex-col h-full transition-transform duration-300 ease-in-out ${isMapOpen ? 'hidden md:flex' : 'flex'}`}>
+          {/* Header */}
+          <div className="p-4 border-b bg-white shrink-0">
+            {/* Success Toast */}
+            {saveSuccess && (
+              <div className="fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-fade-in-out">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="text-sm font-medium">Zapisano</span>
               </div>
             )}
-          </div>
 
-          {/* Mode Toggle */}
-          <div className="flex mb-6 bg-gray-100 p-1 rounded-lg">
-            <button
-              onClick={() => setMode('radius')}
-              className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${mode === 'radius' ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
-            >
-              <div className="flex items-center justify-center gap-1">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-primary transition-colors" title="Wróć do Portalu">
+                  <HomeIcon size={20} />
+                </Link>
+                <h1 className="text-lg font-bold text-gray-800">Wyszukiwanie</h1>
+              </div>
+              <div className="flex gap-2">
+                <Link
+                  href="/my-leads"
+                  className="bg-gray-100 text-gray-600 p-2 rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
+                  title="Moje Leady"
+                >
+                  <BookmarkPlus size={18} />
+                </Link>
+                <Link
+                  href="/apps/planner"
+                  className="bg-gray-100 text-gray-600 p-2 rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center justify-center"
+                  title="Planer Tras"
+                >
+                  <Route size={18} />
+                </Link>
+                {user && (
+                  <button
+                    onClick={() => signOut()}
+                    className="text-xs text-red-500 hover:text-red-700 ml-2 underline"
+                  >
+                    Wyloguj
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Mode Chips */}
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
+              <button
+                onClick={() => setMode('radius')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all ${mode === 'radius' ? 'bg-primary text-white shadow-md ring-2 ring-primary ring-offset-1' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
                 <MapPin size={14} />
                 Wokół Punktu
-              </div>
-            </button>
-            <button
-              onClick={() => setMode('route')}
-              className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${mode === 'route' ? 'bg-primary text-white shadow-md' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}`}
-            >
-              <div className="flex items-center justify-center gap-1">
+              </button>
+              <button
+                onClick={() => setMode('route')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all ${mode === 'route' ? 'bg-primary text-white shadow-md ring-2 ring-primary ring-offset-1' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
                 <Navigation size={14} />
                 Wzdłuż Trasy
-              </div>
-            </button>
-            <button
-              onClick={() => setMode('ai')}
-              className={`flex items-center gap-2 px-4 py-3 rounded-lg transition-all ${mode === 'ai'
-                ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white shadow-lg shadow-purple-500/50 animate-pulse-glow'
-                : 'bg-gray-100 text-gray-800 hover:bg-gradient-to-r hover:from-purple-50 hover:to-cyan-50 hover:shadow-md'
-                }`}
-            >
-              <div className="flex items-center justify-center gap-1">
+              </button>
+              <button
+                onClick={() => setMode('ai')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-all ${mode === 'ai'
+                  ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 text-white shadow-lg ring-2 ring-purple-500 ring-offset-1'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+              >
                 <Sparkles size={14} />
                 AI Assistant
-              </div>
-            </button>
+              </button>
+            </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <Link
-              href="/my-leads"
-              className="bg-primary text-white py-3 px-2 rounded-lg text-center font-semibold hover:bg-primary-dark transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-sm"
-            >
-              <BookmarkPlus size={18} />
-              Moje Leady
-            </Link>
-            <Link
-              href="/apps/planner"
-              className="bg-white text-gray-800 border border-gray-200 py-3 px-2 rounded-lg text-center font-semibold hover:bg-gray-50 hover:text-primary transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 text-sm"
-            >
-              <Route size={18} />
-              Planer Tras
-            </Link>
-          </div>
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
 
-          {/* Search Form */}
-          <form onSubmit={handleSearch} className="space-y-4 mb-8">
+            {/* Search Form */}
+            <form onSubmit={handleSearch} className="space-y-4 mb-8">
 
-            {/* Profile Selection (Only for Radius Mode) */}
-            {mode === 'radius' && (
-              <div className="mb-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Wybierz profile firm:</label>
-                  <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded">
-                    Wybrano: {LEAD_PROFILES[selectedProfiles[0]]?.label || 'Brak'}
-                  </span>
-                </div>
+              {/* Profile Selection (Only for Radius Mode) */}
+              {mode === 'radius' && (
+                <div className="mb-4 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Wybierz profil firmy:</label>
+                    <select
+                      value={selectedProfiles[0] || ''}
+                      onChange={(e) => setSelectedProfiles([e.target.value as ProfileKey])}
+                      className="w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-primary focus:border-primary text-sm text-gray-900 bg-white appearance-none"
+                    >
+                      {sortedProfiles.map((profile) => (
+                        <option key={profile.id} value={profile.id}>
+                          {profile.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-                {/* Profile Search Input */}
-                <div className="mb-2 relative">
-                  <input
-                    type="text"
-                    placeholder="Szukaj profilu (Enter wybiera pierwszy)..."
-                    value={profileSearch}
-                    onChange={(e) => setProfileSearch(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (filteredProfiles.length > 0) {
-                          setSelectedProfiles([filteredProfiles[0].id]);
-                        }
-                      }
-                    }}
-                    className="w-full p-2 pl-8 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary text-gray-900"
-                  />
-                  <Search className="absolute left-2 top-2.5 text-gray-400" size={14} />
-                </div>
-
-                <div className="mb-2">
-                  <select
-                    value={selectedProfiles[0] || ''}
-                    onChange={(e) => setSelectedProfiles([e.target.value as ProfileKey])}
-                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-sm text-gray-900 bg-white"
-                    size={5} // Show multiple options to make it easier to browse
-                  >
-                    {filteredProfiles.map((profile) => (
-                      <option key={profile.id} value={profile.id} className="py-1 text-gray-900">
-                        {profile.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Radius Slider */}
-                <div className="border-t border-gray-200 pt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2 flex justify-between">
-                    <span>Promień wyszukiwania</span>
-                    <span className="font-bold text-primary">{radius} km</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="1"
-                    max="20"
-                    value={radius}
-                    onChange={(e) => setRadius(Number(e.target.value))}
-                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>1 km</span>
-                    <span>20 km</span>
+                  {/* Radius Slider */}
+                  <div>
+                    <label className="flex justify-between text-sm font-medium text-gray-700 mb-2">
+                      <span>Promień wyszukiwania</span>
+                      <span className="font-bold text-primary">{radius} km</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="1"
+                      max="20"
+                      value={radius}
+                      onChange={(e) => setRadius(Number(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary"
+                    />
+                    <div className="flex justify-between text-xs text-gray-400 mt-1">
+                      <span>1 km</span>
+                      <span>20 km</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {mode === 'route' ? 'Punkt Startowy' : 'Adres / Obszar'}
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={address1}
-                  onChange={(e) => setAddress1(e.target.value)}
-                  placeholder={mode === 'ai' ? "np. Warszawa, duże fabryki" : "np. Warszawa, Marszałkowska 1"}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={getUserLocation}
-                  disabled={gettingLocation}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Użyj mojej lokalizacji"
-                >
-                  <Locate size={20} className={gettingLocation ? 'animate-pulse' : ''} />
-                </button>
-              </div>
-            </div>
-
-            {mode === 'route' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Punkt Końcowy
+                  {mode === 'route' ? 'Punkt Startowy' : 'Adres / Obszar'}
                 </label>
-                <input
-                  type="text"
-                  value={address2}
-                  onChange={(e) => setAddress2(e.target.value)}
-                  placeholder="np. Łódź, Piotrkowska"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900"
-                  required
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={address1}
+                    onChange={(e) => setAddress1(e.target.value)}
+                    placeholder={mode === 'ai' ? "np. Warszawa, duże fabryki" : "np. Warszawa, Marszałkowska 1"}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={getUserLocation}
+                    disabled={gettingLocation}
+                    className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Użyj mojej lokalizacji"
+                  >
+                    <Locate size={20} className={gettingLocation ? 'animate-pulse' : ''} />
+                  </button>
+                </div>
+              </div>
+
+              {mode === 'route' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Punkt Końcowy
+                  </label>
+                  <input
+                    type="text"
+                    value={address2}
+                    onChange={(e) => setAddress2(e.target.value)}
+                    placeholder="np. Łódź, Piotrkowska"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-gray-900"
+                    required
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className={`w-full text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${mode === 'ai' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-primary hover:bg-primary-dark'}`}
+              >
+                {loading ? (
+                  'Szukanie...'
+                ) : (
+                  <>
+                    {mode === 'ai' ? <Sparkles size={18} /> : <Search size={18} />}
+                    {mode === 'ai' ? 'Analiza AI' : 'Szukaj Firm'}
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                <p className="text-red-700">{error}</p>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${mode === 'ai' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-primary hover:bg-primary-dark'}`}
-            >
-              {loading ? (
-                'Szukanie...'
-              ) : (
-                <>
-                  {mode === 'ai' ? <Sparkles size={18} /> : <Search size={18} />}
-                  {mode === 'ai' ? 'Analiza AI' : 'Szukaj Firm'}
-                </>
-              )}
-            </button>
-          </form>
+            {/* AI Report */}
+            {mode === 'ai' && aiReport && (
+              <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-100">
+                <div className="flex justify-between items-center mb-3">
+                  <h2 className="text-lg font-bold text-purple-900 flex items-center gap-2">
+                    <Sparkles size={20} />
+                    Raport AI
+                  </h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const XLSX = await import('xlsx');
 
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
-              <p className="text-red-700">{error}</p>
-            </div>
-          )}
+                          // Parse AI Report for structured data using helper
+                          const parsedData = parseAIReport(aiReport);
 
-          {/* AI Report */}
-          {mode === 'ai' && aiReport && (
-            <div className="mb-6 p-4 bg-purple-50 rounded-lg border border-purple-100">
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="text-lg font-bold text-purple-900 flex items-center gap-2">
-                  <Sparkles size={20} />
-                  Raport AI
-                </h2>
+                          const ws = XLSX.utils.json_to_sheet(parsedData);
+                          const wb = XLSX.utils.book_new();
+                          XLSX.utils.book_append_sheet(wb, ws, "AI Prospects");
+                          XLSX.writeFile(wb, "ai_prospects.xlsx");
+                        } catch (e) {
+                          alert("Błąd: Biblioteka xlsx nie jest zainstalowana. Uruchom w terminalu: npm install xlsx");
+                          console.error(e);
+                        }
+                      }}
+                      className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
+                      title="Eksportuj do Excel"
+                    >
+                      Excel
+                    </button>
+                    <button
+                      onClick={() => {
+                        const element = document.createElement("a");
+                        const file = new Blob([aiReport], { type: 'text/plain' });
+                        element.href = URL.createObjectURL(file);
+                        element.download = "raport_ai.txt";
+                        document.body.appendChild(element); // Required for this to work in FireFox
+                        element.click();
+                        document.body.removeChild(element);
+                      }}
+                      className="text-xs bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors"
+                      title="Pobierz raport jako tekst"
+                    >
+                      TXT
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const jsPDF = (await import('jspdf')).default;
+                          const autoTable = (await import('jspdf-autotable')).default;
+
+                          const doc = new jsPDF();
+
+                          // Load custom font for Polish characters
+                          const fontUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf';
+                          const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
+
+                          // Browser compatible base64 conversion
+                          const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
+                            let binary = '';
+                            const bytes = new Uint8Array(buffer);
+                            const len = bytes.byteLength;
+                            for (let i = 0; i < len; i++) {
+                              binary += String.fromCharCode(bytes[i]);
+                            }
+                            return window.btoa(binary);
+                          };
+
+                          const base64String = arrayBufferToBase64(fontBytes);
+
+                          doc.addFileToVFS('Roboto-Regular.ttf', base64String);
+                          doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+                          doc.setFont('Roboto');
+
+                          // Add Title
+                          doc.setFontSize(18);
+                          doc.setTextColor(40, 40, 40);
+                          doc.text("Raport AI Potencjalnych Klientów", 14, 22);
+
+                          doc.setFontSize(10);
+                          doc.setTextColor(100, 100, 100);
+                          doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 30);
+
+                          // Sanitize and Process Text
+                          const cleanText = aiReport
+                            .replace(/\*\*/g, '') // Remove bold
+                            .replace(/\*/g, '-')  // Replace bullets
+                            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links [text](url) -> text
+                            .replace(/<[^>]*>/g, ''); // Remove HTML tags if any
+
+                          doc.setFontSize(11);
+                          doc.setTextColor(60, 60, 60);
+
+                          const splitText = doc.splitTextToSize(cleanText, 180);
+                          let y = 40;
+                          const pageHeight = doc.internal.pageSize.height;
+                          const margin = 14;
+                          const lineHeight = 5;
+
+                          // Pagination Loop
+                          for (let i = 0; i < splitText.length; i++) {
+                            if (y > pageHeight - 20) {
+                              doc.addPage();
+                              y = 20; // Reset Y for new page
+                            }
+                            doc.text(splitText[i], margin, y);
+                            y += lineHeight;
+                          }
+
+                          // Add some spacing before table
+                          y += 10;
+
+                          // Check if table needs new page
+                          if (y > pageHeight - 40) {
+                            doc.addPage();
+                            y = 20;
+                          }
+
+                          // Parse AI Report using helper
+                          const parsedData = parseAIReport(aiReport);
+
+                          const tableData = parsedData.map(r => [
+                            r.Name || '-',
+                            r.NIP || '-',
+                            r.Phone || '-',
+                            r.Website || '-'
+                          ]);
+
+                          autoTable(doc, {
+                            startY: y,
+                            head: [['Firma', 'NIP', 'Telefon', 'WWW']],
+                            body: tableData,
+                            styles: {
+                              font: 'Roboto',
+                              fontSize: 10,
+                              cellPadding: 3,
+                            },
+                            headStyles: {
+                              fillColor: [142, 68, 173], // Purple for AI
+                              textColor: 255,
+                              fontStyle: 'bold',
+                            },
+                            alternateRowStyles: {
+                              fillColor: [245, 245, 245],
+                            },
+                            columnStyles: {
+                              0: { cellWidth: 50 },
+                              1: { cellWidth: 30 },
+                              2: { cellWidth: 30 },
+                              3: { cellWidth: 'auto' },
+                            },
+                          });
+
+                          doc.save("ai_prospects.pdf");
+                        } catch (e) {
+                          alert("Błąd: Biblioteki PDF nie są zainstalowane. Uruchom w terminalu: npm install jspdf jspdf-autotable");
+                          console.error(e);
+                        }
+                      }}
+                      className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors"
+                      title="Eksportuj do PDF"
+                    >
+                      PDF
+                    </button>
+                  </div>
+                </div>
+                <div className="prose prose-sm prose-purple max-w-none text-gray-800">
+                  <ReactMarkdown>{aiReport}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+
+            {/* Results List */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center border-b pb-2">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    Wyniki ({results.length})
+                  </h2>
+
+                  {results.length > 0 && (
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as 'reviews' | 'alphabetical' | 'distance')}
+                      className="text-sm text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 px-2 py-1 cursor-pointer"
+                    >
+                      <option value="reviews">Ilość opinii (domyślnie)</option>
+                      <option value="alphabetical">Alfabetycznie</option>
+                      <option value="distance">Odległość od punktu</option>
+                    </select>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={async () => {
+                      if (results.length === 0) return;
                       try {
                         const XLSX = await import('xlsx');
-
-                        // Parse AI Report for structured data using helper
-                        const parsedData = parseAIReport(aiReport);
-
-                        const ws = XLSX.utils.json_to_sheet(parsedData);
+                        const ws = XLSX.utils.json_to_sheet(results.map(r => ({
+                          Name: r.name,
+                          Address: r.address,
+                          Phone: r.phone || '',
+                          Website: r.website || '',
+                          Rating: r.rating || '',
+                          Reviews: r.user_ratings_total || ''
+                        })));
                         const wb = XLSX.utils.book_new();
-                        XLSX.utils.book_append_sheet(wb, ws, "AI Prospects");
-                        XLSX.writeFile(wb, "ai_prospects.xlsx");
+                        XLSX.utils.book_append_sheet(wb, ws, "Prospects");
+                        XLSX.writeFile(wb, "prospects.xlsx");
                       } catch (e) {
                         alert("Błąd: Biblioteka xlsx nie jest zainstalowana. Uruchom w terminalu: npm install xlsx");
                         console.error(e);
@@ -680,22 +832,8 @@ export default function LeadsPage() {
                     Excel
                   </button>
                   <button
-                    onClick={() => {
-                      const element = document.createElement("a");
-                      const file = new Blob([aiReport], { type: 'text/plain' });
-                      element.href = URL.createObjectURL(file);
-                      element.download = "raport_ai.txt";
-                      document.body.appendChild(element); // Required for this to work in FireFox
-                      element.click();
-                      document.body.removeChild(element);
-                    }}
-                    className="text-xs bg-gray-600 text-white px-2 py-1 rounded hover:bg-gray-700 transition-colors"
-                    title="Pobierz raport jako tekst"
-                  >
-                    TXT
-                  </button>
-                  <button
                     onClick={async () => {
+                      if (results.length === 0) return;
                       try {
                         const jsPDF = (await import('jspdf')).default;
                         const autoTable = (await import('jspdf-autotable')).default;
@@ -705,7 +843,6 @@ export default function LeadsPage() {
                         // Load custom font for Polish characters
                         const fontUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf';
                         const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-
                         // Browser compatible base64 conversion
                         const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
                           let binary = '';
@@ -726,60 +863,22 @@ export default function LeadsPage() {
                         // Add Title
                         doc.setFontSize(18);
                         doc.setTextColor(40, 40, 40);
-                        doc.text("Raport AI Potencjalnych Klientów", 14, 22);
+                        doc.text("Raport Potencjalnych Klientów", 14, 22);
 
                         doc.setFontSize(10);
                         doc.setTextColor(100, 100, 100);
                         doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 30);
 
-                        // Sanitize and Process Text
-                        const cleanText = aiReport
-                          .replace(/\*\*/g, '') // Remove bold
-                          .replace(/\*/g, '-')  // Replace bullets
-                          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links [text](url) -> text
-                          .replace(/<[^>]*>/g, ''); // Remove HTML tags if any
-
-                        doc.setFontSize(11);
-                        doc.setTextColor(60, 60, 60);
-
-                        const splitText = doc.splitTextToSize(cleanText, 180);
-                        let y = 40;
-                        const pageHeight = doc.internal.pageSize.height;
-                        const margin = 14;
-                        const lineHeight = 5;
-
-                        // Pagination Loop
-                        for (let i = 0; i < splitText.length; i++) {
-                          if (y > pageHeight - 20) {
-                            doc.addPage();
-                            y = 20; // Reset Y for new page
-                          }
-                          doc.text(splitText[i], margin, y);
-                          y += lineHeight;
-                        }
-
-                        // Add some spacing before table
-                        y += 10;
-
-                        // Check if table needs new page
-                        if (y > pageHeight - 40) {
-                          doc.addPage();
-                          y = 20;
-                        }
-
-                        // Parse AI Report using helper
-                        const parsedData = parseAIReport(aiReport);
-
-                        const tableData = parsedData.map(r => [
-                          r.Name || '-',
-                          r.NIP || '-',
-                          r.Phone || '-',
-                          r.Website || '-'
+                        const tableData = results.map(r => [
+                          r.name,
+                          r.address,
+                          r.phone || '-',
+                          r.website || '-'
                         ]);
 
                         autoTable(doc, {
-                          startY: y,
-                          head: [['Firma', 'NIP', 'Telefon', 'WWW']],
+                          startY: 40,
+                          head: [['Nazwa Firmy', 'Adres', 'Telefon', 'Strona WWW']],
                           body: tableData,
                           styles: {
                             font: 'Roboto',
@@ -787,7 +886,7 @@ export default function LeadsPage() {
                             cellPadding: 3,
                           },
                           headStyles: {
-                            fillColor: [142, 68, 173], // Purple for AI
+                            fillColor: [41, 128, 185], // Blue
                             textColor: 255,
                             fontStyle: 'bold',
                           },
@@ -795,16 +894,16 @@ export default function LeadsPage() {
                             fillColor: [245, 245, 245],
                           },
                           columnStyles: {
-                            0: { cellWidth: 50 },
-                            1: { cellWidth: 30 },
-                            2: { cellWidth: 30 },
-                            3: { cellWidth: 'auto' },
+                            0: { cellWidth: 50 }, // Name
+                            1: { cellWidth: 60 }, // Address
+                            2: { cellWidth: 30 }, // Phone
+                            3: { cellWidth: 'auto' }, // Website
                           },
                         });
 
-                        doc.save("ai_prospects.pdf");
+                        doc.save("prospects.pdf");
                       } catch (e) {
-                        alert("Błąd: Biblioteki PDF nie są zainstalowane. Uruchom w terminalu: npm install jspdf jspdf-autotable");
+                        alert("Błąd: Biblioteki PDF nie są zainstalowane lub wystąpił błąd generowania. Uruchom w terminalu: npm install jspdf jspdf-autotable");
                         console.error(e);
                       }
                     }}
@@ -815,347 +914,212 @@ export default function LeadsPage() {
                   </button>
                 </div>
               </div>
-              <div className="prose prose-sm prose-purple max-w-none text-gray-800">
-                <ReactMarkdown>{aiReport}</ReactMarkdown>
-              </div>
-            </div>
-          )}
 
-          {/* Results List */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center border-b pb-2">
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-semibold text-gray-800">
-                  Wyniki ({results.length})
-                </h2>
-
-                {results.length > 0 && (
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as 'reviews' | 'alphabetical' | 'distance')}
-                    className="text-sm text-gray-900 bg-white border border-gray-300 rounded-md shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 px-2 py-1 cursor-pointer"
-                  >
-                    <option value="reviews">Ilość opinii (domyślnie)</option>
-                    <option value="alphabetical">Alfabetycznie</option>
-                    <option value="distance">Odległość od punktu</option>
-                  </select>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={async () => {
-                    if (results.length === 0) return;
-                    try {
-                      const XLSX = await import('xlsx');
-                      const ws = XLSX.utils.json_to_sheet(results.map(r => ({
-                        Name: r.name,
-                        Address: r.address,
-                        Phone: r.phone || '',
-                        Website: r.website || '',
-                        Rating: r.rating || '',
-                        Reviews: r.user_ratings_total || ''
-                      })));
-                      const wb = XLSX.utils.book_new();
-                      XLSX.utils.book_append_sheet(wb, ws, "Prospects");
-                      XLSX.writeFile(wb, "prospects.xlsx");
-                    } catch (e) {
-                      alert("Błąd: Biblioteka xlsx nie jest zainstalowana. Uruchom w terminalu: npm install xlsx");
-                      console.error(e);
-                    }
-                  }}
-                  className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors"
-                  title="Eksportuj do Excel"
+              {sortedResults.length === 0 && !loading && (
+                <p className="text-gray-500 text-sm italic">Brak wyników. Wpisz adres i kliknij szukaj.</p>
+              )}
+              {sortedResults.map((place) => (
+                <div
+                  key={place.id}
+                  id={`lead-card-${place.id}`}
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-500 scroll-mt-4"
                 >
-                  Excel
-                </button>
-                <button
-                  onClick={async () => {
-                    if (results.length === 0) return;
-                    try {
-                      const jsPDF = (await import('jspdf')).default;
-                      const autoTable = (await import('jspdf-autotable')).default;
-
-                      const doc = new jsPDF();
-
-                      // Load custom font for Polish characters
-                      const fontUrl = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf';
-                      const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-                      // Browser compatible base64 conversion
-                      const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
-                        let binary = '';
-                        const bytes = new Uint8Array(buffer);
-                        const len = bytes.byteLength;
-                        for (let i = 0; i < len; i++) {
-                          binary += String.fromCharCode(bytes[i]);
-                        }
-                        return window.btoa(binary);
-                      };
-
-                      const base64String = arrayBufferToBase64(fontBytes);
-
-                      doc.addFileToVFS('Roboto-Regular.ttf', base64String);
-                      doc.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
-                      doc.setFont('Roboto');
-
-                      // Add Title
-                      doc.setFontSize(18);
-                      doc.setTextColor(40, 40, 40);
-                      doc.text("Raport Potencjalnych Klientów", 14, 22);
-
-                      doc.setFontSize(10);
-                      doc.setTextColor(100, 100, 100);
-                      doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 30);
-
-                      const tableData = results.map(r => [
-                        r.name,
-                        r.address,
-                        r.phone || '-',
-                        r.website || '-'
-                      ]);
-
-                      autoTable(doc, {
-                        startY: 40,
-                        head: [['Nazwa Firmy', 'Adres', 'Telefon', 'Strona WWW']],
-                        body: tableData,
-                        styles: {
-                          font: 'Roboto',
-                          fontSize: 10,
-                          cellPadding: 3,
-                        },
-                        headStyles: {
-                          fillColor: [41, 128, 185], // Blue
-                          textColor: 255,
-                          fontStyle: 'bold',
-                        },
-                        alternateRowStyles: {
-                          fillColor: [245, 245, 245],
-                        },
-                        columnStyles: {
-                          0: { cellWidth: 50 }, // Name
-                          1: { cellWidth: 60 }, // Address
-                          2: { cellWidth: 30 }, // Phone
-                          3: { cellWidth: 'auto' }, // Website
-                        },
-                      });
-
-                      doc.save("prospects.pdf");
-                    } catch (e) {
-                      alert("Błąd: Biblioteki PDF nie są zainstalowane lub wystąpił błąd generowania. Uruchom w terminalu: npm install jspdf jspdf-autotable");
-                      console.error(e);
-                    }
-                  }}
-                  className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors"
-                  title="Eksportuj do PDF"
-                >
-                  PDF
-                </button>
-              </div>
-            </div>
-
-            {sortedResults.length === 0 && !loading && (
-              <p className="text-gray-500 text-sm italic">Brak wyników. Wpisz adres i kliknij szukaj.</p>
-            )}
-            {sortedResults.map((place) => (
-              <div
-                key={place.id}
-                id={`lead-card-${place.id}`}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-500 scroll-mt-4"
-              >
-                <h3 className="font-bold text-gray-900 text-lg">
-                  <a
-                    href={`https://www.google.com/search?q=${encodeURIComponent(place.name + " " + (place.address || ""))}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-primary hover:underline"
-                  >
-                    {place.name}
-                  </a>
-                </h3>
-                <p className="text-sm text-gray-800 mt-1">{place.address}</p>
-                <div className="flex gap-2">
-                  {!place.detailsFetched && !place.phone && !place.website ? (
-                    <button
-                      onClick={() => handleGetDetails(place.id)}
-                      className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors font-semibold flex items-center gap-1"
-                    >
-                      <Sparkles size={12} />
-                      Pokaż dane kontaktowe
-                    </button>
-                  ) : (
-                    <>
-                      {place.website && (
-                        <a href={place.website} target="_blank" rel="noopener noreferrer" className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 truncate max-w-[150px]">
-                          {new URL(place.website).hostname.replace('www.', '')}
-                        </a>
-                      )}
-                      {place.phone && (
-                        <a href={`tel:${place.phone}`} className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded hover:bg-green-100 whitespace-nowrap">
-                          {place.phone}
-                        </a>
-                      )}
-                    </>
-                  )}
-                </div>
-                {place.nip && (
-                  <div className="flex items-center gap-1 mt-2 text-xs font-mono text-purple-700 bg-purple-50 px-2 py-1 rounded w-fit border border-purple-100">
-                    <span className="font-bold">NIP:</span>
-                    {place.nip}
-                  </div>
-                )}
-
-                {place.summary && (
-                  <p className="text-xs text-gray-700 mt-2 italic border-l-2 border-gray-300 pl-2">
-                    {place.summary}
-                  </p>
-                )}
-
-                <div className="flex items-center mt-2 gap-2 mb-3">
-                  <span className="text-yellow-500 text-sm font-medium">★ {place.rating || 'N/A'}</span>
-                  <span className="text-gray-600 text-xs">({place.user_ratings_total || 0} opinii)</span>
-                </div>
-
-                <div className="flex gap-2 mt-3 border-t pt-3 flex-wrap">
-                  {place.phone && (
+                  <h3 className="font-bold text-gray-900 text-lg">
                     <a
-                      href={`tel:${place.phone}`}
-                      className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-green-200"
-                    >
-                      📞 {place.phone}
-                    </a>
-                  )}
-                  {place.website && (
-                    <a
-                      href={place.website}
+                      href={`https://www.google.com/search?q=${encodeURIComponent(place.name + " " + (place.address || ""))}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 bg-primary-lighter text-primary-dark hover:bg-primary-light py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-primary-light"
+                      className="hover:text-primary hover:underline"
                     >
-                      🌐 Strona WWW
+                      {place.name}
                     </a>
+                  </h3>
+                  <p className="text-sm text-gray-800 mt-1">{place.address}</p>
+                  <div className="flex gap-2">
+                    {!place.detailsFetched && !place.phone && !place.website ? (
+                      <button
+                        onClick={() => handleGetDetails(place.id)}
+                        className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200 transition-colors font-semibold flex items-center gap-1"
+                      >
+                        <Sparkles size={12} />
+                        Pokaż dane kontaktowe
+                      </button>
+                    ) : (
+                      <>
+                        {place.website && (
+                          <a href={place.website} target="_blank" rel="noopener noreferrer" className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 truncate max-w-[150px]">
+                            {new URL(place.website).hostname.replace('www.', '')}
+                          </a>
+                        )}
+                        {place.phone && (
+                          <a href={`tel:${place.phone}`} className="text-xs bg-green-50 text-green-600 px-2 py-1 rounded hover:bg-green-100 whitespace-nowrap">
+                            {place.phone}
+                          </a>
+                        )}
+                      </>
+                    )}
+                  </div>
+                  {place.nip && (
+                    <div className="flex items-center gap-1 mt-2 text-xs font-mono text-purple-700 bg-purple-50 px-2 py-1 rounded w-fit border border-purple-100">
+                      <span className="font-bold">NIP:</span>
+                      {place.nip}
+                    </div>
                   )}
-                  <button
-                    onClick={() => handleDeepSearch(place.id, place.name, place.address, place.website)}
-                    disabled={deepSearchLoading[place.id]}
-                    className="flex-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-indigo-200 flex items-center justify-center gap-1"
-                  >
-                    {deepSearchLoading[place.id] ? (
-                      <span className="animate-spin">⏳</span>
-                    ) : (
-                      <Sparkles size={12} />
+
+                  {place.summary && (
+                    <p className="text-xs text-gray-700 mt-2 italic border-l-2 border-gray-300 pl-2">
+                      {place.summary}
+                    </p>
+                  )}
+
+                  <div className="flex items-center mt-2 gap-2 mb-3">
+                    <span className="text-yellow-500 text-sm font-medium">★ {place.rating || 'N/A'}</span>
+                    <span className="text-gray-600 text-xs">({place.user_ratings_total || 0} opinii)</span>
+                  </div>
+
+                  <div className="flex gap-2 mt-3 border-t pt-3 flex-wrap">
+                    {place.phone && (
+                      <a
+                        href={`tel:${place.phone}`}
+                        className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-green-200"
+                      >
+                        📞 {place.phone}
+                      </a>
                     )}
-                    {deepSearchResults[place.id] ? 'Odśwież Info' : 'Deep Search'}
-                  </button>
-                  <button
-                    onClick={() => handleSaveLead(place)}
-                    disabled={savingLead[place.id]}
-                    className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-green-200 flex items-center justify-center gap-1"
-                    title="Zapisz do mojej bazy leadów"
-                  >
-                    {savingLead[place.id] ? (
-                      <span className="animate-spin">⏳</span>
-                    ) : (
-                      <BookmarkPlus size={12} />
+                    {place.website && (
+                      <a
+                        href={place.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 bg-primary-lighter text-primary-dark hover:bg-primary-light py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-primary-light"
+                      >
+                        🌐 Strona WWW
+                      </a>
                     )}
-                    Zapisz Lead
-                  </button>
-                </div>
+                    <button
+                      onClick={() => handleDeepSearch(place.id, place.name, place.address, place.website)}
+                      disabled={deepSearchLoading[place.id]}
+                      className="flex-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-indigo-200 flex items-center justify-center gap-1"
+                    >
+                      {deepSearchLoading[place.id] ? (
+                        <span className="animate-spin">⏳</span>
+                      ) : (
+                        <Sparkles size={12} />
+                      )}
+                      {deepSearchResults[place.id] ? 'Odśwież Info' : 'Deep Search'}
+                    </button>
+                    <button
+                      onClick={() => handleSaveLead(place)}
+                      disabled={savingLead[place.id]}
+                      className="flex-1 bg-green-50 text-green-700 hover:bg-green-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-green-200 flex items-center justify-center gap-1"
+                      title="Zapisz do mojej bazy leadów"
+                    >
+                      {savingLead[place.id] ? (
+                        <span className="animate-spin">⏳</span>
+                      ) : (
+                        <BookmarkPlus size={12} />
+                      )}
+                      Zapisz Lead
+                    </button>
+                  </div>
 
-                {/* Deep Search Results */}
-                {deepSearchResults[place.id] && (
-                  <div className="mt-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100 text-sm animate-in fade-in slide-in-from-top-2">
-                    <h4 className="font-bold text-indigo-900 mb-2 flex items-center gap-2">
-                      <Sparkles size={14} />
-                      Analiza AI
-                    </h4>
+                  {/* Deep Search Results */}
+                  {deepSearchResults[place.id] && (
+                    <div className="mt-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100 text-sm animate-in fade-in slide-in-from-top-2">
+                      <h4 className="font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                        <Sparkles size={14} />
+                        Analiza AI
+                      </h4>
 
-                    {deepSearchResults[place.id].error ? (
-                      <p className="text-red-600">{deepSearchResults[place.id].error}</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {deepSearchResults[place.id].description && (
-                          <p className="text-gray-900 italic">{deepSearchResults[place.id].description}</p>
-                        )}
+                      {deepSearchResults[place.id].error ? (
+                        <p className="text-red-600">{deepSearchResults[place.id].error}</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {deepSearchResults[place.id].description && (
+                            <p className="text-gray-900 italic">{deepSearchResults[place.id].description}</p>
+                          )}
 
-                        {deepSearchResults[place.id].nip && (
-                          <div className="mt-2 bg-purple-50 p-2 rounded border border-purple-100 inline-block">
-                            <span className="text-xs font-bold text-purple-800 uppercase tracking-wider">NIP: </span>
-                            <span className="font-mono font-medium text-purple-900">{deepSearchResults[place.id].nip}</span>
-                          </div>
-                        )}
-
-                        <div className="grid grid-cols-2 gap-2 mt-2">
-                          {deepSearchResults[place.id].revenue && (
-                            <div className="bg-white p-2 rounded border border-indigo-100">
-                              <span className="block text-xs text-gray-700">Przychody</span>
-                              <span className="font-medium text-indigo-800">{deepSearchResults[place.id].revenue}</span>
+                          {deepSearchResults[place.id].nip && (
+                            <div className="mt-2 bg-purple-50 p-2 rounded border border-purple-100 inline-block">
+                              <span className="text-xs font-bold text-purple-800 uppercase tracking-wider">NIP: </span>
+                              <span className="font-mono font-medium text-purple-900">{deepSearchResults[place.id].nip}</span>
                             </div>
                           )}
-                          {deepSearchResults[place.id].employees && (
-                            <div className="bg-white p-2 rounded border border-indigo-100">
-                              <span className="block text-xs text-gray-700">Pracownicy</span>
-                              <span className="font-medium text-indigo-800">{deepSearchResults[place.id].employees}</span>
-                            </div>
-                          )}
-                        </div>
 
-                        {deepSearchResults[place.id].keyPeople && deepSearchResults[place.id].keyPeople.length > 0 && (
-                          <div className="mt-2">
-                            <span className="block text-xs text-gray-700 mb-1">Kluczowe Osoby:</span>
-                            <ul className="list-disc list-inside text-gray-800">
-                              {deepSearchResults[place.id].keyPeople.map((person: string, idx: number) => (
-                                <li key={idx}>{person}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {deepSearchResults[place.id].socials && Object.values(deepSearchResults[place.id].socials).some(v => v) && (
-                          <div className="mt-2 flex gap-2">
-                            {deepSearchResults[place.id].socials.linkedin && (
-                              <a href={deepSearchResults[place.id].socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">LinkedIn</a>
+                          <div className="grid grid-cols-2 gap-2 mt-2">
+                            {deepSearchResults[place.id].revenue && (
+                              <div className="bg-white p-2 rounded border border-indigo-100">
+                                <span className="block text-xs text-gray-700">Przychody</span>
+                                <span className="font-medium text-indigo-800">{deepSearchResults[place.id].revenue}</span>
+                              </div>
                             )}
-                            {deepSearchResults[place.id].socials.facebook && (
-                              <a href={deepSearchResults[place.id].socials.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Facebook</a>
-                            )}
-                            {deepSearchResults[place.id].socials.instagram && (
-                              <a href={deepSearchResults[place.id].socials.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">Instagram</a>
+                            {deepSearchResults[place.id].employees && (
+                              <div className="bg-white p-2 rounded border border-indigo-100">
+                                <span className="block text-xs text-gray-700">Pracownicy</span>
+                                <span className="font-medium text-indigo-800">{deepSearchResults[place.id].employees}</span>
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    )}
 
-                    {/* GUS Data Section */}
-                    {deepSearchResults[place.id].gus && (
-                      <div className="mt-3 pt-3 border-t border-indigo-200">
-                        <h5 className="font-bold text-indigo-800 text-xs uppercase mb-2">Dane Rejestrowe (GUS/CEIDG)</h5>
-                        <div className="grid grid-cols-1 gap-2 text-xs">
-                          {deepSearchResults[place.id].gus.regon && (
-                            <div><span className="text-gray-700">REGON:</span> <span className="font-mono">{deepSearchResults[place.id].gus.regon}</span></div>
-                          )}
-                          {deepSearchResults[place.id].gus.pkd && deepSearchResults[place.id].gus.pkd.length > 0 && (
-                            <div className="mt-1">
-                              <span className="text-gray-700 block mb-1">PKD:</span>
-                              <ul className="list-disc list-inside pl-1 text-gray-700 space-y-0.5">
-                                {deepSearchResults[place.id].gus.pkd.slice(0, 3).map((code: string, i: number) => (
-                                  <li key={i} className="truncate">{code}</li>
+                          {deepSearchResults[place.id].keyPeople && deepSearchResults[place.id].keyPeople.length > 0 && (
+                            <div className="mt-2">
+                              <span className="block text-xs text-gray-700 mb-1">Kluczowe Osoby:</span>
+                              <ul className="list-disc list-inside text-gray-800">
+                                {deepSearchResults[place.id].keyPeople.map((person: string, idx: number) => (
+                                  <li key={idx}>{person}</li>
                                 ))}
-                                {deepSearchResults[place.id].gus.pkd.length > 3 && <li>...</li>}
                               </ul>
                             </div>
                           )}
+
+                          {deepSearchResults[place.id].socials && Object.values(deepSearchResults[place.id].socials).some(v => v) && (
+                            <div className="mt-2 flex gap-2">
+                              {deepSearchResults[place.id].socials.linkedin && (
+                                <a href={deepSearchResults[place.id].socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">LinkedIn</a>
+                              )}
+                              {deepSearchResults[place.id].socials.facebook && (
+                                <a href={deepSearchResults[place.id].socials.facebook} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Facebook</a>
+                              )}
+                              {deepSearchResults[place.id].socials.instagram && (
+                                <a href={deepSearchResults[place.id].socials.instagram} target="_blank" rel="noopener noreferrer" className="text-pink-600 hover:underline">Instagram</a>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                      )}
+
+                      {/* GUS Data Section */}
+                      {deepSearchResults[place.id].gus && (
+                        <div className="mt-3 pt-3 border-t border-indigo-200">
+                          <h5 className="font-bold text-indigo-800 text-xs uppercase mb-2">Dane Rejestrowe (GUS/CEIDG)</h5>
+                          <div className="grid grid-cols-1 gap-2 text-xs">
+                            {deepSearchResults[place.id].gus.regon && (
+                              <div><span className="text-gray-700">REGON:</span> <span className="font-mono">{deepSearchResults[place.id].gus.regon}</span></div>
+                            )}
+                            {deepSearchResults[place.id].gus.pkd && deepSearchResults[place.id].gus.pkd.length > 0 && (
+                              <div className="mt-1">
+                                <span className="text-gray-700 block mb-1">PKD:</span>
+                                <ul className="list-disc list-inside pl-1 text-gray-700 space-y-0.5">
+                                  {deepSearchResults[place.id].gus.pkd.slice(0, 3).map((code: string, i: number) => (
+                                    <li key={i} className="truncate">{code}</li>
+                                  ))}
+                                  {deepSearchResults[place.id].gus.pkd.length > 3 && <li>...</li>}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Map Area */}
-        <div className="flex-1 relative h-[50vh] md:h-auto bg-gray-200">
+        <div className={`absolute inset-0 z-10 md:relative md:z-0 md:block bg-gray-200 transition-transform duration-300 ease-in-out ${isMapOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
           <Map
             center={center}
             markers={results.map(r => ({
@@ -1168,7 +1132,16 @@ export default function LeadsPage() {
             onMarkerClick={handleMarkerClick}
             selectedLocation={clickedPos}
           />
+
         </div>
+
+        {/* FAB - Floating Action Button for Map Toggle */}
+        <button
+          onClick={() => setIsMapOpen(!isMapOpen)}
+          className="md:hidden fixed bottom-6 right-6 z-50 bg-primary text-white p-4 rounded-full shadow-xl hover:bg-primary-dark transition-transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-4 focus:ring-primary/30"
+        >
+          {isMapOpen ? <List size={24} /> : <MapIcon size={24} />}
+        </button>
       </div>
     </APIProvider>
   );
