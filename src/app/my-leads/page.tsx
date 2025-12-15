@@ -494,10 +494,10 @@ export default function MyLeadsPage() {
                                         <Calendar size={10} />
                                         {new Date(lead.createdAt).toLocaleDateString('pl-PL')}
                                     </span>
-                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <div className="flex gap-1">
                                         <Link
                                             href={`/my-leads/${lead.id}`}
-                                            className="p-1.5 text-gray-500 hover:text-primary hover:bg-green-50 rounded-lg transition-colors"
+                                            className="p-1.5 text-primary hover:text-primary-dark hover:bg-green-50 rounded-lg transition-colors"
                                             title="Edytuj"
                                         >
                                             <Edit size={16} />
@@ -507,7 +507,7 @@ export default function MyLeadsPage() {
                                                 e.stopPropagation();
                                                 handleDelete(lead.id);
                                             }}
-                                            className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                                             title="Usuń"
                                         >
                                             <Trash2 size={16} />
