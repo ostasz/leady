@@ -1119,7 +1119,7 @@ export default function LeadsPage() {
         </div>
 
         {/* Map Area */}
-        <div className={`absolute inset-0 z-10 md:relative md:z-0 md:block bg-gray-200 transition-transform duration-300 ease-in-out ${isMapOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
+        <div className={`absolute inset-0 z-10 md:relative md:flex-1 md:z-0 md:block bg-gray-200 transition-transform duration-300 ease-in-out ${isMapOpen ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
           <Map
             center={center}
             markers={results.map(r => ({
