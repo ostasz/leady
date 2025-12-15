@@ -56,12 +56,12 @@ export default function Dashboard() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <img src="/ekovoltis-logo.png" alt="Ekovoltis" className="h-8" />
-                        <span className="text-xl font-semibold text-gray-700">| Portal Handlowca</span>
+                        <span className="text-xl font-semibold text-gray-700 hidden md:inline">| Portal Handlowca</span>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-gray-600">
                             <User size={18} />
-                            <span className="text-sm font-medium">{user.displayName || user.email}</span>
+                            <span className="text-sm font-medium hidden sm:inline">{user.displayName || user.email}</span>
                         </div>
                         <button
                             onClick={() => signOut()}
