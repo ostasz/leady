@@ -39,6 +39,7 @@ type Lead = {
     notes: string | null;
     createdAt: string;
     ownerEmail?: string;
+    ownerName?: string;
     ownerId?: string;
     user?: {
         name: string | null;
@@ -441,9 +442,16 @@ export default function MyLeadsPage() {
                                             {getPriorityBadge(lead.priority)}
                                         </div>
                                     </div>
-                                    {userData?.role === 'admin' && lead.ownerEmail && (
-                                        <div className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100" title={`Właściciel: ${lead.ownerEmail}`}>
-                                            {lead.ownerEmail.split('@')[0]}
+                                    {userData?.role === 'admin' && (lead.ownerEmail || lead.ownerName) && (
+                                        <div className="text-[10px] text-gray-500 bg-gray-100/80 px-2 py-1 rounded-md border border-gray-200/50 flex flex-col items-end max-w-[120px]" title={`Właściciel: ${lead.ownerEmail || 'Nieznany'}`}>
+                                            <span className="font-semibold text-gray-700 truncate w-full text-right">
+                                                {lead.ownerName || lead.ownerEmail?.split('@')[0]}
+                                            </span>
+                                            {lead.ownerName && lead.ownerEmail && (
+                                                <span className="text-[9px] text-gray-400 truncate w-full text-right opacity-80">
+                                                    {lead.ownerEmail}
+                                                </span>
+                                            )}
                                         </div>
                                     )}
                                 </div>

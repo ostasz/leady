@@ -105,9 +105,12 @@ export default function LeadsPage() {
               phone: detailsData.phone || place.phone,
               website: detailsData.website || place.website,
               summary: detailsData.summary || place.summary,
-              openingHours: detailsData.openingHours
+              openingHours: detailsData.openingHours,
+              detailsFetched: true
             };
-            // We could also update the UI/state here, but not strictly necessary for saving
+
+            // Update results state to show details immediately in UI
+            setResults(prev => prev.map(r => r.id === place.id ? placeDetails : r));
           }
         } catch (detailsErr) {
           console.error("Failed to fetch details during save", detailsErr);
@@ -322,26 +325,55 @@ export default function LeadsPage() {
     return parsedData;
   };
 
-  const handleDeepSearch = async (id: string, name: string, address: string, website: string) => {
-    setDeepSearchLoading(prev => ({ ...prev, [id]: true }));
+  const handleDeepSearch = async (place: any) => {
+    setDeepSearchLoading(prev => ({ ...prev, [place.id]: true }));
     try {
+      let placeDetails = { ...place };
+
+      // Auto-reveal: Fetch details if not present
+      if (!place.detailsFetched) {
+        try {
+          const headers = await getAuthHeaders();
+          const detailsRes = await fetch(`/api/place-details?placeId=${place.id}`, { headers });
+          if (detailsRes.ok) {
+            const detailsData = await detailsRes.json();
+            placeDetails = {
+              ...placeDetails,
+              phone: detailsData.phone || place.phone,
+              website: detailsData.website || place.website,
+              summary: detailsData.summary || place.summary,
+              openingHours: detailsData.openingHours,
+              detailsFetched: true
+            };
+            // Update UI immediately
+            setResults(prev => prev.map(r => r.id === place.id ? placeDetails : r));
+          }
+        } catch (detailsErr) {
+          console.error("Failed to fetch details during deep search", detailsErr);
+        }
+      }
+
       const headers = await getAuthHeaders();
       const res = await fetch('/api/deep-search', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ name, address, website })
+        body: JSON.stringify({
+          name: placeDetails.name,
+          address: placeDetails.address,
+          website: placeDetails.website
+        })
       });
       const data = await res.json();
       if (data.data) {
-        setDeepSearchResults(prev => ({ ...prev, [id]: data.data }));
+        setDeepSearchResults(prev => ({ ...prev, [place.id]: data.data }));
       } else {
-        setDeepSearchResults(prev => ({ ...prev, [id]: { error: 'Nie udało się pobrać danych.' } }));
+        setDeepSearchResults(prev => ({ ...prev, [place.id]: { error: 'Nie udało się pobrać danych.' } }));
       }
     } catch (e) {
       console.error(e);
-      setDeepSearchResults(prev => ({ ...prev, [id]: { error: 'Błąd połączenia.' } }));
+      setDeepSearchResults(prev => ({ ...prev, [place.id]: { error: 'Błąd połączenia.' } }));
     } finally {
-      setDeepSearchLoading(prev => ({ ...prev, [id]: false }));
+      setDeepSearchLoading(prev => ({ ...prev, [place.id]: false }));
     }
   };
 
@@ -810,14 +842,18 @@ export default function LeadsPage() {
                       if (results.length === 0) return;
                       try {
                         const XLSX = await import('xlsx');
-                        const ws = XLSX.utils.json_to_sheet(results.map(r => ({
-                          Name: r.name,
-                          Address: r.address,
-                          Phone: r.phone || '',
-                          Website: r.website || '',
-                          Rating: r.rating || '',
-                          Reviews: r.user_ratings_total || ''
-                        })));
+                        const ws = XLSX.utils.json_to_sheet(results.map(r => {
+                          const deepData = deepSearchResults[r.id];
+                          return {
+                            Name: r.name,
+                            Address: r.address,
+                            Phone: r.phone || deepData?.phone || '',
+                            NIP: r.nip || deepData?.nip || '',
+                            Website: r.website || deepData?.website || '',
+                            Rating: r.rating || '',
+                            Reviews: r.user_ratings_total || ''
+                          };
+                        }));
                         const wb = XLSX.utils.book_new();
                         XLSX.utils.book_append_sheet(wb, ws, "Prospects");
                         XLSX.writeFile(wb, "prospects.xlsx");
@@ -869,16 +905,20 @@ export default function LeadsPage() {
                         doc.setTextColor(100, 100, 100);
                         doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 30);
 
-                        const tableData = results.map(r => [
-                          r.name,
-                          r.address,
-                          r.phone || '-',
-                          r.website || '-'
-                        ]);
+                        const tableData = results.map(r => {
+                          const deepData = deepSearchResults[r.id];
+                          return [
+                            r.name,
+                            r.address,
+                            r.phone || deepData?.phone || '-',
+                            r.nip || deepData?.nip || '-',
+                            r.website || deepData?.website || '-'
+                          ];
+                        });
 
                         autoTable(doc, {
                           startY: 40,
-                          head: [['Nazwa Firmy', 'Adres', 'Telefon', 'Strona WWW']],
+                          head: [['Nazwa Firmy', 'Adres', 'Telefon', 'NIP', 'Strona WWW']],
                           body: tableData,
                           styles: {
                             font: 'Roboto',
@@ -894,10 +934,11 @@ export default function LeadsPage() {
                             fillColor: [245, 245, 245],
                           },
                           columnStyles: {
-                            0: { cellWidth: 50 }, // Name
-                            1: { cellWidth: 60 }, // Address
-                            2: { cellWidth: 30 }, // Phone
-                            3: { cellWidth: 'auto' }, // Website
+                            0: { cellWidth: 40 }, // Name
+                            1: { cellWidth: 50 }, // Address
+                            2: { cellWidth: 25 }, // Phone
+                            3: { cellWidth: 25 }, // NIP
+                            4: { cellWidth: 'auto' }, // Website
                           },
                         });
 
@@ -997,7 +1038,7 @@ export default function LeadsPage() {
                       </a>
                     )}
                     <button
-                      onClick={() => handleDeepSearch(place.id, place.name, place.address, place.website)}
+                      onClick={() => handleDeepSearch(place)}
                       disabled={deepSearchLoading[place.id]}
                       className="flex-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2 px-3 rounded text-xs font-semibold text-center transition-colors border border-indigo-200 flex items-center justify-center gap-1"
                     >

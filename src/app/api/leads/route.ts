@@ -93,18 +93,55 @@ export async function GET(request: Request) {
         // This negates the pagination benefit if search is active on a huge dataset, 
         // but solves the main "dashboard load" use case.
         let results: any[] = [];
+        const ownerIds = new Set<string>();
 
         snapshot.docs.forEach((doc: any) => {
             const data = doc.data();
+            const ownerId = userData?.role === 'admin' ? doc.ref.path.split('/')[1] : uid;
+            if (userData?.role === 'admin') {
+                ownerIds.add(ownerId);
+            }
             results.push({
                 id: doc.id,
                 ...data,
                 createdAt: data.createdAt?.toDate().toISOString(),
                 updatedAt: data.updatedAt?.toDate().toISOString(),
                 // If admin, we might want owner info. collectionGroup docs have `.ref.parent.parent` which is the user doc.
-                ownerId: userData?.role === 'admin' ? doc.ref.path.split('/')[1] : uid
+                ownerId
             });
         });
+
+        // Enrich with owner info for admins
+        if (userData?.role === 'admin' && ownerIds.size > 0) {
+            try {
+                const userDocs = await Promise.all(
+                    Array.from(ownerIds).map(id => adminDb.collection('users').doc(id).get())
+                );
+
+                const userMap = new Map();
+                userDocs.forEach(doc => {
+                    if (doc.exists) {
+                        userMap.set(doc.id, doc.data());
+                    }
+                });
+
+                results = results.map(lead => {
+                    if (lead.ownerId && userMap.has(lead.ownerId)) {
+                        const user = userMap.get(lead.ownerId);
+                        return {
+                            ...lead,
+                            ownerEmail: user.email,
+                            ownerName: user.name || user.displayName // Handle potential naming differences
+                        };
+                    }
+                    return lead;
+                });
+            } catch (err) {
+                console.error('Error fetching owner details:', err);
+                // Continue without owner info if fetch fails
+            }
+        }
+
 
         // Client-side filtering (Server filters disabled for stability)
         if (status && status !== 'all') results = results.filter(l => l.status === status);
