@@ -7,22 +7,23 @@ interface PriceHeatMapProps {
     overallAverage: number;
     selectedShiftId?: string;
     weekendMode?: 'none' | 'saturday' | 'full_weekend';
+    customStartHour?: number;
+    customEndHour?: number;
 }
 
 export default function PriceHeatMap({
     data,
     overallAverage,
     selectedShiftId,
-    weekendMode = 'none'
+    weekendMode = 'none',
+    customStartHour,
+    customEndHour
 }: PriceHeatMapProps) {
     const hours = Array.from({ length: 24 }, (_, i) => i + 1);
 
     // Helper to check if a cell is active in the current profile
     const isCellActive = (dayOfWeek: number, hour: number) => {
         if (!selectedShiftId) return true; // Show all if no profile selected
-
-        const selectedShift = SHIFT_OPTIONS.find(s => s.id === selectedShiftId);
-        if (!selectedShift) return true;
 
         const isSaturday = dayOfWeek === 6;
         const isSunday = dayOfWeek === 0;
@@ -36,6 +37,14 @@ export default function PriceHeatMap({
         }
 
         // Check shift hours
+        if (selectedShiftId === 'custom') {
+            if (customStartHour === undefined || customEndHour === undefined) return true;
+            return hour >= customStartHour && hour < customEndHour;
+        }
+
+        const selectedShift = SHIFT_OPTIONS.find(s => s.id === selectedShiftId);
+        if (!selectedShift) return true;
+
         if (selectedShift.type === '24/7') return true;
 
         return hour >= selectedShift.startHour && hour < selectedShift.endHour;

@@ -10,6 +10,10 @@ interface WorkProfileCalculatorProps {
     onShiftChange: (id: string) => void;
     weekendMode: 'none' | 'saturday' | 'full_weekend';
     onWeekendModeChange: (mode: 'none' | 'saturday' | 'full_weekend') => void;
+    customStartHour: number;
+    setCustomStartHour: (hour: number) => void;
+    customEndHour: number;
+    setCustomEndHour: (hour: number) => void;
 }
 
 export default function WorkProfileCalculator({
@@ -18,17 +22,28 @@ export default function WorkProfileCalculator({
     selectedShiftId,
     onShiftChange,
     weekendMode,
-    onWeekendModeChange
+    onWeekendModeChange,
+    customStartHour,
+    setCustomStartHour,
+    customEndHour,
+    setCustomEndHour
 }: WorkProfileCalculatorProps) {
 
     const result = useMemo(() => {
         if (!weeklyProfile.length) return 0;
 
         const selectedShift = SHIFT_OPTIONS.find(s => s.id === selectedShiftId);
-        if (!selectedShift) return 0;
+
+        // Handle custom shift
+        if (selectedShiftId === 'custom') {
+            // Logic for custom shift will be inside the loop
+            // Just verifying we proceed if it's custom OR found standard shift
+        } else if (!selectedShift) {
+            return 0;
+        }
 
         // If 24/7 and full weekend is included, return the precise overall average
-        if (selectedShift.type === '24/7' && weekendMode === 'full_weekend') {
+        if (selectedShift && selectedShift.type === '24/7' && weekendMode === 'full_weekend') {
             return overallAverage + 100;
         }
 
@@ -53,14 +68,23 @@ export default function WorkProfileCalculator({
 
                 // Check if hour is within shift
                 // Handle 24/7 simply
-                if (selectedShift.type === '24/7') {
+                if (selectedShift && selectedShift.type === '24/7') {
                     totalSum += price;
                     totalCount++;
                     return;
                 }
 
+                // Handle custom shift
+                if (selectedShiftId === 'custom') {
+                    if (hour >= customStartHour && hour < customEndHour) {
+                        totalSum += price;
+                        totalCount++;
+                    }
+                    return;
+                }
+
                 // Handle standard ranges
-                if (hour >= selectedShift.startHour && hour < selectedShift.endHour) {
+                if (selectedShift && hour >= selectedShift.startHour && hour < selectedShift.endHour) {
                     totalSum += price;
                     totalCount++;
                 }
@@ -68,7 +92,7 @@ export default function WorkProfileCalculator({
         });
 
         return (totalCount > 0 ? totalSum / totalCount : 0) + 100;
-    }, [weeklyProfile, selectedShiftId, weekendMode, overallAverage]);
+    }, [weeklyProfile, selectedShiftId, weekendMode, overallAverage, customStartHour, customEndHour]);
 
     return (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
@@ -158,7 +182,58 @@ export default function WorkProfileCalculator({
                                 </div>
                             </div>
                         </div>
+                        {/* Custom Profile Group */}
+                        <div>
+                            <div className="text-xs text-gray-500 mb-2 font-semibold uppercase tracking-wider">Własny zakres godzin</div>
+                            <div className="grid grid-cols-1 gap-4">
+                                <label className={`
+                                            flex items-center justify-center px-3 py-2 rounded-lg border cursor-pointer text-sm transition-all
+                                            ${selectedShiftId === 'custom'
+                                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700 font-medium'
+                                        : 'border-gray-200 hover:border-gray-300 text-gray-700'}
+                                        `}>
+                                    <input
+                                        type="radio"
+                                        name="shift"
+                                        value="custom"
+                                        checked={selectedShiftId === 'custom'}
+                                        onChange={(e) => onShiftChange(e.target.value)}
+                                        className="sr-only"
+                                    />
+                                    Własny zakres godzin
+                                </label>
+
+                                {selectedShiftId === 'custom' && (
+                                    <div className="flex gap-4 items-center justify-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-xs text-gray-500">Od godziny</label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={24}
+                                                value={customStartHour}
+                                                onChange={(e) => setCustomStartHour(Math.min(Math.max(1, parseInt(e.target.value) || 1), 24))}
+                                                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
+                                            />
+                                        </div>
+                                        <div className="text-gray-400 mt-5">-</div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-xs text-gray-500">Do godziny</label>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={24}
+                                                value={customEndHour}
+                                                onChange={(e) => setCustomEndHour(Math.min(Math.max(1, parseInt(e.target.value) || 1), 24))}
+                                                className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
+
 
                     {/* Weekend Options */}
                     <div>
@@ -214,6 +289,6 @@ export default function WorkProfileCalculator({
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

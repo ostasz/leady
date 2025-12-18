@@ -33,6 +33,8 @@ export default function EnergyPricesDashboard() {
     // Work Profile State (lifted for sharing)
     const [selectedShiftId, setSelectedShiftId] = useState<string>('1s-8-16');
     const [weekendMode, setWeekendMode] = useState<'none' | 'saturday' | 'full_weekend'>('none');
+    const [customStartHour, setCustomStartHour] = useState<number>(8);
+    const [customEndHour, setCustomEndHour] = useState<number>(16);
 
     // Auth guard - admin only for now
     // Auth guard - allow all authenticated users
@@ -241,6 +243,8 @@ export default function EnergyPricesDashboard() {
                                 overallAverage={overallAverage}
                                 selectedShiftId={selectedShiftId}
                                 weekendMode={weekendMode}
+                                customStartHour={customStartHour}
+                                customEndHour={customEndHour}
                             />
                         </div>
 
@@ -252,6 +256,10 @@ export default function EnergyPricesDashboard() {
                             onShiftChange={setSelectedShiftId}
                             weekendMode={weekendMode}
                             onWeekendModeChange={setWeekendMode}
+                            customStartHour={customStartHour}
+                            setCustomStartHour={setCustomStartHour}
+                            customEndHour={customEndHour}
+                            setCustomEndHour={setCustomEndHour}
                         />
                     </>
                 )}
