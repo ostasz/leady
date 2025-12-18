@@ -23,16 +23,17 @@ export default function Dashboard() {
 
     const fetchLeadStats = async () => {
         try {
-            const res = await fetch('/api/leads', {
+            const res = await fetch('/api/leads/stats', {
                 headers: {
                     'Authorization': `Bearer ${await user?.getIdToken()}`
                 }
             });
             const data = await res.json();
-            if (data.leads) {
-                const total = data.leads.length;
-                const unscheduled = data.leads.filter((l: any) => !l.scheduledDate).length;
-                setLeadStats({ total, unscheduled });
+            if (data) {
+                setLeadStats({
+                    total: data.total || 0,
+                    unscheduled: data.unscheduled || 0
+                });
             }
         } catch (e) {
             console.error('Failed to fetch lead stats', e);
