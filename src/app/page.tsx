@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { Search, Shield, LogOut, User, Building2, Zap, Cloud, Briefcase, Map as MapIcon, Bot } from 'lucide-react';
 import DashboardWidgets from '@/components/DashboardWidgets';
+import CardScanner from '@/components/admin/CardScanner';
+import { ScanLine } from 'lucide-react';
 
 export default function Dashboard() {
     const { user, userData, loading, signOut } = useAuth();
@@ -222,6 +224,21 @@ export default function Dashboard() {
                             Twój osobisty asystent do codziennej pracy.
                         </p>
                     </Link>
+
+                    {/* Business Card Scanner (Admin Only) */}
+                    {userData?.role === 'admin' && (
+                        <CardScanner customTrigger={
+                            <div className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20 cursor-pointer h-full">
+                                <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
+                                    <ScanLine size={24} />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">Skaner Wizytówek</h3>
+                                <p className="text-gray-500 text-sm">
+                                    Szybkie dodawanie kontaktów przez zdjęcie wizytówki.
+                                </p>
+                            </div>
+                        } />
+                    )}
 
                     {/* Placeholder for future apps */}
                     <div className="bg-gray-50 p-6 rounded-xl border border-dashed border-gray-300 flex flex-col items-center justify-center text-center opacity-75">

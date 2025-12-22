@@ -216,6 +216,7 @@ export default function AdminCostsPage() {
                                                 <div className="flex flex-col">
                                                     <span className="font-medium text-gray-900">{userCost.name}</span>
                                                     <span className="text-sm text-gray-500">{userCost.email}</span>
+                                                    <span className="text-[10px] text-gray-400 font-mono tracking-tight mt-0.5" title="User ID (UID)">{userCost.id}</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-gray-700 font-mono">
@@ -245,6 +246,6 @@ export default function AdminCostsPage() {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

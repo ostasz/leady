@@ -23,6 +23,7 @@ import {
     Home,
     MapPin
 } from 'lucide-react';
+import CardScanner from '@/components/admin/CardScanner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { robotoRegular } from '@/lib/fonts/roboto-regular';
@@ -338,6 +339,10 @@ export default function MyLeadsPage() {
                     </div>
 
                     <div className="h-6 w-px bg-gray-200 hidden md:block"></div>
+
+                    {userData?.role === 'admin' && (
+                        <CardScanner onSaveSuccess={() => fetchLeads(false)} />
+                    )}
 
                     <Link
                         href="/"
