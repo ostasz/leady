@@ -4,7 +4,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Search, Shield, LogOut, User, Building2, Zap, Cloud, Briefcase, Map as MapIcon } from 'lucide-react';
+import { Search, Shield, LogOut, User, Building2, Zap, Cloud, Briefcase, Map as MapIcon, Bot } from 'lucide-react';
 import DashboardWidgets from '@/components/DashboardWidgets';
 
 export default function Dashboard() {
@@ -85,6 +85,8 @@ export default function Dashboard() {
                 <DashboardWidgets />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+
                     {/* Sales App Card */}
                     <Link
                         href="/apps/leads"
@@ -200,6 +202,24 @@ export default function Dashboard() {
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Prognoza Pogody</h3>
                         <p className="text-gray-500 text-sm">
                             Szczegółowa prognoza pogody dla dowolnej lokalizacji.
+                        </p>
+                    </Link>
+
+                    {/* AI Assistant Card */}
+                    <Link
+                        href="/apps/ai-assistant"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
+                    >
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300 overflow-hidden">
+                            <img
+                                src="/logo-e.png"
+                                alt="AI Assistant"
+                                className="h-8 w-auto object-contain p-1"
+                            />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Asystent AI</h3>
+                        <p className="text-gray-500 text-sm">
+                            Twój osobisty asystent do codziennej pracy.
                         </p>
                     </Link>
 

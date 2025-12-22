@@ -1,7 +1,7 @@
 import { adminDb } from './firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
-export type ServiceType = 'google_maps' | 'openai' | 'gemini' | 'gus';
+export type ServiceType = 'google_maps' | 'openai' | 'gemini' | 'gus' | 'assistant:query';
 
 export interface UsageLog {
     userId: string;
@@ -29,6 +29,10 @@ const PRICE_TABLE: Record<string, number> = {
 
     // GUS (Free)
     'gus:search': 0,
+
+    // AI Assistant
+    'assistant:query': 1000,
+    'gemini:admin_chat': 500, // ~$0.0005 per message
 };
 
 export function calculateEstimatedCost(service: ServiceType, action: string, quantity: number = 1): number {
@@ -61,15 +65,55 @@ export async function logUsage(
 
         // Optional: Update aggregated stats on user document (atomic increment)
         // This helps with quick dashboard views without querying all logs
+        // Determine category for cost tracking
+        const isChat = service === 'gemini' && action === 'admin_chat' || service === 'assistant:query';
+        const isSearch = service === 'google_maps' || service === 'gus' || (service === 'gemini' && action === 'generate_content');
+
+        const updateData: any = {
+            [`${service}_cost`]: FieldValue.increment(estimatedCostMicros),
+            totalCost: FieldValue.increment(estimatedCostMicros),
+            queryCount: FieldValue.increment(1)
+        };
+
+        if (isChat) {
+            updateData.chat_cost = FieldValue.increment(estimatedCostMicros);
+        } else if (isSearch) {
+            updateData.search_cost = FieldValue.increment(estimatedCostMicros);
+        }
+
         await adminDb.collection('users').doc(userId).set({
-            usageStats: {
-                [`${service}_cost`]: FieldValue.increment(estimatedCostMicros),
-                totalCost: FieldValue.increment(estimatedCostMicros),
-                queryCount: FieldValue.increment(1)
-            }
+            usageStats: updateData
         }, { merge: true });
 
     } catch (error) {
         console.error('Failed to log usage:', error);
     }
+}
+
+export async function getMonthlyUsage(userId: string, service: ServiceType): Promise<number> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    try {
+        // Count documents in usage_logs for this user/service this month
+        // Using collection() instead of collectionGroup() to avoid complex index requirements
+        // since we only write to the root usage_logs collection.
+        const snapshot = await adminDb.collection('usage_logs')
+            .where('userId', '==', userId)
+            .where('service', '==', service)
+            .where('timestamp', '>=', startOfMonth)
+            .count()
+            .get();
+
+        return snapshot.data().count;
+    } catch (error) {
+        console.error('Error fetching monthly usage (possibly missing index):', error);
+        // Fail open: return 0 usage so simple queries work even if stats are broken
+        return 0;
+    }
+}
+
+export async function hasRemainingQuota(userId: string, maxLimit: number = 100): Promise<boolean> {
+    const usageCount = await getMonthlyUsage(userId, 'assistant:query');
+    return usageCount < maxLimit;
 }

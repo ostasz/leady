@@ -132,7 +132,7 @@ export default function AdminPage() {
                             Koszty API
                         </button>
                         <button
-                            onClick={() => router.push('/admin/ai-assistant')}
+                            onClick={() => router.push('/apps/ai-assistant')}
                             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
                         >
                             <Sparkles size={18} />
