@@ -21,7 +21,7 @@ export default function AIAssistantPage() {
     const router = useRouter();
 
     // UI State
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [sessions, setSessions] = useState<Session[]>([]);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -234,55 +234,60 @@ export default function AIAssistantPage() {
             )}
 
             {/* Sidebar */}
+            {/* Sidebar */}
             <aside className={`
-                fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out flex flex-col
+                fixed inset-y-0 left-0 z-30 w-[85vw] sm:w-80 md:w-72 lg:w-80 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out flex flex-col shadow-2xl md:shadow-none
                 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
                 md:relative md:translate-x-0
             `}>
-                <div className="p-4 border-b flex items-center justify-between">
-                    <button onClick={() => router.push('/')} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-primary transition-colors">
-                        <House size={20} />
+                <div className="p-5 border-b flex items-center justify-between bg-gray-50/50">
+                    <button onClick={() => router.push('/')} className="p-2 hover:bg-gray-200 rounded-xl text-gray-500 hover:text-primary transition-colors">
+                        <House size={22} />
                     </button>
-                    <h2 className="font-semibold text-gray-700">Twoje rozmowy</h2>
-                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden text-gray-400">
-                        <X size={20} />
+                    <h2 className="font-semibold text-gray-800 text-lg">Twoje rozmowy</h2>
+                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">
+                        <X size={24} />
                     </button>
                 </div>
 
                 <div className="p-4">
                     <button
                         onClick={startNewThread}
-                        className="w-full flex items-center gap-2 justify-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors shadow-sm"
+                        className="w-full flex items-center gap-3 justify-center px-4 py-3.5 bg-primary text-white rounded-xl hover:bg-primary-dark transition-all transform active:scale-95 shadow-md font-medium text-base"
                     >
-                        <RotateCcw size={16} /> Nowy wątek
+                        <RotateCcw size={18} /> Nowy wątek
                     </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-2 space-y-1">
+                <div className="flex-1 overflow-y-auto px-3 space-y-1.5 pb-4">
                     {sessions.map(session => (
                         <div
                             key={session.id}
                             onClick={() => loadSession(session.id)}
                             className={`
-                                group flex items-center justify-between px-3 py-3 rounded-lg cursor-pointer transition-colors text-sm
-                                ${currentSessionId === session.id ? 'bg-primary-lighter text-primary-dark font-medium' : 'text-gray-600 hover:bg-gray-100'}
+                                group flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer transition-all border border-transparent
+                                ${currentSessionId === session.id
+                                    ? 'bg-primary-lighter/50 text-primary-dark font-semibold border-primary/10 shadow-sm'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                                }
                             `}
                         >
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <MessageSquare size={16} className={`flex-shrink-0 ${currentSessionId === session.id ? 'text-primary' : 'text-gray-400'}`} />
-                                <span className="truncate">{session.title}</span>
+                            <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                                <MessageSquare size={18} className={`flex-shrink-0 ${currentSessionId === session.id ? 'text-primary' : 'text-gray-400'}`} />
+                                <span className="truncate text-[15px]">{session.title}</span>
                             </div>
                             <button
                                 onClick={(e) => confirmDeleteSession(e, session.id)}
-                                className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-white rounded-lg"
                             >
-                                <Trash2 size={14} />
+                                <Trash2 size={16} />
                             </button>
                         </div>
                     ))}
                     {sessions.length === 0 && (
-                        <div className="text-center text-xs text-gray-400 py-8">
-                            Brak historii rozmów
+                        <div className="flex flex-col items-center justify-center h-48 text-gray-400 gap-2">
+                            <MessageSquare size={32} className="opacity-20" />
+                            <span className="text-sm">Brak historii rozmów</span>
                         </div>
                     )}
                 </div>
