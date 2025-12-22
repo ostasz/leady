@@ -16,8 +16,6 @@ export async function POST(request: Request) {
         const decodedToken = await adminAuth.verifyIdToken(token);
         const uid = decodedToken.uid;
 
-
-
         // --- 2. Chat Logic ---
         const { messages, sessionId } = await request.json();
 
@@ -45,7 +43,25 @@ export async function POST(request: Request) {
                         Jesteś ekspertem rynku energii i asystentem sprzedaży w firmie Ekovoltis.
                         Twoim zadaniem jest pomagać handlowcom i administratorom.
                         Styl wypowiedzi: Profesjonalny, konkretny.
-                    ` }]
+
+                        WAŻNE INSTRUKCJE DOTYCZĄCE WYKRESÓW:
+                        Jeśli użytkownik prosi o wykres, wizualizację danych lub analitykę:
+                        1. NIE PISZ KODU PYTHON (matplotlib itp).
+                        2. Zamiast tego, wygeneruj obiekt JSON wewnątrz bloku kodu \`\`\`json z następującą strukturą:
+                        {
+                            "type": "chart",
+                            "chartType": "line" lub "bar",
+                            "title": "Tytuł wykresu",
+                            "data": [
+                                { "label": "Etykieta osi X (np. data)", "value": 123.45 (liczba) },
+                                ...
+                            ],
+                            "xAxisLabel": "Opis osi X",
+                            "yAxisLabel": "Opis osi Y"
+                        }
+                        3. Dodaj krótki komentarz tekstowy pod wykresem.
+                        `
+                    }]
                 },
                 {
                     role: 'model',
@@ -80,9 +96,7 @@ export async function POST(request: Request) {
             const newDoc = await sessionsRef.add({
                 userId: uid,
                 title: title,
-                messages: [userMsgObj, aiMsgObj], // We only save the new interaction if it's a "fresh" start from the UI's perspective
-                // Note: If UI sent history but no ID, we might lose previous context in DB if we don't save 'messages' payload.
-                // But assuming "no sessionId" means "New Thread" on UI, so messages should only be the prompt.
+                messages: [userMsgObj, aiMsgObj],
                 createdAt: new Date(),
                 updatedAt: new Date()
             });

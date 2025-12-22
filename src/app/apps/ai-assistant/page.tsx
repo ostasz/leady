@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { House, Send, Sparkles, RotateCcw, User, MessageSquare, Trash2, Menu, X } from 'lucide-react';
+import AIChart from '@/components/ai/AIChart';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -176,8 +177,6 @@ export default function AIAssistantPage() {
                         title: data.title || 'Nowy wątek',
                         updatedAt: new Date().toISOString()
                     }, ...prev]);
-                } else {
-                    // Update timestamp in list logic could go here
                 }
             }
         } catch (error) {
@@ -233,7 +232,6 @@ export default function AIAssistantPage() {
                 />
             )}
 
-            {/* Sidebar */}
             {/* Sidebar */}
             <aside className={`
                 fixed inset-y-0 left-0 z-30 w-[85vw] sm:w-80 md:w-72 lg:w-80 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out flex flex-col shadow-2xl md:shadow-none
@@ -345,7 +343,37 @@ export default function AIAssistantPage() {
                                         ? 'bg-primary text-white rounded-tr-none'
                                         : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
                                         }`}>
-                                        {msg.content}
+                                        {(() => {
+                                            const content = msg.content;
+                                            // Check for JSON chart block
+                                            const chartMatch = content.match(/```json\s*(\{[\s\S]*?"type":\s*"chart"[\s\S]*?\})\s*```/);
+
+                                            if (chartMatch && msg.role === 'assistant') {
+                                                try {
+                                                    const chartData = JSON.parse(chartMatch[1]);
+                                                    const textBefore = content.substring(0, chartMatch.index).trim();
+                                                    const textAfter = content.substring((chartMatch.index || 0) + chartMatch[0].length).trim();
+
+                                                    return (
+                                                        <div className="w-full min-w-[300px] max-w-2xl">
+                                                            {textBefore && <p className="mb-4">{textBefore}</p>}
+                                                            <AIChart
+                                                                type={chartData.chartType || 'line'}
+                                                                title={chartData.title}
+                                                                data={chartData.data}
+                                                                xAxisLabel={chartData.xAxisLabel}
+                                                                yAxisLabel={chartData.yAxisLabel}
+                                                            />
+                                                            {textAfter && <p className="mt-4 text-gray-600">{textAfter}</p>}
+                                                        </div>
+                                                    );
+                                                } catch (e) {
+                                                    console.error("Failed to parse chart JSON", e);
+                                                    return content;
+                                                }
+                                            }
+                                            return content;
+                                        })()}
                                     </div>
                                 </div>
                             </div>
