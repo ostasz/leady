@@ -6,6 +6,8 @@ import RdnChart from '@/components/rdn/RdnChart';
 import RdnTable from '@/components/rdn/RdnTable';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { format, parseISO } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
 interface PriceData {
     date: string;
@@ -48,16 +50,19 @@ export default function RdnPage() {
     const filteredData = data.slice(-timeRange);
 
     return (
-        <div className="min-h-screen bg-[#0f111a] text-gray-200">
+        <div className="min-h-screen bg-[#F3F4F6] text-gray-900">
             {/* Navbar / Header */}
-            <div className="border-b border-gray-800 bg-gray-900/50 backdrop-blur sticky top-0 z-50">
+            <div className="bg-white sticky top-0 z-50 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
-                    <Link href="/" className="p-2 -ml-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors">
-                        <ArrowLeft size={20} />
+                    <Link href="/" className="p-2 -ml-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-900 transition-colors">
+                        <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
                     </Link>
-                    <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                        📊 Centrum Analiz RDN (TGe24)
-                    </h1>
+                    <div className="flex items-center gap-3">
+                        <img src="/rdn-trend-icon.png" alt="RDN" className="w-8 h-8 object-contain" />
+                        <h1 className="text-xl font-bold text-gray-900">
+                            Centrum Analiz RDN (TGe24)
+                        </h1>
+                    </div>
                 </div>
             </div>
 
@@ -78,20 +83,25 @@ export default function RdnPage() {
                         <div className="space-y-4">
                             <div className="flex justify-between items-center flex-wrap gap-4">
                                 <div>
-                                    <h2 className="text-lg font-semibold text-gray-100">Analiza Trendu</h2>
+                                    <h2 className="text-lg font-semibold text-gray-900">Analiza Trendu</h2>
                                     <div className="text-sm text-gray-500">
                                         Notowania historyczne TGe24
+                                        {filteredData.length > 0 && (
+                                            <span className="ml-1 text-gray-400">
+                                                (od {format(parseISO(filteredData[0].date), 'dd.MM.yyyy')} do {format(parseISO(filteredData[filteredData.length - 1].date), 'dd.MM.yyyy')})
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 bg-gray-900 p-1 rounded-lg border border-gray-800">
+                                <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
                                     {[30, 90, 365].map((days) => (
                                         <button
                                             key={days}
                                             onClick={() => setTimeRange(days)}
                                             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${timeRange === days
-                                                    ? 'bg-emerald-500/20 text-emerald-400 shadow-sm border border-emerald-500/20'
-                                                    : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+                                                ? 'bg-[#C1F232] text-gray-900 shadow-sm'
+                                                : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'
                                                 }`}
                                         >
                                             {days === 365 ? '1 Rok' : `${days} Dni`}

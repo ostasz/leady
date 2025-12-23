@@ -1,6 +1,6 @@
 'use client';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps, Brush } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -16,16 +16,16 @@ interface ChartProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-gray-900 border border-gray-700 p-3 rounded-lg shadow-xl text-sm z-50">
-                <p className="text-gray-400 mb-2 font-medium">
+            <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-lg text-sm z-50">
+                <p className="text-gray-500 mb-2 font-medium">
                     {format(parseISO(label), 'd MMMM yyyy (EEEE)', { locale: pl })}
                 </p>
                 {payload.map((entry: any, index: number) => (
                     <div key={index} className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                        <span className="text-gray-300 font-medium">TGe24:</span>
-                        <span className="text-white font-bold text-base">
-                            {entry.value?.toFixed(2)} <span className="text-xs font-normal text-gray-500">PLN</span>
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#C1F232]" />
+                        <span className="text-gray-500 font-medium">TGe24:</span>
+                        <span className="text-gray-900 font-bold text-lg">
+                            {entry.value?.toFixed(2)} <span className="text-xs font-normal text-gray-400">PLN</span>
                         </span>
                     </div>
                 ))}
@@ -37,42 +37,45 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function RdnChart({ data }: ChartProps) {
     return (
-        <div className="w-full h-[450px] bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-lg">
+        <div className="w-full h-[450px] bg-white border border-gray-100 rounded-xl p-6 shadow-sm">
             <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                <AreaChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                    <defs>
+                        <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#4ADE80" stopOpacity={0.4} />
+                            <stop offset="95%" stopColor="#4ADE80" stopOpacity={0} />
+                        </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={true} />
                     <XAxis
                         dataKey="date"
                         tickFormatter={(str) => format(parseISO(str), 'dd.MM')}
-                        stroke="#9ca3af"
+                        stroke="#9CA3AF"
                         fontSize={12}
-                        minTickGap={30}
+                        minTickGap={40}
+                        tickLine={false}
+                        axisLine={false}
+                        dy={10}
                     />
                     <YAxis
                         domain={['auto', 'auto']}
-                        stroke="#9ca3af"
+                        stroke="#9CA3AF"
                         fontSize={12}
                         tickFormatter={(val) => `${val}`}
                         width={40}
+                        tickLine={false}
+                        axisLine={false}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Line
+                    <Area
                         type="monotone"
                         dataKey="price"
-                        stroke="#10b981"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{ r: 6, fill: '#10b981', stroke: '#fff' }}
-                        connectNulls
+                        stroke="#4ADE80"
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill="url(#colorPrice)"
                     />
-                    <Brush
-                        dataKey="date"
-                        height={30}
-                        stroke="#4b5563"
-                        fill="#1f2937"
-                        tickFormatter={(str) => format(parseISO(str), 'MM-yy')}
-                    />
-                </LineChart>
+                </AreaChart>
             </ResponsiveContainer>
         </div>
     );

@@ -132,7 +132,7 @@ export default function Dashboard() {
                                     <div className="flex items-baseline gap-1">
                                         <span className="text-lg font-bold text-green-600">{leadStats.total}</span>
                                         <span className="text-xs text-gray-400">/</span>
-                                        <span className="text-sm font-medium text-orange-500" title="Nie zaplanowane">{leadStats.unscheduled}</span>
+                                        <span className="text-sm font-medium text-[#FF5500]" title="Nie zaplanowane">{leadStats.unscheduled}</span>
                                     </div>
                                     <span className="text-[10px] text-gray-400">zapisane / do planowania</span>
                                 </div>
@@ -167,7 +167,7 @@ export default function Dashboard() {
                         className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
                         <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-[#C5FAEA] transition-all duration-300">
-                            <img src="/energy-icon.png" alt="Ceny Energii" className="h-10 w-10 object-contain" />
+                            <img src="/rdn-trend-icon.png" alt="Ceny Energii" className="h-10 w-10 object-contain" />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Obliczenie kosztu energii po RDN (FLEX)</h3>
                         <p className="text-gray-500 text-sm">

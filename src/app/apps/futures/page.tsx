@@ -5,6 +5,8 @@ import FuturesKPI from '@/components/futures/FuturesKPI';
 import FuturesChart from '@/components/futures/FuturesChart';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { format, parseISO } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
 interface FutureData {
     date: string;
@@ -52,16 +54,19 @@ export default function FuturesPage() {
     const filteredDataY2 = dataY2.slice(-timeRange);
 
     return (
-        <div className="min-h-screen bg-[#0f111a] text-gray-200">
+        <div className="min-h-screen bg-white text-gray-900">
             {/* Navbar / Header */}
-            <div className="border-b border-gray-800 bg-gray-900/50 backdrop-blur sticky top-0 z-50">
+            <div className="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-100">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center gap-4">
-                    <Link href="/" className="p-2 -ml-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors">
-                        <ArrowLeft size={20} />
+                    <Link href="/" className="p-2 -ml-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-900 transition-colors">
+                        <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
                     </Link>
-                    <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                        ⚡ Centrum Analiz Futures
-                    </h1>
+                    <div className="flex items-center gap-3">
+                        <span className="text-2xl">⚡</span>
+                        <h1 className="text-xl font-bold text-gray-900">
+                            Centrum Analiz Futures
+                        </h1>
+                    </div>
                 </div>
             </div>
 
@@ -69,7 +74,7 @@ export default function FuturesPage() {
 
                 {loading ? (
                     <div className="h-96 flex items-center justify-center">
-                        <div className="w-12 h-12 border-4 border-gray-700 border-t-cyan-500 rounded-full animate-spin"></div>
+                        <div className="w-12 h-12 border-4 border-gray-200 border-t-[#2DD4BF] rounded-full animate-spin"></div>
                     </div>
                 ) : (
                     <>
@@ -83,23 +88,28 @@ export default function FuturesPage() {
                         <div className="space-y-4">
                             <div className="flex justify-between items-center flex-wrap gap-4">
                                 <div>
-                                    <h2 className="text-lg font-semibold text-gray-100">Analiza Cenowa</h2>
+                                    <h2 className="text-lg font-semibold text-gray-700">Analiza Cenowa</h2>
                                     <div className="text-sm text-gray-500">
                                         Porównanie kontraktów rocznych
+                                        {filteredDataY1.length > 0 && (
+                                            <span className="ml-1 text-gray-400">
+                                                (za okres od {format(parseISO(filteredDataY1[0].date), 'dd.MM.yyyy')} do {format(parseISO(filteredDataY1[filteredDataY1.length - 1].date), 'dd.MM.yyyy')})
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2 bg-gray-900 p-1 rounded-lg border border-gray-800">
+                                <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
                                     {[30, 90, 365].map((days) => (
                                         <button
                                             key={days}
                                             onClick={() => setTimeRange(days)}
                                             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${timeRange === days
-                                                ? 'bg-cyan-500/20 text-cyan-400 shadow-sm border border-cyan-500/20'
-                                                : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+                                                ? 'bg-[#C1F232] text-gray-900 shadow-sm'
+                                                : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'
                                                 }`}
                                         >
-                                            {days === 365 ? '1 Rok' : `${days} Dni`}
+                                            {days} Dni
                                         </button>
                                     ))}
                                 </div>
