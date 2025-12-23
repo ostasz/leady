@@ -193,7 +193,7 @@ export default function WeatherApp() {
                 <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-primary transition-colors" title="Wróć do Portalu">
-                            <Home size={20} />
+                            <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
                         </Link>
                         <h1 className="text-2xl font-bold text-gray-800">Prognoza Pogody</h1>
                     </div>

@@ -240,7 +240,7 @@ export default function AIAssistantPage() {
             `}>
                 <div className="p-5 border-b flex items-center justify-between bg-gray-50/50">
                     <button onClick={() => router.push('/')} className="p-2 hover:bg-gray-200 rounded-xl text-gray-500 hover:text-primary transition-colors">
-                        <House size={22} />
+                        <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
                     </button>
                     <h2 className="font-semibold text-gray-800 text-lg">Twoje rozmowy</h2>
                     <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-xl transition-colors">

@@ -306,7 +306,7 @@ export default function MyLeadsPage() {
                         className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
                         title="Strona główna"
                     >
-                        <Home size={20} />
+                        <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
                     </Link>
                     <div className="h-6 w-px bg-gray-200 hidden lg:block"></div>
                     <h1 className="text-lg lg:text-xl font-bold text-gray-800 flex items-center gap-2">

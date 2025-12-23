@@ -474,7 +474,7 @@ export default function LeadsPage() {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-primary transition-colors" title="Wróć do Portalu">
-                  <HomeIcon size={20} />
+                  <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
                 </Link>
                 <h1 className="text-lg font-bold text-gray-800">Wyszukiwanie</h1>
               </div>

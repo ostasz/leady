@@ -157,7 +157,7 @@ export default function EnergyPricesDashboard() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-primary transition-colors" title="Wróć do Portalu">
-                            <Home size={20} />
+                            <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
                         </Link>
                         <h1 className="text-xl font-semibold text-gray-900">
                             Ceny Energii - Rynek Dnia Następnego

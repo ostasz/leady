@@ -145,7 +145,7 @@ export default function PlannerPage() {
                 <div className="flex items-center gap-3 lg:gap-4 w-full lg:w-auto justify-between lg:justify-start">
                     <div className="flex items-center gap-3">
                         <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500">
-                            <Home size={20} />
+                            <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
                         </Link>
                         <h1 className="text-lg lg:text-xl font-bold text-gray-800 hidden lg:block">Planer Tras</h1>
                     </div>

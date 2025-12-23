@@ -121,7 +121,7 @@ export default function DashboardWidgets() {
             return {
                 icon: isNight
                     ? <Moon className="w-8 h-8" />
-                    : <Sun className="w-8 h-8" />,
+                    : <img src="/sun-icon.jpg" alt="Słonecznie" className="w-8 h-8 object-contain" />,
                 text: isNight
                     ? "Spokojna noc. Odpocznij przed jutrem."
                     : "Słonecznie i pogodnie. Miłego dnia!",
@@ -166,7 +166,7 @@ export default function DashboardWidgets() {
                 {/* Weather Widget */}
                 {weather && weatherInfo ? (
                     <Link href="/apps/weather" className="group p-6 rounded-xl shadow-sm border border-gray-100 hover:border-primary/20 bg-white flex items-center gap-4 transition-all hover:shadow-md cursor-pointer">
-                        <div className="bg-gray-100 p-3 rounded-lg shadow-sm text-gray-600 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
+                        <div className="bg-gray-100 p-3 rounded-lg shadow-sm text-gray-600 group-hover:bg-[#C5FAEA] transition-all duration-300">
                             {weatherInfo.icon}
                         </div>
                         <div className="flex-1">

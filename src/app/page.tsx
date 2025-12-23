@@ -94,8 +94,8 @@ export default function Dashboard() {
                         href="/apps/leads"
                         className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                            <Search size={24} />
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-[#C5FAEA] transition-all duration-300">
+                            <img src="/call-center-icon.png" alt="Leady" className="h-10 w-10 object-contain" />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Leady Sprzedażowe</h3>
                         <p className="text-gray-500 text-sm">
@@ -108,8 +108,8 @@ export default function Dashboard() {
                         href="/my-leads"
                         className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                            <Briefcase size={24} />
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-[#C5FAEA] transition-all duration-300">
+                            <img src="/case-icon.png" alt="Moje Leady" className="h-10 w-10 object-contain" />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Moje Leady</h3>
                         <p className="text-gray-500 text-sm">
@@ -123,8 +123,8 @@ export default function Dashboard() {
                         className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
                         <div className="flex justify-between items-start">
-                            <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                                <MapIcon size={24} />
+                            <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-[#C5FAEA] transition-all duration-300">
+                                <img src="/map-icon.png" alt="Planer Tras" className="h-10 w-10 object-contain" />
                             </div>
                             {leadStats.total > 0 && (
                                 <div className="flex flex-col items-end">
@@ -166,8 +166,8 @@ export default function Dashboard() {
                         href="/apps/ceny-energii"
                         className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                            <Zap size={24} />
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-[#C5FAEA] transition-all duration-300">
+                            <img src="/energy-icon.png" alt="Ceny Energii" className="h-10 w-10 object-contain" />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Obliczenie kosztu energii po RDN (FLEX)</h3>
                         <p className="text-gray-500 text-sm">
@@ -198,8 +198,8 @@ export default function Dashboard() {
                         href="/apps/weather"
                         className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                            <Cloud size={24} />
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-[#C5FAEA] transition-all duration-300">
+                            <img src="/weather-icon.png" alt="Prognoza Pogody" className="h-10 w-10 object-contain" />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Prognoza Pogody</h3>
                         <p className="text-gray-500 text-sm">
@@ -212,12 +212,8 @@ export default function Dashboard() {
                         href="/apps/ai-assistant"
                         className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
                     >
-                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300 overflow-hidden">
-                            <img
-                                src="/logo-e.png"
-                                alt="AI Assistant"
-                                className="h-8 w-auto object-contain p-1"
-                            />
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-[#C5FAEA] transition-all duration-300">
+                            <img src="/ai-icon.png" alt="Asystent AI" className="h-10 w-10 object-contain" />
                         </div>
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">Asystent AI</h3>
                         <p className="text-gray-500 text-sm">
@@ -229,8 +225,8 @@ export default function Dashboard() {
                     {userData?.role === 'admin' && (
                         <CardScanner customTrigger={
                             <div className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20 cursor-pointer h-full">
-                                <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-primary group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                                    <ScanLine size={24} />
+                                <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-[#C5FAEA] transition-all duration-300">
+                                    <img src="/scan-icon.png" alt="Skaner Wizytówek" className="h-10 w-10 object-contain" />
                                 </div>
                                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Skaner Wizytówek</h3>
                                 <p className="text-gray-500 text-sm">

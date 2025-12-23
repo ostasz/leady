@@ -128,7 +128,7 @@ export default function LeadDetailPage() {
                             className="p-3 bg-white border border-gray-200 hover:border-primary hover:text-primary rounded-xl text-gray-500 shadow-sm transition-all hover:shadow-md hover:scale-105 active:scale-95 flex items-center justify-center"
                             title="Strona główna"
                         >
-                            <Home size={24} />
+                            <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
                         </Link>
                     </div>
                     <div className="flex-1">
