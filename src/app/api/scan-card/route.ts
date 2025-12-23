@@ -7,6 +7,7 @@ import { parseBusinessCard } from '@/lib/card-parser';
 // We reuse the Firebase Admin Service Account credentials if available,
 // or expect specific Google Cloud credentials.
 const client = new ImageAnnotatorClient({
+    apiEndpoint: 'eu-vision.googleapis.com',
     credentials: {
         client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL || process.env.GOOGLE_CLIENT_EMAIL,
         private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || process.env.GOOGLE_PRIVATE_KEY)?.replace(/\\n/g, '\n'),
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
             // (Skipping for brevity/performance, assuming proper role management)
         }
 
-        const { image } = await request.json(); // Expecting base64 string
+        const { image, language = 'pl' } = await request.json(); // Expecting base64 string
 
         if (!image) {
             return NextResponse.json({ error: 'No image provided' }, { status: 400 });
@@ -54,7 +55,19 @@ export async function POST(request: Request) {
         const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
         const buffer = Buffer.from(base64Image, 'base64');
 
-        const [result] = await client.textDetection(buffer);
+        // Ustawienie priorytetu języka
+        const languageHints = language === 'pl' ? ['pl', 'en'] : ['en'];
+
+        const requestPayload = {
+            image: {
+                content: buffer
+            },
+            imageContext: {
+                languageHints: languageHints
+            }
+        };
+
+        const [result] = await client.textDetection(requestPayload);
         const detections = result.textAnnotations;
 
         if (!detections || detections.length === 0) {

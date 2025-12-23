@@ -21,6 +21,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
     const [formData, setFormData] = useState<Partial<ParsedCardData>>({});
     const [loading, setLoading] = useState(false);
     const [base64Image, setBase64Image] = useState<string | null>(null);
+    const [selectedLanguage, setSelectedLanguage] = useState('pl');
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,7 +53,10 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                     ...headers,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ image: base64Image })
+                body: JSON.stringify({
+                    image: base64Image,
+                    language: selectedLanguage
+                })
             });
 
             const result = await res.json();
@@ -202,13 +206,49 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                     </div>
 
                                     {imagePreview && (
-                                        <button
-                                            onClick={handleScan}
-                                            className="w-full bg-primary hover:bg-primary-dark text-white py-3 rounded-xl font-bold text-lg shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <ScanLine size={20} />
-                                            Analizuj Obraz
-                                        </button>
+                                        <div className="flex flex-col gap-4 text-left">
+                                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                                <label className="block text-sm font-medium text-gray-700 mb-3">
+                                                    Język wizytówki
+                                                </label>
+                                                <div className="flex gap-4">
+                                                    <label className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors flex-1 border border-transparent hover:border-gray-200">
+                                                        <input
+                                                            type="radio"
+                                                            name="language"
+                                                            value="pl"
+                                                            checked={selectedLanguage === 'pl'}
+                                                            onChange={(e) => setSelectedLanguage(e.target.value)}
+                                                            className="text-primary focus:ring-primary w-4 h-4"
+                                                        />
+                                                        <span className="text-sm">🇵🇱 Polski (PL)</span>
+                                                    </label>
+
+                                                    <label className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors flex-1 border border-transparent hover:border-gray-200">
+                                                        <input
+                                                            type="radio"
+                                                            name="language"
+                                                            value="en"
+                                                            checked={selectedLanguage === 'en'}
+                                                            onChange={(e) => setSelectedLanguage(e.target.value)}
+                                                            className="text-primary focus:ring-primary w-4 h-4"
+                                                        />
+                                                        <span className="text-sm">🇬🇧 Angielski (EN)</span>
+                                                    </label>
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-2">
+                                                    Polski tryb lepiej rozpoznaje znaki diakrytyczne (ą, ę, ś).
+                                                </p>
+                                            </div>
+
+                                            <button
+                                                onClick={handleScan}
+                                                className="w-full bg-primary hover:bg-primary-dark text-white py-3 rounded-xl font-bold text-lg shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <ScanLine size={20} />
+                                                Analizuj Obraz
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             )}
@@ -313,21 +353,11 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                             Wstecz
                                         </button>
                                         <button
-                                            type="submit"
-                                            disabled={loading}
-                                            className="px-4 py-2.5 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors flex-[2] flex items-center justify-center gap-2 shadow-lg shadow-green-200"
-                                        >
-                                            {loading ? <Loader2 className="animate-spin" /> : <Save size={18} />}
-                                            Zapisz w App
-                                        </button>
-                                    </div>
-                                    <div className="text-center pt-2">
-                                        <button
                                             type="button"
                                             onClick={handleSaveToContacts}
-                                            className="text-primary hover:text-primary-dark text-sm font-medium flex items-center justify-center gap-1.5 mx-auto px-4 py-2 hover:bg-blue-50 rounded-lg transition-colors"
+                                            className="px-4 py-2.5 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors flex-[2] flex items-center justify-center gap-2 shadow-lg shadow-green-200"
                                         >
-                                            <Contact size={16} />
+                                            <Contact size={18} />
                                             Zapisz w Telefonie (vCard)
                                         </button>
                                     </div>

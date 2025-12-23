@@ -117,5 +117,24 @@ export function parseBusinessCard(text: string): ParsedCardData {
         }
     }
 
+    // 5. Final Fallback: Company from Email Domain
+    if (!data.company && data.email) {
+        const domain = data.email.split('@')[1];
+        if (domain) {
+            const domainParts = domain.split('.');
+            // Exclude common generic providers
+            const genericProviders = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'wp', 'onet', 'interia', 'op', 'o2', 'tlen'];
+            if (domainParts.length >= 2) {
+                const companyName = domainParts[0];
+                if (!genericProviders.includes(companyName.toLowerCase())) {
+                    data.company = companyName.charAt(0).toUpperCase() + companyName.slice(1);
+                    // Add TLD if it's short? e.g. adn.pl -> Adn.pl? Or just Adn?
+                    // User example: adam.niedziolka@adn.pl -> adn
+                    // Let's keep it simple: "Adn"
+                }
+            }
+        }
+    }
+
     return data;
 }
