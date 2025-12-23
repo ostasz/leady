@@ -12,7 +12,9 @@ const vertexAI = new VertexAI({
     }
 });
 
-const MODEL_NAME = 'gemini-1.5-flash-002';
+// Primary Model: Gemini 3.0 Flash (Preview)
+// Secondary Model: Gemini 1.5 Flash (GA) - Fallback if 3.0 is not available in region
+const MODELS = ['gemini-3-flash-preview', 'gemini-1.5-flash-001'];
 
 export interface ParsedCardData {
     name?: string; // Unified Name (or split if you prefer, but interface kept compatible)
@@ -29,9 +31,12 @@ export interface ParsedCardData {
 }
 
 export async function parseBusinessCard(text: string, languageHints: string[] = []): Promise<ParsedCardData> {
-    try {
+
+    // Helper to try a specific model
+    const tryModel = async (modelName: string): Promise<ParsedCardData> => {
+        console.log(`[VertexAI] Trying model: ${modelName}`);
         const model = vertexAI.getGenerativeModel({
-            model: MODEL_NAME,
+            model: modelName,
             generationConfig: {
                 responseMimeType: 'application/json',
                 temperature: 0.1,
@@ -39,7 +44,6 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
         });
 
         const langContext = languageHints.includes('pl') ? 'Priorytet: Polski.' : 'Priorytet: Angielski.';
-
         const prompt = `
             Jesteś ekspertem OCR i asystentem wprowadzania danych.
             Twoim zadaniem jest przeanalizowanie surowego tekstu z wizytówki i wyodrębnienie danych strukturalnych.
@@ -79,14 +83,12 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
             throw new Error('Gemini zwróciło pustą odpowiedź');
         }
 
-        // Clean Markdown code blocks if present (e.g. ```json ... ```)
+        // Clean Markdown code blocks if present
         responseText = responseText.replace(/```json\n?|\n?```/g, '').trim();
 
         const aiData = JSON.parse(responseText);
-        console.log('[VertexAI] Parsed structured data:', aiData);
+        console.log(`[VertexAI] Success with ${modelName}:`, aiData);
 
-        // Map AI keys to our internal interface (if needed)
-        // Our interface uses 'name', AI gives first/last. Let's combine for backward compatibility.
         const name = [aiData.firstName, aiData.lastName].filter(Boolean).join(' ');
 
         return {
@@ -95,12 +97,23 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
             fullText: text,
             source: 'ai'
         };
+    };
 
-    } catch (error) {
-        console.error('Błąd parsowania AI (Using Regex Fallback):', error);
-        // Fallback: Use Heuristic Regex Parser if AI fails
-        const fallbackData = parseBusinessCardRegex(text);
-        return fallbackData;
+    // Main Logic: Try 3.0 -> 1.5 -> Regex
+    try {
+        // Try Gemini 3.0
+        return await tryModel(MODELS[0]);
+    } catch (error3) {
+        console.warn('[VertexAI] Gemini 3.0 failed, trying 1.5...', error3);
+
+        try {
+            // Try Gemini 1.5
+            return await tryModel(MODELS[1]);
+        } catch (error15) {
+            console.error('[VertexAI] Both AI models failed, using regex fallback:', error15);
+            // Fallback: Regex
+            return parseBusinessCardRegex(text);
+        }
     }
 }
 
