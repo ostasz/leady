@@ -51,9 +51,9 @@ export default function FuturesTicker() {
     if (years.length === 0) return null;
 
     return (
-        <div className="group bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden text-gray-900 transition-all hover:shadow-md">
+        <div className="group bg-white rounded-xl p-4 md:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden text-gray-900 transition-all hover:shadow-md">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6 relative z-10">
+            <div className="flex items-center justify-between mb-4 md:mb-6 relative z-10">
                 <div className="flex items-center gap-3">
                     <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-[#2DD4BF] group-hover:bg-[#C5FAEA] transition-all duration-300">
                         <Zap size={24} strokeWidth={1.5} />
@@ -68,7 +68,7 @@ export default function FuturesTicker() {
                 </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 relative z-10">
                 {years.map(year => {
                     const history = data.futures[year];
                     if (!history || history.length === 0) return null;

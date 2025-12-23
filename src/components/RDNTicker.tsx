@@ -62,9 +62,9 @@ export default function RDNTicker() {
     }));
 
     return (
-        <div className="group bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden text-gray-900 h-full flex flex-col justify-between transition-all hover:shadow-md">
+        <div className="group bg-white rounded-xl p-4 md:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden text-gray-900 h-full flex flex-col justify-between transition-all hover:shadow-md">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6 relative z-10 w-full">
+            <div className="flex items-center justify-between mb-4 md:mb-6 relative z-10 w-full">
                 <div className="flex items-center gap-3">
                     <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-[#2DD4BF] group-hover:bg-[#C5FAEA] transition-all duration-300">
                         <Activity size={24} strokeWidth={1.5} />
