@@ -1,19 +1,111 @@
-/**
- * Parses raw text from Google Vision API into structured contact data.
- * Heuristic-based approach (Regex + Keyword Matching).
- */
+import { VertexAI } from '@google-cloud/vertexai';
+
+// Initialize Vertex AI with explicit credentials for local/admin usage
+const vertexAI = new VertexAI({
+    project: process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.GOOGLE_PROJECT_ID || 'ekovoltis-portal',
+    location: 'europe-central2',
+    googleAuthOptions: {
+        credentials: {
+            client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL || process.env.GOOGLE_CLIENT_EMAIL,
+            private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || process.env.GOOGLE_PRIVATE_KEY)?.replace(/\\n/g, '\n'),
+        }
+    }
+});
+
+const MODEL_NAME = 'gemini-1.5-flash-002';
 
 export interface ParsedCardData {
-    name?: string;
+    name?: string; // Unified Name (or split if you prefer, but interface kept compatible)
+    firstName?: string;
+    lastName?: string;
     email?: string;
     phone?: string;
     website?: string;
     company?: string;
     jobTitle?: string;
+    address?: string;
     fullText: string;
 }
 
-export function parseBusinessCard(text: string): ParsedCardData {
+export async function parseBusinessCard(text: string, languageHints: string[] = []): Promise<ParsedCardData> {
+    try {
+        const model = vertexAI.getGenerativeModel({
+            model: MODEL_NAME,
+            generationConfig: {
+                responseMimeType: 'application/json',
+                temperature: 0.1,
+            }
+        });
+
+        const langContext = languageHints.includes('pl') ? 'Priorytet: Polski.' : 'Priorytet: Angielski.';
+
+        const prompt = `
+            Jesteś ekspertem OCR i asystentem wprowadzania danych.
+            Twoim zadaniem jest przeanalizowanie surowego tekstu z wizytówki i wyodrębnienie danych strukturalnych.
+            ${langContext}
+            
+            Zasady:
+            1. Popraw oczywiste błędy OCR (np. "Emall" -> "Email", "VVarszawa" -> "Warszawa").
+            2. Dla numerów telefonu dodaj prefiks kraju (np. +48) jeśli go brakuje i jest to numer polski. Sformatuj jako +XX XXX XXX XXX.
+            3. Rozdziel Imię od Nazwiska jeśli to możliwe.
+            4. Nazwa firmy: ignoruj "NIP" i "REGON", szukaj nazw podmiotów. 
+            5. Jeśli czegoś nie ma, zostaw null.
+            
+            Oto tekst z wizytówki:
+            """
+            ${text}
+            """
+            
+            Zwróć JSON w formacie:
+            {
+                "firstName": string | null,
+                "lastName": string | null,
+                "company": string | null,
+                "jobTitle": string | null,
+                "email": string | null,
+                "phone": string | null,
+                "website": string | null,
+                "address": string | null
+            }
+        `;
+
+        console.log('[VertexAI] Input text length:', text.length);
+        const result = await model.generateContent(prompt);
+        let responseText = result.response.candidates?.[0].content.parts[0].text;
+        console.log('[VertexAI] Raw response:', responseText);
+
+        if (!responseText) {
+            throw new Error('Gemini zwróciło pustą odpowiedź');
+        }
+
+        // Clean Markdown code blocks if present (e.g. ```json ... ```)
+        responseText = responseText.replace(/```json\n?|\n?```/g, '').trim();
+
+        const aiData = JSON.parse(responseText);
+        console.log('[VertexAI] Parsed structured data:', aiData);
+
+        // Map AI keys to our internal interface (if needed)
+        // Our interface uses 'name', AI gives first/last. Let's combine for backward compatibility.
+        const name = [aiData.firstName, aiData.lastName].filter(Boolean).join(' ');
+
+        return {
+            ...aiData,
+            name: name || undefined,
+            fullText: text
+        };
+
+    } catch (error) {
+        console.error('Błąd parsowania AI (Using Regex Fallback):', error);
+        // Fallback: Use Heuristic Regex Parser if AI fails
+        const fallbackData = parseBusinessCardRegex(text);
+        return fallbackData;
+    }
+}
+
+/**
+ * Fallback Heuristic Parser (Regex + Keyword Matching)
+ */
+function parseBusinessCardRegex(text: string): ParsedCardData {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     const data: ParsedCardData = { fullText: text };
 
@@ -29,15 +121,13 @@ export function parseBusinessCard(text: string): ParsedCardData {
 
     // 1. First Pass: Contact details Extraction
     for (const line of lines) {
-        // Email
+        // Email - First match
         if (!data.email) {
             const emailMatch = line.match(emailRegex);
-            if (emailMatch) {
-                data.email = emailMatch[0];
-            }
+            if (emailMatch) data.email = emailMatch[0];
         }
 
-        // Phone
+        // Phone - First match not being NIP/REGON
         if (!data.phone) {
             const isNotTaxId = !line.toLowerCase().includes('nip') && !line.toLowerCase().includes('regon');
             if (isNotTaxId) {
@@ -77,16 +167,13 @@ export function parseBusinessCard(text: string): ParsedCardData {
     for (const line of potentialInfoLines) {
         // Company
         if (!data.company) {
-            const isCompany = companySuffixes.some(suffix => line.includes(suffix));
-            if (isCompany) {
+            if (companySuffixes.some(suffix => line.includes(suffix))) {
                 data.company = line;
             }
         }
-
         // Job Title
         if (!data.jobTitle) {
-            const isTitle = jobTitles.some(title => line.toLowerCase().includes(title.toLowerCase()));
-            if (isTitle) {
+            if (jobTitles.some(title => line.toLowerCase().includes(title.toLowerCase()))) {
                 data.jobTitle = line;
             }
         }
@@ -113,25 +200,6 @@ export function parseBusinessCard(text: string): ParsedCardData {
                 data.name = localPart.split('.')
                     .map(part => part.charAt(0).toUpperCase() + part.slice(1))
                     .join(' ');
-            }
-        }
-    }
-
-    // 5. Final Fallback: Company from Email Domain
-    if (!data.company && data.email) {
-        const domain = data.email.split('@')[1];
-        if (domain) {
-            const domainParts = domain.split('.');
-            // Exclude common generic providers
-            const genericProviders = ['gmail', 'yahoo', 'outlook', 'hotmail', 'icloud', 'wp', 'onet', 'interia', 'op', 'o2', 'tlen'];
-            if (domainParts.length >= 2) {
-                const companyName = domainParts[0];
-                if (!genericProviders.includes(companyName.toLowerCase())) {
-                    data.company = companyName.charAt(0).toUpperCase() + companyName.slice(1);
-                    // Add TLD if it's short? e.g. adn.pl -> Adn.pl? Or just Adn?
-                    // User example: adam.niedziolka@adn.pl -> adn
-                    // Let's keep it simple: "Adn"
-                }
             }
         }
     }

@@ -77,8 +77,8 @@ export async function POST(request: Request) {
         // detections[0] is the full text
         const fullText = detections[0].description || '';
 
-        // 3. Parse Data
-        const parsedData = parseBusinessCard(fullText);
+        // 3. Parse Data (Now Async with Vertex AI)
+        const parsedData = await parseBusinessCard(fullText, languageHints);
 
         return NextResponse.json({
             success: true,

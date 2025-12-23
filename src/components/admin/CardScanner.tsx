@@ -6,7 +6,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { resizeImage } from '@/lib/image-utils';
 import { downloadVCard } from '@/lib/vcard-generator';
 
-import { ParsedCardData } from '@/lib/card-parser';
+import type { ParsedCardData } from '@/lib/card-parser';
 
 interface CardScannerProps {
     onSaveSuccess?: () => void;
@@ -341,6 +341,16 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                     placeholder="www.firma.pl"
                                                 />
                                             </div>
+                                        </div>
+
+                                        <div className="col-span-2">
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Pełny tekst OCR (do weryfikacji)</label>
+                                            <textarea
+                                                value={formData.fullText || ''}
+                                                onChange={e => handleInputChange('fullText', e.target.value)}
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none min-h-[100px]"
+                                                placeholder="Tutaj pojawi się surowy tekst z wizytówki..."
+                                            />
                                         </div>
                                     </div>
 
