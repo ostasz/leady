@@ -51,19 +51,19 @@ export default function FuturesTicker() {
     if (years.length === 0) return null;
 
     return (
-        <div className="bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-800 relative overflow-hidden text-white">
+        <div className="group bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden text-gray-900 transition-all hover:shadow-md">
             {/* Header */}
             <div className="flex items-center justify-between mb-6 relative z-10">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-800 rounded-lg text-cyan-400">
-                        <Zap size={20} />
+                    <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-[#2DD4BF] group-hover:bg-[#C5FAEA] transition-all duration-300">
+                        <Zap size={24} strokeWidth={1.5} />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-gray-100">Notowania Terminowe (Futures)</h3>
-                        <p className="text-xs text-gray-400">Kontrakty BASE (PLN/MWh)</p>
+                        <h3 className="text-lg font-bold text-gray-900">Notowania Terminowe (Futures)</h3>
+                        <p className="text-xs text-gray-500">Kontrakty BASE (PLN/MWh)</p>
                     </div>
                 </div>
-                <Link href="/apps/futures" className="text-gray-500 hover:text-cyan-400 transition-colors" title="Otwórz pełny dashboard">
+                <Link href="/apps/futures" className="text-gray-400 hover:text-[#2DD4BF] transition-colors" title="Otwórz pełny dashboard">
                     <ExternalLink size={18} />
                 </Link>
             </div>
@@ -78,28 +78,35 @@ export default function FuturesTicker() {
                     const change = latest.price - prev.price;
                     const changePercent = prev.price ? (change / prev.price) * 100 : 0;
 
-                    // Determine color based on change
-                    let chartColor = '#06b6d4'; // Default Blue/Cyan (0 change)
-                    if (change > 0) chartColor = '#22c55e'; // Green
-                    if (change < 0) chartColor = '#ef4444'; // Red
+                    // Specific Color Logic per year/trend
+                    // Grow: Mint/Turquoise Chart, Lime Indicator
+                    // Decline: Orange Chart, Orange Indicator
+
+                    const isGrowth = change >= 0;
+
+                    // Chart Color: Mint (#2DD4BF) if growth, Orange (#f97316) if decline
+                    const chartColor = isGrowth ? '#2DD4BF' : '#f97316';
+
+                    // Indicator Styles
+                    const indicatorClass = isGrowth
+                        ? 'bg-[#ecfccb] text-[#65a30d]' // Lime 100 BG, Lime 600 Text
+                        : 'bg-[#fff7ed] text-[#ea580c]'; // Orange 50 BG, Orange 600 Text
 
                     return (
                         <div key={year} className="relative">
                             <div className="flex justify-between items-end mb-2">
                                 <div>
-                                    <div className="text-sm font-medium text-gray-400 mb-1">BASE {year}</div>
-                                    <div className="text-2xl font-bold tracking-tight text-white">
-                                        {latest.price.toFixed(2)} <span className="text-sm font-normal text-gray-500">PLN</span>
+                                    <div className="text-sm font-medium text-gray-500 mb-1">BASE {year}</div>
+                                    <div className="text-2xl font-bold tracking-tight text-gray-900">
+                                        {latest.price.toFixed(2)} <span className="text-sm font-normal text-gray-400">PLN</span>
                                     </div>
                                     <div className="flex items-center gap-2 mt-1">
-                                        <div className={`flex items-center text-xs font-semibold px-1.5 py-0.5 rounded ${change > 0 ? 'bg-green-900/30 text-green-400' :
-                                            change < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'
-                                            }`}>
-                                            {change > 0 ? <TrendingUp size={12} className="mr-1" /> :
-                                                change < 0 ? <TrendingDown size={12} className="mr-1" /> : <Minus size={12} className="mr-1" />}
+                                        <div className={`flex items-center text-xs font-bold px-2 py-0.5 rounded-md ${indicatorClass}`}>
+                                            {change >= 0 ? <TrendingUp size={12} className="mr-1" strokeWidth={2.5} /> :
+                                                <TrendingDown size={12} className="mr-1" strokeWidth={2.5} />}
                                             {Math.abs(change).toFixed(2)} ({Math.abs(changePercent).toFixed(1)}%)
                                         </div>
-                                        <div className="text-xs text-gray-500">
+                                        <div className="text-xs text-gray-400">
                                             {new Date(latest.date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}
                                         </div>
                                     </div>
@@ -110,7 +117,7 @@ export default function FuturesTicker() {
                                     <AreaChart width={96} height={64} data={history}>
                                         <defs>
                                             <linearGradient id={`gradient-${year}`} x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor={chartColor} stopOpacity={0.5} />
+                                                <stop offset="0%" stopColor={chartColor} stopOpacity={0.4} />
                                                 <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
@@ -126,7 +133,7 @@ export default function FuturesTicker() {
                                             content={({ active, payload }) => {
                                                 if (active && payload && payload.length) {
                                                     return (
-                                                        <div className="bg-gray-950/90 px-1.5 py-0.5 rounded text-[10px] text-gray-200 font-mono border border-gray-800 shadow-sm leading-none">
+                                                        <div className="bg-white px-2 py-1 rounded text-xs text-gray-700 font-medium border border-gray-100 shadow-md">
                                                             {Number(payload[0].value).toFixed(1)}
                                                         </div>
                                                     );
@@ -144,8 +151,8 @@ export default function FuturesTicker() {
                 })}
             </div>
 
-            {/* Decor */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+            {/* Decor - Mint Glow */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#2DD4BF]/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
         </div>
     );
 }

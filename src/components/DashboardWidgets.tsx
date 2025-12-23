@@ -162,70 +162,7 @@ export default function DashboardWidgets() {
                 <RDNTicker />
                 <FuturesTicker />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Weather Widget */}
-                {weather && weatherInfo ? (
-                    <Link href="/apps/weather" className="group p-6 rounded-xl shadow-sm border border-gray-100 hover:border-primary/20 bg-white flex items-center gap-4 transition-all hover:shadow-md cursor-pointer">
-                        <div className="bg-gray-100 p-3 rounded-lg shadow-sm text-gray-600 group-hover:bg-[#C5FAEA] transition-all duration-300">
-                            {weatherInfo.icon}
-                        </div>
-                        <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-2xl font-bold text-gray-900">{weather.temp}°C</span>
-                                    <div className="hidden sm:flex items-center gap-1">
-                                        <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-white/50 border border-gray-200 text-gray-600">Teraz</span>
-                                        {locationName && <span className="text-xs font-bold text-gray-500">{locationName}</span>}
-                                    </div>
-                                </div>
-                                {/* Sunrise/Sunset */}
-                                <div className="flex gap-3 text-xs text-gray-500 font-medium">
-                                    <div className="flex items-center gap-1" title="Wschód słońca">
-                                        <Sunrise size={14} className="text-orange-400" />
-                                        {formatTime(weather.sunrise)}
-                                    </div>
-                                    <div className="flex items-center gap-1" title="Zachód słońca">
-                                        <Sunset size={14} className="text-indigo-400" />
-                                        {formatTime(weather.sunset)}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="sm:hidden mb-2">
-                                {locationName && <span className="text-xs font-bold text-gray-500">{locationName}</span>}
-                            </div>
-                            <p className="text-gray-700 font-medium leading-tight text-sm sm:text-base">
-                                {weatherInfo.text}
-                            </p>
-                        </div>
-                    </Link>
-                ) : (
-                    <div className="p-6 rounded-xl shadow-sm border border-gray-100 bg-gray-50 flex items-center justify-center text-center relative overflow-hidden h-full">
-                        <div className="absolute inset-0 bg-gray-50 flex items-center justify-center opacity-50">
-                            <Cloud className="w-32 h-32 text-gray-200" />
-                        </div>
-                        <div className="relative z-10">
-                            <Cloud className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-                            <p className="text-gray-500 text-sm font-medium">Pogoda niedostępna</p>
-                            <p className="text-xs text-gray-400 mt-1">{error || 'Brak uprawnień lokalizacji'}</p>
-                        </div>
-                    </div>
-                )}
 
-                {/* Motivation Widget */}
-                <div className="p-6 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-sm text-white flex items-center gap-4 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 -mr-4 -mt-4 w-24 h-24 bg-white/10 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700"></div>
-
-                    <div className="bg-white/20 p-3 rounded-full backdrop-blur-sm">
-                        <Sparkles className="w-8 h-8 text-yellow-300" />
-                    </div>
-                    <div className="relative z-10">
-                        <h3 className="font-bold text-indigo-100 text-xs uppercase tracking-wider mb-1">Motywacja na dziś</h3>
-                        <p className="text-lg font-bold leading-tight">
-                            "{quote}"
-                        </p>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }

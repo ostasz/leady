@@ -62,56 +62,58 @@ export default function RDNTicker() {
     }));
 
     return (
-        <div className="bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-800 relative overflow-hidden text-white h-full flex flex-col justify-between">
+        <div className="group bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden text-gray-900 h-full flex flex-col justify-between transition-all hover:shadow-md">
             {/* Header */}
             <div className="flex items-center justify-between mb-6 relative z-10 w-full">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-800 rounded-lg text-green-400">
-                        <Activity size={20} />
+                    <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-[#2DD4BF] group-hover:bg-[#C5FAEA] transition-all duration-300">
+                        <Activity size={24} strokeWidth={1.5} />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-gray-100">TGe24 (RDN)</h3>
-                        <p className="text-xs text-gray-400">Rynek Dnia Następnego (PLN/MWh)</p>
+                        <h3 className="text-lg font-bold text-gray-900">TGe24 (RDN)</h3>
+                        <p className="text-xs text-gray-500">Rynek Dnia Następnego (PLN/MWh)</p>
                     </div>
                 </div>
-                <Link href="/apps/rdn" className="text-gray-500 hover:text-green-400 transition-colors" title="Otwórz pełny dashboard">
+                <Link href="/apps/rdn" className="text-gray-400 hover:text-[#2DD4BF] transition-colors" title="Otwórz pełny dashboard">
                     <ExternalLink size={18} />
                 </Link>
             </div>
 
             <div className="relative z-10 flex justify-between items-end">
                 <div>
-                    <div className="text-sm font-medium text-gray-400 mb-1">Index TGe24</div>
-                    <div className="text-2xl font-bold tracking-tight text-white">
-                        {latestPrice.toFixed(2)} <span className="text-sm font-normal text-gray-500">PLN</span>
+                    <div className="text-sm font-medium text-gray-500 mb-1">Index TGe24</div>
+                    <div className="text-2xl font-bold tracking-tight text-gray-900">
+                        {latestPrice.toFixed(2)} <span className="text-sm font-normal text-gray-400">PLN</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                        <div className={`flex items-center text-xs font-semibold px-1.5 py-0.5 rounded ${priceChange > 0 ? 'bg-green-900/30 text-green-400' :
-                            priceChange < 0 ? 'bg-red-900/30 text-red-400' : 'bg-gray-800 text-gray-400'
+                        {/* Indicator: Lime text on Light Lime pill */}
+                        <div className={`flex items-center text-xs font-bold px-2 py-0.5 rounded-md ${priceChange >= 0
+                            ? 'bg-[#ecfccb] text-[#65a30d]' // Lime 100 BG, Lime 600 Text
+                            : 'bg-[#fff7ed] text-[#ea580c]' // Orange 50 BG, Orange 600 Text
                             }`}>
-                            {priceChange > 0 ? <TrendingUp size={12} className="mr-1" /> :
-                                priceChange < 0 ? <TrendingDown size={12} className="mr-1" /> : <Minus size={12} className="mr-1" />}
+                            {priceChange >= 0 ? <TrendingUp size={12} className="mr-1" strokeWidth={2.5} /> :
+                                <TrendingDown size={12} className="mr-1" strokeWidth={2.5} />}
                             {Math.abs(priceChange).toFixed(2)} ({Math.abs(percentChange).toFixed(1)}%)
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-400">
                             {new Date(current.date).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' })}
                         </div>
                     </div>
                 </div>
 
-                {/* Sparkline */}
+                {/* Sparkline - Mint Color */}
                 <Link href="/apps/rdn" className="h-16 w-32 cursor-pointer hover:opacity-80 transition-opacity">
                     <AreaChart width={128} height={64} data={graphData}>
                         <defs>
                             <linearGradient id="gradient-rdn" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor={chartColor} stopOpacity={0.5} />
-                                <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
+                                <stop offset="0%" stopColor="#2DD4BF" stopOpacity={0.4} />
+                                <stop offset="100%" stopColor="#2DD4BF" stopOpacity={0} />
                             </linearGradient>
                         </defs>
                         <Area
                             type="monotone"
                             dataKey="price"
-                            stroke={chartColor}
+                            stroke="#2DD4BF" // Mint/Turquoise
                             strokeWidth={2}
                             fill="url(#gradient-rdn)"
                             isAnimationActive={false}
@@ -120,24 +122,22 @@ export default function RDNTicker() {
                             content={({ active, payload }) => {
                                 if (active && payload && payload.length) {
                                     return (
-                                        <div className="bg-gray-950/90 px-1.5 py-0.5 rounded text-[10px] text-gray-200 font-mono border border-gray-800 shadow-sm leading-none">
+                                        <div className="bg-white px-2 py-1 rounded text-xs text-gray-700 font-medium border border-gray-100 shadow-md">
                                             {Number(payload[0].value).toFixed(1)}
                                         </div>
                                     );
                                 }
                                 return null;
                             }}
-                            cursor={{ stroke: chartColor, strokeWidth: 1, opacity: 0.5 }}
+                            cursor={{ stroke: '#2DD4BF', strokeWidth: 1, opacity: 0.5 }}
                         />
                         <YAxis domain={['dataMin', 'dataMax']} hide />
                     </AreaChart>
                 </Link>
             </div>
 
-            {/* Decor */}
-            <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 ${priceChange > 0 ? 'bg-green-500/10' :
-                priceChange < 0 ? 'bg-red-500/10' : 'bg-cyan-500/10'
-                }`}></div>
+            {/* Decor - Subtle Mint Glow */}
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-16 -mt-16 bg-[#2DD4BF]/5 pointer-events-none"></div>
         </div>
     );
 }
