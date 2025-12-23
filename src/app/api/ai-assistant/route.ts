@@ -163,6 +163,7 @@ export async function POST(request: Request) {
 
     } catch (error: any) {
         console.error('[AdminAI] CRITICAL ERROR:', error);
+
         // Teraz w konsoli Vercel zobaczysz dokładny powód błędu 500
         return NextResponse.json({ error: error.message || 'Server Error' }, { status: 500 });
     }
