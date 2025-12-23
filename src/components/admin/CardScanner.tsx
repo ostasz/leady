@@ -268,9 +268,19 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
 
                             {step === 'verify' && (
                                 <form onSubmit={handleSave} className="space-y-4">
-                                    <div className="bg-blue-50 p-4 rounded-xl mb-4 border border-blue-100">
-                                        <h4 className="text-sm font-bold text-blue-800 mb-1">Sukces! Sprawdź dane.</h4>
-                                        <p className="text-xs text-blue-600">AI rozpoznało tekst. Możesz go teraz edytować.</p>
+                                    <div className="bg-blue-50 p-4 rounded-xl mb-4 border border-blue-100 flex justify-between items-start">
+                                        <div>
+                                            <h4 className="text-sm font-bold text-blue-800 mb-1">Sukces! Sprawdź dane.</h4>
+                                            <p className="text-xs text-blue-600">Możesz teraz edytować rozpoznane dane.</p>
+                                        </div>
+                                        {formData.source && (
+                                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase border ${formData.source === 'ai'
+                                                    ? 'bg-purple-100 text-purple-700 border-purple-200'
+                                                    : 'bg-orange-100 text-orange-700 border-orange-200'
+                                                }`}>
+                                                {formData.source === 'ai' ? 'Vertex AI ✨' : 'Regex (Fallback) ⚠️'}
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">

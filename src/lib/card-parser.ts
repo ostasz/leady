@@ -25,6 +25,7 @@ export interface ParsedCardData {
     jobTitle?: string;
     address?: string;
     fullText: string;
+    source?: 'ai' | 'regex';
 }
 
 export async function parseBusinessCard(text: string, languageHints: string[] = []): Promise<ParsedCardData> {
@@ -91,7 +92,8 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
         return {
             ...aiData,
             name: name || undefined,
-            fullText: text
+            fullText: text,
+            source: 'ai'
         };
 
     } catch (error) {
@@ -107,7 +109,7 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
  */
 function parseBusinessCardRegex(text: string): ParsedCardData {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    const data: ParsedCardData = { fullText: text };
+    const data: ParsedCardData = { fullText: text, source: 'regex' };
 
     // Regex Patterns
     const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/;
