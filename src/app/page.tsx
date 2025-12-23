@@ -79,9 +79,23 @@ export default function Dashboard() {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900">Witaj, {user.displayName?.split(' ')[0] || user.email || 'Pracowniku'}!</h1>
-                    <p className="text-gray-600 mt-2">Wybierz aplikację, z której chcesz skorzystać.</p>
+                {/* Hero Banner */}
+                <div className="relative rounded-2xl overflow-hidden mb-8 shadow-sm group h-48">
+                    <img
+                        src="/dashboard-cover.png"
+                        alt="Ekovoltis Cover"
+                        className="w-full h-full object-cover object-[0%_59%] scale-110 origin-bottom-left"
+                    />
+                    <div className="absolute inset-0 flex flex-col justify-center px-8">
+                        <div className="backdrop-blur-md bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg max-w-xl">
+                            <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-md">
+                                Witaj, {user.displayName?.split(' ')[0] || user.email || 'Pracowniku'}!
+                            </h1>
+                            <p className="text-gray-100 text-lg drop-shadow">
+                                Wybierz aplikację, z której chcesz skorzystać.
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <DashboardWidgets />
