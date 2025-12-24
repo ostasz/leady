@@ -84,7 +84,7 @@ export default function Dashboard() {
                     <img
                         src="/dashboard-cover.png"
                         alt="Ekovoltis Cover"
-                        className="w-full h-full object-cover object-[0%_59%] scale-110 origin-bottom-left"
+                        className="w-full h-full object-cover object-center"
                     />
                     <div className="absolute inset-0 flex flex-col justify-center px-8">
                         <div className="backdrop-blur-md bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg max-w-xl">
