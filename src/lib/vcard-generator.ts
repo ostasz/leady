@@ -71,8 +71,16 @@ export function generateVCard(input: ParsedCardData): string {
     // Address (opcjonalnie, ale masz pole)
     if (data.address) parts.push(`ADR;TYPE=WORK:;;${esc(data.address)};;;;`);
 
+    // Photo
+    if (data.photo?.base64) {
+        // Map content-type to type (vCard 3.0 supports JPEG, GIF, TIFF. vCard 4.0 is more flexible)
+        // Usually TYPE=JPEG or TYPE=PNG works on modern phones.
+        const type = data.photo.contentType.includes('png') ? 'PNG' : 'JPEG';
+        parts.push(`PHOTO;ENCODING=b;TYPE=${type}:${data.photo.base64}`);
+    }
+
     // Note
-    parts.push(`NOTE:${esc('Zeskanowano przez SalesApp')}`);
+    parts.push(`NOTE:${esc(data.notes || 'Zeskanowano przez SalesApp')}`);
 
     parts.push('END:VCARD');
 

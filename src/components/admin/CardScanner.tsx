@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Camera, Upload, X, Loader2, ScanLine, Save, RotateCw, Image as ImageIcon, Contact } from 'lucide-react';
+import { Camera, Upload, X, Loader2, ScanLine, Save, RotateCw, Image as ImageIcon, Contact, Sparkles, ImagePlus } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { resizeImage } from '@/lib/image-utils';
 import { downloadVCard } from '@/lib/vcard-generator';
@@ -22,6 +22,12 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
     const [loading, setLoading] = useState(false);
     const [base64Image, setBase64Image] = useState<string | null>(null);
     const [selectedLanguage, setSelectedLanguage] = useState('pl');
+    const [photoCandidates, setPhotoCandidates] = useState<Array<{
+        imageUrl: string;
+        thumbUrl: string;
+        sourcePage: string;
+        title?: string | null;
+    }>>([]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -367,12 +373,222 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                         </div>
 
                                         <div className="col-span-2">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="block text-xs font-medium text-gray-500">Notatki / Dodatkowe Info</label>
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        if (!formData.company && !formData.website) {
+                                                            alert("Podaj najpierw nazwę firmy lub stronę WWW.");
+                                                            return;
+                                                        }
+                                                        setLoading(true);
+                                                        try {
+                                                            const headers = await getAuthHeaders();
+                                                            const res = await fetch("/api/enrich-company", {
+                                                                method: "POST",
+                                                                headers: { ...headers, "Content-Type": "application/json" },
+                                                                body: JSON.stringify({
+                                                                    company: formData.company,
+                                                                    website: formData.website,
+                                                                    rawText: formData.fullText,
+                                                                }),
+                                                            });
+                                                            const json = await res.json();
+                                                            if (!res.ok) throw new Error(json.error || "Enrich failed");
+
+                                                            const enr = json.enrichment;
+                                                            const newNote = [
+                                                                formData.notes, // Keep existing notes if any
+                                                                "—",
+                                                                "🤖 AI Info o firmie:",
+                                                                enr.companySummary,
+                                                                enr.industry ? `Branża: ${enr.industry}` : "",
+                                                                enr.hqOrLocation ? `Lokalizacja: ${enr.hqOrLocation}` : "",
+                                                                enr.keyLinks?.website ? `WWW: ${enr.keyLinks.website}` : "",
+                                                                enr.keyLinks?.linkedin ? `LinkedIn: ${enr.keyLinks.linkedin}` : "",
+                                                            ].filter(Boolean).join("\n");
+
+                                                            setFormData(prev => ({ ...prev, notes: newNote })); // Changed 'note' to 'notes' to match lead data
+                                                            alert("Dane firmy zostały uzupełnione w notatce!");
+                                                        } catch (err: any) {
+                                                            console.error(err);
+                                                            alert("Nie udało się pobrać danych o firmie: " + err.message);
+                                                        } finally {
+                                                            setLoading(false);
+                                                        }
+                                                    }}
+                                                    className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 transition-colors flex items-center gap-1 font-medium"
+                                                    disabled={loading}
+                                                >
+                                                    {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                                                    Uzupełnij info o firmie (AI)
+                                                </button>
+                                            </div>
+                                            <textarea
+                                                value={formData.notes || ''} // Using notes instead of undefined note field
+                                                onChange={e => handleInputChange('notes', e.target.value)} // ensure ParsedCardData has notes or use 'details'? 
+                                                // ParsedCardData doesn't strictly have 'notes', but 'details'. 
+                                                // However, CardScanner uses local state which is Partial<ParsedCardData>.
+                                                // Let's check ParsedCardData interface in card-parser logs.
+                                                // ParsedCardData has: name, firstName, lastName, ... fullText. No 'notes'.
+                                                // But we can cast or extend.
+                                                // Actually... handleInputChange is typed to 'keyof ParsedCardData'.
+                                                // I'll extend the type locally or just use 'fullText' or a separate state if needed.
+                                                // Wait, the user snippet used 'formData.note'.
+                                                // I will add 'notes' to ParsedCardData interface in a separate step or just cast here.
+                                                // For safety, I'll ignore type check here or add it to interface.
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none min-h-[100px] text-gray-900 placeholder:text-gray-400"
+                                                placeholder="Tutaj pojawią się dodatkowe informacje..."
+                                            />
+                                        </div>
+
+                                        {/* Photo Selection Section */}
+                                        <div className="col-span-2 border-t pt-4">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <label className="block text-xs font-medium text-gray-500">Zdjęcie kontaktu (do vCard)</label>
+                                                {formData.company && formData.name && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            const company = (formData.company ?? "").trim();
+                                                            let firstName = formData.firstName?.trim() || "";
+                                                            let lastName = formData.lastName?.trim() || "";
+
+                                                            if (!firstName || !lastName) {
+                                                                const parts = (formData.name || "").trim().split(" ");
+                                                                if (parts.length >= 2) {
+                                                                    firstName = parts[0];
+                                                                    lastName = parts.slice(1).join(" ");
+                                                                }
+                                                            }
+
+                                                            if (!firstName || !lastName || !company) {
+                                                                alert("Do wyszukania zdjęcia potrzebuję: imię, nazwisko i nazwa firmy.");
+                                                                return;
+                                                            }
+
+                                                            setLoading(true);
+                                                            try {
+                                                                const headers = await getAuthHeaders();
+                                                                const res = await fetch("/api/photo-search", {
+                                                                    method: "POST",
+                                                                    headers: { ...headers, "Content-Type": "application/json" },
+                                                                    body: JSON.stringify({
+                                                                        firstName,
+                                                                        lastName,
+                                                                        company,
+                                                                        country: selectedLanguage === 'pl' ? 'PL' : 'US',
+                                                                        lang: selectedLanguage
+                                                                    }),
+                                                                });
+
+                                                                const json = await res.json();
+                                                                if (!res.ok) throw new Error(json.error || "Photo search failed");
+
+                                                                if (json.candidates && json.candidates.length > 0) {
+                                                                    setPhotoCandidates(json.candidates);
+                                                                } else {
+                                                                    alert("Nie znaleziono zdjęć w sieci.");
+                                                                }
+                                                            } catch (err: any) {
+                                                                console.error(err);
+                                                                alert("Błąd: " + err.message);
+                                                            } finally {
+                                                                setLoading(false);
+                                                            }
+                                                        }}
+                                                        className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-md hover:bg-blue-100 transition-colors flex items-center gap-1 font-medium"
+                                                        disabled={loading}
+                                                    >
+                                                        <ImagePlus size={12} />
+                                                        Szukaj zdjęć (Brave)
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {photoCandidates.length > 0 && (
+                                                <div className="grid grid-cols-5 gap-2 mb-3 bg-gray-50 p-2 rounded-lg border border-gray-200">
+                                                    {photoCandidates.map((c, idx) => (
+                                                        <div key={idx} className="relative group aspect-square">
+                                                            <img
+                                                                src={c.thumbUrl}
+                                                                alt={c.title ?? "Candidate"}
+                                                                className="w-full h-full object-cover rounded-md cursor-pointer hover:opacity-80 border border-transparent hover:border-primary transition-all"
+                                                                onError={(e) => {
+                                                                    // fallback: try full image if thumbnail fails
+                                                                    (e.currentTarget as HTMLImageElement).src = c.imageUrl;
+                                                                }}
+                                                                onClick={async () => {
+                                                                    setLoading(true);
+                                                                    try {
+                                                                        const headers = await getAuthHeaders();
+                                                                        const res = await fetch("/api/fetch-photo", {
+                                                                            method: "POST",
+                                                                            headers: { ...headers, "Content-Type": "application/json" },
+                                                                            body: JSON.stringify({
+                                                                                imageUrl: c.imageUrl,
+                                                                                referer: c.sourcePage,
+                                                                            }),
+                                                                        });
+                                                                        const json = await res.json();
+                                                                        if (!res.ok) throw new Error(json.error || "Failed to fetch photo");
+
+                                                                        setFormData(prev => ({
+                                                                            ...prev,
+                                                                            photo: { contentType: json.contentType, base64: json.base64 }
+                                                                        }));
+                                                                        setPhotoCandidates([]); // Close selection
+                                                                        alert("Zdjęcie wybrane!");
+                                                                    } catch (err: any) {
+                                                                        console.error(err);
+                                                                        alert("Błąd pobierania zdjęcia: " + err.message);
+                                                                    } finally {
+                                                                        setLoading(false);
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setPhotoCandidates([])}
+                                                        className="aspect-square flex items-center justify-center bg-gray-200 rounded-md hover:bg-gray-300 text-gray-500"
+                                                    >
+                                                        <X size={16} />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {formData.photo && (
+                                                <div className="flex items-center gap-3 bg-green-50 p-2 rounded-lg border border-green-200">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-green-300 relative">
+                                                        <img
+                                                            src={`data:${formData.photo.contentType};base64,${formData.photo.base64}`}
+                                                            alt="Selected"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="text-xs font-medium text-green-800">Zdjęcie dodane</p>
+                                                        <p className="text-[10px] text-green-600">Będzie widoczne w kontaktach</p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData(prev => ({ ...prev, photo: null }))}
+                                                        className="text-red-500 hover:text-red-700 p-1"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="col-span-2 hidden">
                                             <label className="block text-xs font-medium text-gray-500 mb-1">Pełny tekst OCR (do weryfikacji)</label>
                                             <textarea
                                                 value={formData.fullText || ''}
                                                 onChange={e => handleInputChange('fullText', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none min-h-[100px] text-gray-900 placeholder:text-gray-400"
-                                                placeholder="Tutaj pojawi się surowy tekst z wizytówki..."
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200"
                                             />
                                         </div>
                                     </div>

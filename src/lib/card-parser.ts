@@ -31,6 +31,8 @@ export interface ParsedCardData {
     fullText: string;
     source?: 'ai' | 'regex';
     modelName?: string;
+    notes?: string | null;
+    photo?: { base64: string; contentType: string; } | null;
 }
 
 export async function parseBusinessCard(text: string, languageHints: string[] = []): Promise<ParsedCardData> {
