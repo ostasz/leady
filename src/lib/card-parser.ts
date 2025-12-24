@@ -12,29 +12,30 @@ const vertexAI = new VertexAI({
     }
 });
 
-// Primary Model: Gemini 3.0 Flash (Preview)
-// Secondary Model: Gemini 1.5 Flash (GA) - Fallback if 3.0 is not available in region
-const MODELS = ['gemini-3-flash-preview', 'gemini-1.5-flash-001'];
+// EU-first models: Gemini 2.5 Flash / Flash-Lite / Pro
+// EU-first models: Gemini 2.5 Flash / Flash-Lite / Pro
+const EU_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'];
 
 export interface ParsedCardData {
-    name?: string; // Unified Name (or split if you prefer, but interface kept compatible)
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    phone?: string;
-    website?: string;
-    company?: string;
-    jobTitle?: string;
-    address?: string;
+    name?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    website?: string | null;
+    company?: string | null;
+    jobTitle?: string | null;
+    address?: string | null;
     fullText: string;
     source?: 'ai' | 'regex';
+    modelName?: string;
 }
 
 export async function parseBusinessCard(text: string, languageHints: string[] = []): Promise<ParsedCardData> {
 
     // Helper to try a specific model
     const tryModel = async (modelName: string): Promise<ParsedCardData> => {
-        console.log(`[VertexAI] Trying model: ${modelName}`);
+        // console.log(`[VertexAI] Trying model: ${modelName}`); // Debug only
         const model = vertexAI.getGenerativeModel({
             model: modelName,
             generationConfig: {
@@ -54,14 +55,14 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
             2. Dla numerów telefonu dodaj prefiks kraju (np. +48) jeśli go brakuje i jest to numer polski. Sformatuj jako +XX XXX XXX XXX.
             3. Rozdziel Imię od Nazwiska jeśli to możliwe.
             4. Nazwa firmy: ignoruj "NIP" i "REGON", szukaj nazw podmiotów. 
-            5. Jeśli czegoś nie ma, zostaw null.
+            5. Jeśli czegoś nie ma, zwróć null.
             
             Oto tekst z wizytówki:
             """
             ${text}
             """
             
-            Zwróć JSON w formacie:
+            Zwróć kompletny JSON (bez markdown) w formacie:
             {
                 "firstName": string | null,
                 "lastName": string | null,
@@ -74,47 +75,68 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
             }
         `;
 
-        console.log('[VertexAI] Input text length:', text.length);
+        // console.log('[VertexAI] Input text length:', text.length); 
         const result = await model.generateContent(prompt);
-        let responseText = result.response.candidates?.[0].content.parts[0].text;
-        console.log('[VertexAI] Raw response:', responseText);
+
+        // Safer response extraction
+        const candidates = result.response.candidates;
+        const parts = candidates?.[0]?.content?.parts ?? [];
+        let responseText = parts.map(p => (p as any).text ?? '').join('').trim();
+
+        // debug log (careful with PII in prod)
+        // console.log('[VertexAI] Raw response length:', responseText.length);
 
         if (!responseText) {
             throw new Error('Gemini zwróciło pustą odpowiedź');
         }
 
-        // Clean Markdown code blocks if present
+        // Clean Markdown code blocks if present (just in case, even with responseMimeType)
         responseText = responseText.replace(/```json\n?|\n?```/g, '').trim();
 
-        const aiData = JSON.parse(responseText);
-        console.log(`[VertexAI] Success with ${modelName}:`, aiData);
+        let aiData: any;
+        try {
+            aiData = JSON.parse(responseText);
+        } catch (e) {
+            console.error("JSON Parse Error", e);
+            throw new Error("Failed to parse AI response as JSON");
+        }
 
-        const name = [aiData.firstName, aiData.lastName].filter(Boolean).join(' ');
+        // Sanitization & Normalization function
+        const norm = (v: any) => (typeof v === 'string' ? v.trim() || null : null);
 
-        return {
-            ...aiData,
-            name: name || undefined,
+        const data: ParsedCardData = {
+            firstName: norm(aiData.firstName),
+            lastName: norm(aiData.lastName),
+            company: norm(aiData.company),
+            jobTitle: norm(aiData.jobTitle),
+            email: norm(aiData.email),
+            phone: norm(aiData.phone),
+            website: norm(aiData.website),
+            address: norm(aiData.address),
+            name: [norm(aiData.firstName), norm(aiData.lastName)].filter(Boolean).join(' ') || null,
             fullText: text,
-            source: 'ai'
+            source: 'ai',
+            modelName: modelName,
         };
+
+        // console.log(`[VertexAI] Success with ${modelName}`);
+        return data;
     };
 
-    // Main Logic: Try 3.0 -> 1.5 -> Regex
-    try {
-        // Try Gemini 3.0
-        return await tryModel(MODELS[0]);
-    } catch (error3) {
-        console.warn('[VertexAI] Gemini 3.0 failed, trying 1.5...', error3);
-
+    // Main Logic: Try Models in Sequence (EU)
+    // We try the first model, if it fails (e.g. overload), we try the next.
+    for (const modelName of EU_MODELS) {
         try {
-            // Try Gemini 1.5
-            return await tryModel(MODELS[1]);
-        } catch (error15) {
-            console.error('[VertexAI] Both AI models failed, using regex fallback:', error15);
-            // Fallback: Regex
-            return parseBusinessCardRegex(text);
+            return await tryModel(modelName);
+        } catch (error) {
+            console.warn(`[VertexAI] Model ${modelName} failed:`, error instanceof Error ? error.message : error);
+            // Continue to next model
         }
     }
+
+    // If all AI models fail, fall back to Regex
+    console.error('[VertexAI] All AI models failed, using regex fallback.');
+    return parseBusinessCardRegex(text);
 }
 
 /**
@@ -122,7 +144,20 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
  */
 function parseBusinessCardRegex(text: string): ParsedCardData {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    const data: ParsedCardData = { fullText: text, source: 'regex' };
+    // Initialize with nulls to match strict interface
+    const data: ParsedCardData = {
+        fullText: text,
+        source: 'regex',
+        firstName: null,
+        lastName: null,
+        company: null,
+        jobTitle: null,
+        email: null,
+        phone: null,
+        website: null,
+        address: null,
+        name: null
+    };
 
     // Regex Patterns
     const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/;
@@ -168,6 +203,13 @@ function parseBusinessCardRegex(text: string): ParsedCardData {
                 }
             }
         }
+
+        // Address (Simple heuristic)
+        if (!data.address) {
+            if (addressRegex.test(line)) {
+                data.address = line;
+            }
+        }
     }
 
     // 2. Filter lines used for name/company detection
@@ -199,7 +241,7 @@ function parseBusinessCardRegex(text: string): ParsedCardData {
         const potentialName = potentialInfoLines.find(line => {
             const notCompany = line !== data.company;
             const notTitle = line !== data.jobTitle;
-            const notAddress = !line.match(addressRegex);
+            const notAddress = line !== data.address; // simple quality check
             const properLength = line.split(' ').length >= 2 && line.split(' ').length <= 4;
             const startsCap = /^[A-Z]/.test(line);
 
@@ -208,6 +250,12 @@ function parseBusinessCardRegex(text: string): ParsedCardData {
 
         if (potentialName) {
             data.name = potentialName;
+            // Best effort split
+            const parts = potentialName.split(' ');
+            if (parts.length >= 2) {
+                data.lastName = parts.pop() || null;
+                data.firstName = parts.join(' ') || null;
+            }
         } else if (data.email) {
             // Fallback from email
             const localPart = data.email.split('@')[0];

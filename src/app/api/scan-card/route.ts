@@ -3,6 +3,8 @@ import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { adminAuth } from '@/lib/firebase-admin';
 import { parseBusinessCard } from '@/lib/card-parser';
 
+export const runtime = 'nodejs';
+
 // Initialize Vision Client
 // We reuse the Firebase Admin Service Account credentials if available,
 // or expect specific Google Cloud credentials.
@@ -16,15 +18,7 @@ const client = new ImageAnnotatorClient({
 });
 
 export async function POST(request: Request) {
-    console.log('[ScanCard] Request received');
-
-    // Debug: Check if credentials exist (do not log actual keys)
-    if (!process.env.FIREBASE_ADMIN_CLIENT_EMAIL && !process.env.GOOGLE_CLIENT_EMAIL) {
-        console.error('[ScanCard] Missing Client Email credential');
-    }
-    if (!process.env.FIREBASE_ADMIN_PRIVATE_KEY && !process.env.GOOGLE_PRIVATE_KEY) {
-        console.error('[ScanCard] Missing Private Key credential');
-    }
+    // console.log('[ScanCard] Request received'); // Detailed logging disabled for privacy/noise
 
     try {
         // 1. Auth Check (Admin Only)
@@ -35,22 +29,31 @@ export async function POST(request: Request) {
         const token = authHeader.split('Bearer ')[1];
         const decodedToken = await adminAuth.verifyIdToken(token);
 
-        // Fetch full user to check role (custom claims or Firestore)
-        // For speed, assuming 'admin' claim or we trust the decoded token if we set it previously.
-        // But safer to check Firestore or Custom Claim. 
-        // We'll proceed with basic auth for now, user asked for "Admin only" feature logic in UI, validation here.
-        if (decodedToken.role !== 'admin' && !decodedToken.admin) {
-            // Fallback: check Firestore if claims aren't set
-            // (Skipping for brevity/performance, assuming proper role management)
+        // Strict Admin Check
+        // Using custom claim 'admin' or explicit 'role' property if set in custom claims.
+        // Also allow specific admin email to bypass claim issues (e.g. stale token).
+        if (!decodedToken.admin && decodedToken.role !== 'admin' && decodedToken.email !== 'ostasz@mac.com') {
+            return NextResponse.json({ error: 'Forbidden: Admins only' }, { status: 403 });
         }
 
-        const { image, language = 'pl' } = await request.json(); // Expecting base64 string
+        const { image, language = 'pl' } = await request.json();
 
-        if (!image) {
-            return NextResponse.json({ error: 'No image provided' }, { status: 400 });
+        // 2. Input Validation
+        if (!image || typeof image !== 'string') {
+            return NextResponse.json({ error: 'No valid image provided' }, { status: 400 });
         }
 
-        // 2. Call Google Cloud Vision
+        if (language !== 'pl' && language !== 'en') {
+            return NextResponse.json({ error: 'Invalid language' }, { status: 400 });
+        }
+
+        // Approx limit check (4MB base64 is roughly 3MB binary)
+        // 5,500,000 chars of base64 ~ 4.1MB
+        if (image.length > 5_500_000) {
+            return NextResponse.json({ error: 'Image too large (max ~4MB)' }, { status: 413 });
+        }
+
+        // 3. Call Google Cloud Vision
         // Remove header if present (e.g. "data:image/jpeg;base64,")
         const base64Image = image.replace(/^data:image\/\w+;base64,/, '');
         const buffer = Buffer.from(base64Image, 'base64');
@@ -77,8 +80,11 @@ export async function POST(request: Request) {
         // detections[0] is the full text
         const fullText = detections[0].description || '';
 
-        // 3. Parse Data (Now Async with Vertex AI)
+        // 4. Parse Data (Now Async with Vertex AI)
         const parsedData = await parseBusinessCard(fullText, languageHints);
+
+        // Don't return raw full text in production if not needed, but UI currently uses it for "Full Text" field.
+        // We will keep it but ensure no logging of it on server side.
 
         return NextResponse.json({
             success: true,
@@ -87,7 +93,7 @@ export async function POST(request: Request) {
         });
 
     } catch (error: any) {
-        console.error('[ScanCard] Error:', error);
+        console.error('[ScanCard] Error:', error.message); // Log only message, not full object potentially containing PII
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }

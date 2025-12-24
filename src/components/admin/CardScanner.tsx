@@ -89,7 +89,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
             const headers = await getAuthHeaders();
             const leadData = {
                 companyName: formData.company || formData.name || 'Nowy Kontakt',
-                address: null, // Vision API doesn't easily get full address usually
+                address: formData.address || null,
                 phone: formData.phone,
                 website: formData.website,
                 description: `Zeskanowano z wizytówki.\nStanowisko: ${formData.jobTitle || '-'}\nOsoba: ${formData.name || '-'}`,
@@ -275,10 +275,12 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                         </div>
                                         {formData.source && (
                                             <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase border ${formData.source === 'ai'
-                                                    ? 'bg-purple-100 text-purple-700 border-purple-200'
-                                                    : 'bg-orange-100 text-orange-700 border-orange-200'
+                                                ? 'bg-purple-100 text-purple-700 border-purple-200'
+                                                : 'bg-orange-100 text-orange-700 border-orange-200'
                                                 }`}>
-                                                {formData.source === 'ai' ? 'Vertex AI ✨' : 'Regex (Fallback) ⚠️'}
+                                                {formData.source === 'ai'
+                                                    ? `Vertex AI ✨ ${formData.modelName ? `(${formData.modelName})` : ''}`
+                                                    : 'Regex (Fallback) ⚠️'}
                                             </span>
                                         )}
                                     </div>
@@ -290,7 +292,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="text"
                                                 value={formData.company || ''}
                                                 onChange={e => handleInputChange('company', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none font-medium"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none font-medium text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Brak nazwy firmy"
                                             />
                                         </div>
@@ -301,7 +303,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="text"
                                                 value={formData.name || ''}
                                                 onChange={e => handleInputChange('name', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Imię"
                                             />
                                         </div>
@@ -312,7 +314,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="text"
                                                 value={formData.jobTitle || ''}
                                                 onChange={e => handleInputChange('jobTitle', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Stanowisko"
                                             />
                                         </div>
@@ -323,7 +325,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="text"
                                                 value={formData.phone || ''}
                                                 onChange={e => handleInputChange('phone', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Telefon"
                                             />
                                         </div>
@@ -334,8 +336,19 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="email"
                                                 value={formData.email || ''}
                                                 onChange={e => handleInputChange('email', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Email"
+                                            />
+                                        </div>
+
+                                        <div className="col-span-2">
+                                            <label className="block text-xs font-medium text-gray-500 mb-1">Adres</label>
+                                            <input
+                                                type="text"
+                                                value={formData.address || ''}
+                                                onChange={e => handleInputChange('address', e.target.value)}
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
+                                                placeholder="Ulica, Miasto, Kod pocztowy"
                                             />
                                         </div>
 
@@ -347,7 +360,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                     type="text"
                                                     value={formData.website || ''}
                                                     onChange={e => handleInputChange('website', e.target.value)}
-                                                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                                                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
                                                     placeholder="www.firma.pl"
                                                 />
                                             </div>
@@ -358,7 +371,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                             <textarea
                                                 value={formData.fullText || ''}
                                                 onChange={e => handleInputChange('fullText', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none min-h-[100px]"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none min-h-[100px] text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Tutaj pojawi się surowy tekst z wizytówki..."
                                             />
                                         </div>

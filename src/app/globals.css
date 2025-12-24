@@ -16,13 +16,13 @@
   --color-primary-lighter: #F0FDFD;
 }
 
-@media (prefers-color-scheme: dark) {
+/* Dark mode disabled by user request */
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
-}
-
+} */
 body {
   background: var(--background);
   color: var(--foreground);
