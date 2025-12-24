@@ -266,8 +266,8 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                         <ScanLine className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary" size={24} />
                                     </div>
                                     <div>
-                                        <h4 className="text-lg font-bold text-gray-800">Przetwarzanie w chmurze...</h4>
-                                        <p className="text-sm text-gray-500">Wysyłanie do Google Vision API</p>
+                                        <h4 className="text-lg font-bold text-gray-800">Przetwarzanie wizytówki...</h4>
+                                        <p className="text-sm text-gray-500">Analiza obrazu i ekstrakcja danych...</p>
                                     </div>
                                 </div>
                             )}
