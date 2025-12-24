@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { VertexAI } from '@google-cloud/vertexai';
 import { admin, adminAuth, adminDb } from '@/lib/firebase-admin';
 import { logUsage } from '@/lib/usage';
+import { logInfo, logWarn, logError } from '@/lib/logger';
+import { callWithRetry } from '@/lib/retry';
 
 // Initialize Vertex AI (Service Account) - Same as card-parser.ts
 const vertexAI = new VertexAI({
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
         const rawLastContent = messages[messages.length - 1].content;
         const lastMessageContent = sanitizeText(rawLastContent);
 
-        console.log(`[AdminAI] Processing msg length: ${lastMessageContent.length} for UID: ${uid}`);
+        logInfo(`[AdminAI] Processing msg for UID: ${uid}`, { length: lastMessageContent.length });
 
         let responseText = '';
 
@@ -186,7 +188,7 @@ export async function POST(request: Request) {
         });
 
     } catch (error: any) {
-        console.error('[AdminAI] CRITICAL ERROR:', error);
+        logError('[AdminAI] CRITICAL ERROR', { error: error.message });
         return NextResponse.json({ error: error.message || 'Server Error' }, { status: 500 });
     }
 }

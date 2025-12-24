@@ -1,4 +1,6 @@
 import { VertexAI } from '@google-cloud/vertexai';
+import { logWarn, logError } from './logger';
+import { callWithRetry } from './retry';
 
 // Initialize Vertex AI with explicit credentials for local/admin usage
 const vertexAI = new VertexAI({
@@ -32,27 +34,6 @@ export interface ParsedCardData {
 }
 
 export async function parseBusinessCard(text: string, languageHints: string[] = []): Promise<ParsedCardData> {
-
-    // Retry helper with status logging
-    const callWithRetry = async <T>(fn: () => Promise<T>, retries = 3, backoff = 1000): Promise<T> => {
-        try {
-            return await fn();
-        } catch (error: any) {
-            const code = error.code || error.status || error.response?.status;
-
-            // Log status for debugging (Vercel/Dev)
-            if (process.env.NODE_ENV !== 'production' || process.env.VERCEL_ENV === 'preview') {
-                console.error(`[VertexAI] API Error. Status: ${code}, Message: ${error.message}`);
-            }
-
-            const isRetryable = code === 429 || code === 503;
-            if (retries > 0 && isRetryable) {
-                await new Promise(resolve => setTimeout(resolve, backoff));
-                return callWithRetry(fn, retries - 1, backoff * 2);
-            }
-            throw error;
-        }
-    };
 
     // Helper to try a specific model
     const tryModel = async (modelName: string): Promise<ParsedCardData> => {
@@ -110,8 +91,8 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
         let aiData: any;
         try {
             aiData = JSON.parse(responseText);
-        } catch (e) {
-            console.error("JSON Parse Error", e);
+        } catch (e: any) {
+            logError("JSON Parse Error", { error: e.message });
             throw new Error("Failed to parse AI response as JSON");
         }
 
@@ -139,17 +120,14 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
     for (const modelName of EU_MODELS) {
         try {
             return await tryModel(modelName);
-        } catch (error) {
-            // Log short warning to avoid spamming production logs with full stack traces
+        } catch (error: any) {
             const msg = error instanceof Error ? error.message : String(error);
-            if (process.env.NODE_ENV !== 'production') {
-                console.warn(`[VertexAI] Model ${modelName} failed: ${msg}`);
-            }
+            logWarn(`[VertexAI] Model ${modelName} failed`, { error: msg });
         }
     }
 
     // Fallback
-    console.warn('[VertexAI] All AI models failed, using regex fallback.');
+    logWarn('[VertexAI] All AI models failed, using regex fallback.');
     return parseBusinessCardRegex(text);
 }
 
