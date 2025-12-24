@@ -165,7 +165,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
             ) : (
                 <button
                     onClick={() => setIsOpen(true)}
-                    className="bg-white border border-gray-300 text-gray-700 hover:text-primary hover:border-primary px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm"
+                    className="bg-white border border-gray-300 text-gray-700 hover:text-[#1F4E5A] hover:border-[#1F4E5A] px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm"
                 >
                     <ScanLine size={18} />
                     Skanuj wizytówkę
@@ -174,14 +174,13 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh]">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden flex flex-col max-h-[90vh]">
                         {/* Header */}
-                        <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-                            <h3 className="font-bold text-lg text-gray-800 flex items-center gap-2">
-                                <ScanLine className="text-primary" size={20} />
+                        <div className="p-6 pb-0 flex justify-between items-center bg-white">
+                            <h3 className="font-bold text-xl text-[#111827] flex items-center gap-2">
                                 Skaner Wizytówek
                             </h3>
-                            <button onClick={close} className="p-2 hover:bg-gray-200 rounded-full text-gray-500">
+                            <button onClick={close} className="p-2 hover:bg-gray-100 text-gray-500 rounded-full transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
@@ -189,8 +188,11 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                         {/* Content */}
                         <div className="p-6 overflow-y-auto custom-scrollbar">
                             {step === 'upload' && (
-                                <div className="space-y-6 text-center">
-                                    <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                                <div className="space-y-6 text-center pt-2">
+                                    <div
+                                        className="relative group border-2 border-dashed border-[#2A7B88] hover:border-[#1F4E5A] hover:border-solid rounded-xl p-8 bg-gradient-to-b from-[#F0FDFA] to-white cursor-pointer transition-all duration-300 hover:shadow-md"
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
                                         {imagePreview ? (
                                             <div className="relative">
                                                 <img src={imagePreview} alt="Preview" className="max-h-64 mx-auto rounded-lg shadow-md object-contain" />
@@ -199,12 +201,14 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col items-center gap-3 text-gray-500">
-                                                <div className="w-16 h-16 bg-blue-100 text-primary rounded-full flex items-center justify-center mb-2">
-                                                    <Camera size={32} />
+                                            <div className="flex flex-col items-center gap-4 text-[#6B7280]">
+                                                <div className="w-20 h-20 bg-[#F0FDFA] rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
+                                                    <Camera size={40} className="text-[#1F4E5A]" />
                                                 </div>
-                                                <p className="font-medium text-gray-700">Dotknij aby zrobić zdjęcie lub wybrać plik</p>
-                                                <p className="text-xs text-gray-400">JPG, PNG (Max 5MB)</p>
+                                                <p className="font-medium text-[#111827] text-lg">
+                                                    Dotknij, aby zrobić zdjęcie lub <span className="font-bold underline decoration-[#4FD1C5] decoration-2 underline-offset-4">wybrać plik</span>
+                                                </p>
+                                                <p className="text-sm text-[#6B7280]">JPG, PNG (Max 5MB)</p>
                                             </div>
                                         )}
                                         <input
@@ -231,7 +235,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                             value="pl"
                                                             checked={selectedLanguage === 'pl'}
                                                             onChange={(e) => setSelectedLanguage(e.target.value)}
-                                                            className="text-primary focus:ring-primary w-4 h-4"
+                                                            className="text-[#1F4E5A] focus:ring-[#2A7B88] w-4 h-4"
                                                         />
                                                         <span className="text-sm">🇵🇱 Polski (PL)</span>
                                                     </label>
@@ -243,7 +247,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                             value="en"
                                                             checked={selectedLanguage === 'en'}
                                                             onChange={(e) => setSelectedLanguage(e.target.value)}
-                                                            className="text-primary focus:ring-primary w-4 h-4"
+                                                            className="text-[#1F4E5A] focus:ring-[#2A7B88] w-4 h-4"
                                                         />
                                                         <span className="text-sm">🇬🇧 Angielski (EN)</span>
                                                     </label>
@@ -255,7 +259,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
 
                                             <button
                                                 onClick={handleScan}
-                                                className="w-full bg-primary hover:bg-primary-dark text-white py-3 rounded-xl font-bold text-lg shadow-lg shadow-blue-200 transition-all flex items-center justify-center gap-2"
+                                                className="w-full bg-[#1F4E5A] hover:bg-[#153e48] text-white py-3 rounded-xl font-bold text-lg shadow-lg shadow-teal-100 transition-all flex items-center justify-center gap-2"
                                             >
                                                 <ScanLine size={20} />
                                                 Analizuj Obraz
@@ -268,8 +272,8 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                             {step === 'scanning' && (
                                 <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
                                     <div className="relative">
-                                        <div className="w-20 h-20 border-4 border-gray-100 border-t-primary rounded-full animate-spin"></div>
-                                        <ScanLine className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary" size={24} />
+                                        <div className="w-20 h-20 border-4 border-[#F0FDFA] border-t-[#2A7B88] rounded-full animate-spin"></div>
+                                        <ScanLine className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#1F4E5A]" size={24} />
                                     </div>
                                     <div>
                                         <h4 className="text-lg font-bold text-gray-800">Przetwarzanie wizytówki...</h4>
@@ -289,7 +293,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="text"
                                                 value={formData.company || ''}
                                                 onChange={e => handleInputChange('company', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none font-medium text-gray-900 placeholder:text-gray-400"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#2A7B88] outline-none font-medium text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Brak nazwy firmy"
                                             />
                                         </div>
@@ -300,7 +304,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="text"
                                                 value={formData.name || ''}
                                                 onChange={e => handleInputChange('name', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#2A7B88] outline-none text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Imię"
                                             />
                                         </div>
@@ -311,7 +315,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="text"
                                                 value={formData.jobTitle || ''}
                                                 onChange={e => handleInputChange('jobTitle', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#2A7B88] outline-none text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Stanowisko"
                                             />
                                         </div>
@@ -322,7 +326,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="text"
                                                 value={formData.phone || ''}
                                                 onChange={e => handleInputChange('phone', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#2A7B88] outline-none text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Telefon"
                                             />
                                         </div>
@@ -333,7 +337,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="email"
                                                 value={formData.email || ''}
                                                 onChange={e => handleInputChange('email', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#2A7B88] outline-none text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Email"
                                             />
                                         </div>
@@ -344,7 +348,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 type="text"
                                                 value={formData.address || ''}
                                                 onChange={e => handleInputChange('address', e.target.value)}
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#2A7B88] outline-none text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Ulica, Miasto, Kod pocztowy"
                                             />
                                         </div>
@@ -357,7 +361,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                     type="text"
                                                     value={formData.website || ''}
                                                     onChange={e => handleInputChange('website', e.target.value)}
-                                                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none text-gray-900 placeholder:text-gray-400"
+                                                    className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#2A7B88] outline-none text-gray-900 placeholder:text-gray-400"
                                                     placeholder="www.firma.pl"
                                                 />
                                             </div>
@@ -369,7 +373,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                     <label className="block text-xs font-medium text-gray-500">Notatki / Dodatkowe Info</label>
                                                     {statusMessage && (
                                                         <span className={`text-xs font-medium animate-pulse ${statusMessage.type === 'error' ? 'text-red-500' :
-                                                                statusMessage.type === 'success' ? 'text-green-600' : 'text-blue-500'
+                                                            statusMessage.type === 'success' ? 'text-green-600' : 'text-blue-500'
                                                             }`}>
                                                             {statusMessage.text}
                                                         </span>
@@ -438,7 +442,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 // Wait, the user snippet used 'formData.note'.
                                                 // I will add 'notes' to ParsedCardData interface in a separate step or just cast here.
                                                 // For safety, I'll ignore type check here or add it to interface.
-                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none min-h-[100px] text-gray-900 placeholder:text-gray-400"
+                                                className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#2A7B88] outline-none min-h-[100px] text-gray-900 placeholder:text-gray-400"
                                                 placeholder="Tutaj pojawią się dodatkowe informacje..."
                                             />
                                         </div>
@@ -514,7 +518,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                             <img
                                                                 src={`/api/image-proxy?url=${encodeURIComponent(c.thumbUrl)}`}
                                                                 alt={c.title ?? "Candidate"}
-                                                                className="w-full h-full object-cover rounded-md cursor-pointer hover:opacity-80 border border-transparent hover:border-primary transition-all"
+                                                                className="w-full h-full object-cover rounded-md cursor-pointer hover:opacity-80 border border-transparent hover:border-[#2A7B88] transition-all"
                                                                 onError={(e) => {
                                                                     // fallback: try full image if thumbnail fails
                                                                     (e.currentTarget as HTMLImageElement).src = c.imageUrl;
