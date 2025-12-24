@@ -21,13 +21,19 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
     const [formData, setFormData] = useState<Partial<ParsedCardData>>({});
     const [loading, setLoading] = useState(false);
     const [base64Image, setBase64Image] = useState<string | null>(null);
-    const [selectedLanguage, setSelectedLanguage] = useState('pl');
     const [photoCandidates, setPhotoCandidates] = useState<Array<{
         imageUrl: string;
         thumbUrl: string;
         sourcePage: string;
         title?: string | null;
     }>>([]);
+    const [selectedLanguage, setSelectedLanguage] = useState('pl');
+    const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+    const showStatus = (text: string, type: 'success' | 'error' | 'info' = 'success') => {
+        setStatusMessage({ text, type });
+        setTimeout(() => setStatusMessage(null), 3000);
+    };
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,7 +47,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                 setBase64Image(resizedBase64);
             } catch (error) {
                 console.error("Error resizing image:", error);
-                alert("Błąd przetwarzania zdjęcia.");
+                // alert("Błąd przetwarzania zdjęcia.");
             }
         }
     };
@@ -76,7 +82,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
             setStep('verify');
         } catch (error: any) {
             console.error("Scan Error:", error);
-            alert(`Błąd skanowania: ${error.message || 'Spróbuj ponownie.'}\nJeśli problem się powtarza, sprawdź konfigurację API.`);
+            // alert(`Błąd skanowania: ${error.message || 'Spróbuj ponownie.'}\nJeśli problem się powtarza, sprawdź konfigurację API.`);
             setStep('upload');
         } finally {
             setLoading(false);
@@ -113,14 +119,14 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
 
             if (!res.ok) throw new Error('Failed to save lead');
 
-            alert('Kontakt zapisany!');
+            // alert('Kontakt zapisany!');
             setIsOpen(false);
             resetState();
             if (onSaveSuccess) onSaveSuccess();
 
         } catch (error) {
             console.error(error);
-            alert('Błąd zapisu.');
+            // alert('Błąd zapisu.');
         } finally {
             setLoading(false);
         }
@@ -359,12 +365,21 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
 
                                         <div className="col-span-2">
                                             <div className="flex justify-between items-center mb-1">
-                                                <label className="block text-xs font-medium text-gray-500">Notatki / Dodatkowe Info</label>
+                                                <div className="flex items-center gap-2">
+                                                    <label className="block text-xs font-medium text-gray-500">Notatki / Dodatkowe Info</label>
+                                                    {statusMessage && (
+                                                        <span className={`text-xs font-medium animate-pulse ${statusMessage.type === 'error' ? 'text-red-500' :
+                                                                statusMessage.type === 'success' ? 'text-green-600' : 'text-blue-500'
+                                                            }`}>
+                                                            {statusMessage.text}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <button
                                                     type="button"
                                                     onClick={async () => {
                                                         if (!formData.company && !formData.website) {
-                                                            alert("Podaj najpierw nazwę firmy lub stronę WWW.");
+                                                            showStatus("Podaj nazwę firmy lub stronę WWW.", "error");
                                                             return;
                                                         }
                                                         setLoading(true);
@@ -395,10 +410,10 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                             ].filter(Boolean).join("\n");
 
                                                             setFormData(prev => ({ ...prev, notes: newNote })); // Changed 'note' to 'notes' to match lead data
-                                                            alert("Dane firmy zostały uzupełnione w notatce!");
+                                                            showStatus("Dane firmy uzupełnione!");
                                                         } catch (err: any) {
                                                             console.error(err);
-                                                            alert("Nie udało się pobrać danych o firmie: " + err.message);
+                                                            showStatus("Błąd pobierania danych o firmie.", "error");
                                                         } finally {
                                                             setLoading(false);
                                                         }
@@ -449,7 +464,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                             }
 
                                                             if (!firstName || !lastName || !company) {
-                                                                alert("Do wyszukania zdjęcia potrzebuję: imię, nazwisko i nazwa firmy.");
+                                                                showStatus("Wymagane: Imię, Nazwisko, Firma", "error");
                                                                 return;
                                                             }
 
@@ -474,11 +489,11 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                                 if (json.candidates && json.candidates.length > 0) {
                                                                     setPhotoCandidates(json.candidates);
                                                                 } else {
-                                                                    alert("Nie znaleziono zdjęć w sieci.");
+                                                                    showStatus("Nie znaleziono zdjęć.", "info");
                                                                 }
                                                             } catch (err: any) {
                                                                 console.error(err);
-                                                                alert("Błąd: " + err.message);
+                                                                showStatus("Błąd wyszukiwania.", "error");
                                                             } finally {
                                                                 setLoading(false);
                                                             }
@@ -547,10 +562,10 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                                             notes: (prev.notes || "") + `\nZdjęcie: źródło ${c.sourcePage}`
                                                                         }));
                                                                         setPhotoCandidates([]); // Close selection
-                                                                        alert("Zdjęcie wybrane!");
+                                                                        showStatus("Zdjęcie wybrane!");
                                                                     } catch (err: any) {
                                                                         console.error(err);
-                                                                        alert("Błąd pobierania zdjęcia: " + err.message);
+                                                                        showStatus("Błąd pobierania zdjęcia.", "error");
                                                                     } finally {
                                                                         setLoading(false);
                                                                     }
