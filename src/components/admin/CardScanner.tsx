@@ -274,13 +274,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
 
                             {step === 'verify' && (
                                 <form onSubmit={handleSave} className="space-y-4">
-                                    <div className="bg-blue-50 p-4 rounded-xl mb-4 border border-blue-100 flex justify-between items-start">
-                                        <div>
-                                            <h4 className="text-sm font-bold text-blue-800 mb-1">Sukces! Sprawdź dane.</h4>
-                                            <p className="text-xs text-blue-600">Możesz teraz edytować rozpoznane dane.</p>
-                                        </div>
 
-                                    </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="col-span-2">
