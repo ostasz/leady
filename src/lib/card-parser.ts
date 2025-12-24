@@ -33,9 +33,29 @@ export interface ParsedCardData {
 
 export async function parseBusinessCard(text: string, languageHints: string[] = []): Promise<ParsedCardData> {
 
+    // Retry helper with status logging
+    const callWithRetry = async <T>(fn: () => Promise<T>, retries = 3, backoff = 1000): Promise<T> => {
+        try {
+            return await fn();
+        } catch (error: any) {
+            const code = error.code || error.status || error.response?.status;
+
+            // Log status for debugging (Vercel/Dev)
+            if (process.env.NODE_ENV !== 'production' || process.env.VERCEL_ENV === 'preview') {
+                console.error(`[VertexAI] API Error. Status: ${code}, Message: ${error.message}`);
+            }
+
+            const isRetryable = code === 429 || code === 503;
+            if (retries > 0 && isRetryable) {
+                await new Promise(resolve => setTimeout(resolve, backoff));
+                return callWithRetry(fn, retries - 1, backoff * 2);
+            }
+            throw error;
+        }
+    };
+
     // Helper to try a specific model
     const tryModel = async (modelName: string): Promise<ParsedCardData> => {
-        // console.log(`[VertexAI] Trying model: ${modelName}`); // Debug only
         const model = vertexAI.getGenerativeModel({
             model: modelName,
             generationConfig: {
@@ -75,22 +95,16 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
             }
         `;
 
-        // console.log('[VertexAI] Input text length:', text.length); 
-        const result = await model.generateContent(prompt);
+        const result = await callWithRetry(() => model.generateContent(prompt));
 
-        // Safer response extraction
         const candidates = result.response.candidates;
         const parts = candidates?.[0]?.content?.parts ?? [];
         let responseText = parts.map(p => (p as any).text ?? '').join('').trim();
-
-        // debug log (careful with PII in prod)
-        // console.log('[VertexAI] Raw response length:', responseText.length);
 
         if (!responseText) {
             throw new Error('Gemini zwróciło pustą odpowiedź');
         }
 
-        // Clean Markdown code blocks if present (just in case, even with responseMimeType)
         responseText = responseText.replace(/```json\n?|\n?```/g, '').trim();
 
         let aiData: any;
@@ -101,7 +115,6 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
             throw new Error("Failed to parse AI response as JSON");
         }
 
-        // Sanitization & Normalization function
         const norm = (v: any) => (typeof v === 'string' ? v.trim() || null : null);
 
         const data: ParsedCardData = {
@@ -119,23 +132,24 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
             modelName: modelName,
         };
 
-        // console.log(`[VertexAI] Success with ${modelName}`);
         return data;
     };
 
     // Main Logic: Try Models in Sequence (EU)
-    // We try the first model, if it fails (e.g. overload), we try the next.
     for (const modelName of EU_MODELS) {
         try {
             return await tryModel(modelName);
         } catch (error) {
-            console.warn(`[VertexAI] Model ${modelName} failed:`, error instanceof Error ? error.message : error);
-            // Continue to next model
+            // Log short warning to avoid spamming production logs with full stack traces
+            const msg = error instanceof Error ? error.message : String(error);
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn(`[VertexAI] Model ${modelName} failed: ${msg}`);
+            }
         }
     }
 
-    // If all AI models fail, fall back to Regex
-    console.error('[VertexAI] All AI models failed, using regex fallback.');
+    // Fallback
+    console.warn('[VertexAI] All AI models failed, using regex fallback.');
     return parseBusinessCardRegex(text);
 }
 

@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { VertexAI } from '@google-cloud/vertexai';
 import { admin, adminAuth, adminDb } from '@/lib/firebase-admin';
 import { logUsage } from '@/lib/usage';
 
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+// Initialize Vertex AI (Service Account) - Same as card-parser.ts
+const vertexAI = new VertexAI({
+    project: process.env.FIREBASE_ADMIN_PROJECT_ID || process.env.GOOGLE_PROJECT_ID || 'ekovoltis-portal',
+    location: 'europe-central2',
+    googleAuthOptions: {
+        credentials: {
+            client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL || process.env.GOOGLE_CLIENT_EMAIL,
+            private_key: (process.env.FIREBASE_ADMIN_PRIVATE_KEY || process.env.GOOGLE_PRIVATE_KEY)?.replace(/\\n/g, '\n'),
+        }
+    }
+});
 
 // Funkcja czyszcząca tekst z "iPhone'owych" znaków
 function sanitizeText(text: string): string {
@@ -30,12 +40,11 @@ export async function POST(request: Request) {
             uid = decodedToken.uid;
         } catch (authError: any) {
             console.error('[AdminAI] Auth Error:', authError.message);
-            // Zwracamy 401 zamiast 500 przy błędzie tokena!
             return NextResponse.json({ error: 'Session expired', details: authError.message }, { status: 401 });
         }
 
         // --- 2. Chat Logic ---
-        const body = await request.json(); // Parsujemy raz
+        const body = await request.json();
         const { messages, sessionId } = body;
 
         if (!messages || !Array.isArray(messages)) {
@@ -51,16 +60,16 @@ export async function POST(request: Request) {
         let responseText = '';
 
         const runChat = async (modelName: string) => {
-            console.log(`[AdminAI] Trying model: ${modelName}`);
+            console.log(`[AdminAI] Trying model (Vertex): ${modelName}`);
 
-            // Czyścimy historię rozmowy
+            // Przygotowanie historii dla Vertex AI
+            // Vertex wymaga 'user' lub 'model'. Nasz frontend wysyła 'user'/'assistant'.
             const history = messages.slice(0, -1).map((msg: any) => ({
                 role: msg.role === 'user' ? 'user' : 'model',
-                parts: [{ text: sanitizeText(msg.content) }], // Sanityzacja historii
+                parts: [{ text: sanitizeText(msg.content) }],
             }));
 
-            const genAI = new GoogleGenerativeAI(API_KEY || '');
-            const model = genAI.getGenerativeModel({ model: modelName });
+            const model = vertexAI.getGenerativeModel({ model: modelName });
 
             const chat = model.startChat({
                 history: [
@@ -102,29 +111,43 @@ export async function POST(request: Request) {
                 ]
             });
 
-            // Ustawiamy timeout dla samego żądania do AI (żeby złapać to przed Vercelem)
+            // Timeout dla żądania Vertex (dłuższy dla Vertexa)
             const timeoutPromise = new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("AI Timeout")), 15000)
+                setTimeout(() => reject(new Error("AI Timeout")), 25000)
             );
 
+            // Vertex AI: sendMessage returns { response: { candidates: [...] } }
             const result: any = await Promise.race([
                 chat.sendMessage(lastMessageContent),
                 timeoutPromise
             ]);
 
-            return result.response.text();
+            const candidates = result.response.candidates;
+            const parts = candidates?.[0]?.content?.parts ?? [];
+            const text = parts.map((p: any) => p.text ?? '').join('').trim();
+
+            if (!text) throw new Error("Empty response from Vertex AI");
+            return text;
         };
 
-        // Retry Logic
+        // Retry Logic - Vertex Models Only (EU)
         try {
-            responseText = await runChat("gemini-3-flash-preview");
-        } catch (error3: any) {
-            console.warn(`[AdminAI] Gemini 3 failed (${error3.message}). Fallback...`);
+            // First Try: Gemini 2.5 Flash
+            responseText = await runChat("gemini-2.5-flash");
+        } catch (errorFirst: any) {
+            console.warn(`[AdminAI] Primary model failed (${errorFirst.message}). Fallback...`);
             try {
-                responseText = await runChat("gemini-1.5-flash");
-            } catch (error15: any) {
-                console.error('[AdminAI] All models failed:', error15);
-                throw new Error(`AI Service Unavailable: ${error15.message}`);
+                // Fallback: Gemini 2.5 Flash-Lite (cheaper/faster/backup)
+                responseText = await runChat("gemini-2.5-flash-lite");
+            } catch (errorSecond: any) {
+                console.warn(`[AdminAI] Secondary model failed. Trying Pro...`);
+                try {
+                    // Last Resort: Gemini 2.5 Pro
+                    responseText = await runChat("gemini-2.5-pro");
+                } catch (errorFinal: any) {
+                    console.error('[AdminAI] All Vertex models failed:', errorFinal);
+                    throw new Error(`AI Service Unavailable: ${errorFinal.message}`);
+                }
             }
         }
 
@@ -153,7 +176,8 @@ export async function POST(request: Request) {
             finalSessionId = newDoc.id;
         }
 
-        await logUsage(uid, 'gemini', 'admin_chat', 1, { length: lastMessageContent.length });
+        // Log usage with 'vertex' provider
+        await logUsage(uid, 'vertex-gemini', 'admin_chat', 1, { length: lastMessageContent.length });
 
         return NextResponse.json({
             response: responseText,
@@ -163,8 +187,6 @@ export async function POST(request: Request) {
 
     } catch (error: any) {
         console.error('[AdminAI] CRITICAL ERROR:', error);
-
-        // Teraz w konsoli Vercel zobaczysz dokładny powód błędu 500
         return NextResponse.json({ error: error.message || 'Server Error' }, { status: 500 });
     }
 }
