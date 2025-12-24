@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { ImageAnnotatorClient } from '@google-cloud/vision';
 import { adminAuth } from '@/lib/firebase-admin';
 import { parseBusinessCard } from '@/lib/card-parser';
+import { logInfo, logError } from '@/lib/logger';
 
 export const runtime = 'nodejs';
 
@@ -18,8 +19,6 @@ const client = new ImageAnnotatorClient({
 });
 
 export async function POST(request: Request) {
-    // console.log('[ScanCard] Request received'); // Detailed logging disabled for privacy/noise
-
     try {
         // 1. Auth Check (Admin Only)
         const authHeader = request.headers.get('authorization');
@@ -35,6 +34,9 @@ export async function POST(request: Request) {
         if (!decodedToken.admin && decodedToken.role !== 'admin' && decodedToken.email !== 'ostasz@mac.com') {
             return NextResponse.json({ error: 'Forbidden: Admins only' }, { status: 403 });
         }
+
+        const requestId = crypto.randomUUID();
+        logInfo('[ScanCard] Request start', { requestId, uid: decodedToken.uid });
 
         const { image, language = 'pl' } = await request.json();
 
@@ -74,6 +76,7 @@ export async function POST(request: Request) {
         const detections = result.textAnnotations;
 
         if (!detections || detections.length === 0) {
+            logInfo('[ScanCard] No text detected', { requestId });
             return NextResponse.json({ error: 'No text detected' }, { status: 422 });
         }
 
@@ -86,6 +89,8 @@ export async function POST(request: Request) {
         // Don't return raw full text in production if not needed, but UI currently uses it for "Full Text" field.
         // We will keep it but ensure no logging of it on server side.
 
+        logInfo('[ScanCard] Success', { requestId, source: parsedData.source, model: parsedData.modelName });
+
         return NextResponse.json({
             success: true,
             data: parsedData,
@@ -93,7 +98,7 @@ export async function POST(request: Request) {
         });
 
     } catch (error: any) {
-        console.error('[ScanCard] Error:', error.message); // Log only message, not full object potentially containing PII
+        logError('[ScanCard] Error', { error: error.message });
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }

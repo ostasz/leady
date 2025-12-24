@@ -1,7 +1,7 @@
 import { adminDb } from './firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
-export type ServiceType = 'google_maps' | 'openai' | 'gemini' | 'gus' | 'assistant:query';
+export type ServiceType = 'google_maps' | 'openai' | 'gemini' | 'gus' | 'assistant:query' | 'vertex-gemini';
 
 export interface UsageLog {
     userId: string;
@@ -26,6 +26,7 @@ const PRICE_TABLE: Record<string, number> = {
     // Let's assume average call is ~1000 input + ~500 output tokens.
     // Cost ~= 75 micros + 150 micros = 225 micros.
     'gemini:generate_content': 250,
+    'vertex-gemini:generate_content': 250,
 
     // GUS (Free)
     'gus:search': 0,
@@ -33,6 +34,7 @@ const PRICE_TABLE: Record<string, number> = {
     // AI Assistant
     'assistant:query': 1000,
     'gemini:admin_chat': 500, // ~$0.0005 per message
+    'vertex-gemini:admin_chat': 500,
 };
 
 export function calculateEstimatedCost(service: ServiceType, action: string, quantity: number = 1): number {
@@ -66,8 +68,8 @@ export async function logUsage(
         // Optional: Update aggregated stats on user document (atomic increment)
         // This helps with quick dashboard views without querying all logs
         // Determine category for cost tracking
-        const isChat = service === 'gemini' && action === 'admin_chat' || service === 'assistant:query';
-        const isSearch = service === 'google_maps' || service === 'gus' || (service === 'gemini' && action === 'generate_content');
+        const isChat = (service === 'gemini' || service === 'vertex-gemini') && action === 'admin_chat' || service === 'assistant:query';
+        const isSearch = service === 'google_maps' || service === 'gus' || ((service === 'gemini' || service === 'vertex-gemini') && action === 'generate_content');
 
         const updateData: any = {
             [`${service}_cost`]: FieldValue.increment(estimatedCostMicros),
