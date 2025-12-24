@@ -6,6 +6,24 @@ export const maxDuration = 30;
 
 import sharp from "sharp";
 
+function sniffImageType(buf: Buffer): "jpeg" | "png" | "webp" | null {
+    if (buf.length < 12) return null;
+    // JPEG FF D8 FF
+    if (buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "jpeg";
+    // PNG 89 50 4E 47
+    if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return "png";
+    // WEBP: "RIFF....WEBP"
+    if (buf.toString("ascii", 0, 4) === "RIFF" && buf.toString("ascii", 8, 12) === "WEBP") return "webp";
+    return null;
+}
+
+
+function normalizeUrl(u: string) {
+    const s = u.trim();
+    if (!/^https?:\/\//i.test(s)) return `https://${s}`;
+    return s;
+}
+
 export async function POST(req: Request) {
     try {
         const authHeader = req.headers.get("authorization");
@@ -25,27 +43,37 @@ export async function POST(req: Request) {
         const { imageUrl, referer } = await req.json();
         if (!imageUrl || typeof imageUrl !== "string") return NextResponse.json({ error: "imageUrl required" }, { status: 400 });
 
-        const res = await fetch(imageUrl, {
+        const url = normalizeUrl(imageUrl);
+
+        const res = await fetch(url, {
+            redirect: "follow",
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'User-Agent': 'Mozilla/5.0 (compatible; SalesProspectingApp/1.0)',
                 'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
                 ...(referer ? { 'Referer': referer } : {})
             },
-            redirect: "follow",
         });
 
         if (!res.ok) return NextResponse.json({ error: `Fetch failed ${res.status}` }, { status: 400 });
 
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.startsWith("image/")) {
-            console.error(`[FetchPhoto] Invalid Content-Type: ${ct} for URL: ${imageUrl}`);
-            return NextResponse.json({ error: "URL is not an image" }, { status: 415 });
+        const ct = (res.headers.get("content-type") || "").toLowerCase();
+        const arr = await res.arrayBuffer();
+        const buf = Buffer.from(arr);
+
+        const sniffed = sniffImageType(buf);
+        const isImageHeader = ct.startsWith("image/");
+
+        if (!isImageHeader && !sniffed) {
+            const head = buf.toString("utf8", 0, 200);
+            console.error(`[FetchPhoto] Invalid Content-Type: ${ct}, Sniff failed. Head: ${head.substring(0, 50)}...`);
+            return NextResponse.json({
+                error: "URL is not an image",
+                details: { contentType: ct, status: res.status, sample: head }
+            }, { status: 415 });
         }
 
-        const original = Buffer.from(await res.arrayBuffer());
-
         // Konwersja + resize + kompresja
-        const compressed = await sharp(original)
+        const compressed = await sharp(buf)
             .resize({
                 width: 320,
                 height: 320,

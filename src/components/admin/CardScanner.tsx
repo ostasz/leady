@@ -512,7 +512,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                     {photoCandidates.map((c, idx) => (
                                                         <div key={idx} className="relative group aspect-square">
                                                             <img
-                                                                src={c.thumbUrl}
+                                                                src={`/api/image-proxy?url=${encodeURIComponent(c.thumbUrl)}`}
                                                                 alt={c.title ?? "Candidate"}
                                                                 className="w-full h-full object-cover rounded-md cursor-pointer hover:opacity-80 border border-transparent hover:border-primary transition-all"
                                                                 onError={(e) => {
@@ -523,20 +523,43 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                                     setLoading(true);
                                                                     try {
                                                                         const headers = await getAuthHeaders();
-                                                                        const res = await fetch("/api/fetch-photo", {
+                                                                        let finalRes = null;
+
+                                                                        // 1. Try fetching the THUMBNAIL via our backend (safer/smaller)
+                                                                        const resThumb = await fetch("/api/fetch-photo", {
                                                                             method: "POST",
                                                                             headers: { ...headers, "Content-Type": "application/json" },
                                                                             body: JSON.stringify({
-                                                                                imageUrl: c.imageUrl,
+                                                                                imageUrl: c.thumbUrl,
                                                                                 referer: c.sourcePage,
                                                                             }),
                                                                         });
-                                                                        const json = await res.json();
-                                                                        if (!res.ok) throw new Error(json.error || "Failed to fetch photo");
 
+                                                                        if (resThumb.ok) {
+                                                                            finalRes = resThumb;
+                                                                        } else {
+                                                                            // 2. If thumbnail failed (e.g. 415/403), try FULL IMAGE
+                                                                            console.warn("Thumb fetch failed, trying full image...", resThumb.status);
+                                                                            const resFull = await fetch("/api/fetch-photo", {
+                                                                                method: "POST",
+                                                                                headers: { ...headers, "Content-Type": "application/json" },
+                                                                                body: JSON.stringify({
+                                                                                    imageUrl: c.imageUrl,
+                                                                                    referer: c.sourcePage,
+                                                                                }),
+                                                                            });
+                                                                            if (!resFull.ok) {
+                                                                                const errJson = await resFull.json();
+                                                                                throw new Error(errJson.error || `Fetch failed ${resFull.status}`);
+                                                                            }
+                                                                            finalRes = resFull;
+                                                                        }
+
+                                                                        const json = await finalRes.json();
                                                                         setFormData(prev => ({
                                                                             ...prev,
-                                                                            photo: { contentType: json.contentType, base64: json.base64 }
+                                                                            photo: { contentType: json.contentType, base64: json.base64 },
+                                                                            notes: (prev.notes || "") + `\nZdjęcie: źródło ${c.sourcePage}`
                                                                         }));
                                                                         setPhotoCandidates([]); // Close selection
                                                                         alert("Zdjęcie wybrane!");
