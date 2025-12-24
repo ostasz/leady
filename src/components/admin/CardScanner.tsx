@@ -279,16 +279,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                             <h4 className="text-sm font-bold text-blue-800 mb-1">Sukces! Sprawdź dane.</h4>
                                             <p className="text-xs text-blue-600">Możesz teraz edytować rozpoznane dane.</p>
                                         </div>
-                                        {formData.source && (
-                                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase border ${formData.source === 'ai'
-                                                ? 'bg-purple-100 text-purple-700 border-purple-200'
-                                                : 'bg-orange-100 text-orange-700 border-orange-200'
-                                                }`}>
-                                                {formData.source === 'ai'
-                                                    ? `Vertex AI ✨ ${formData.modelName ? `(${formData.modelName})` : ''}`
-                                                    : 'Regex (Fallback) ⚠️'}
-                                            </span>
-                                        )}
+
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
