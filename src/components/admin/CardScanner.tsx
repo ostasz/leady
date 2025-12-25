@@ -237,7 +237,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                             onChange={(e) => setSelectedLanguage(e.target.value)}
                                                             className="text-[#1F4E5A] focus:ring-[#2A7B88] w-4 h-4"
                                                         />
-                                                        <span className="text-sm">🇵🇱 Polski (PL)</span>
+                                                        <span className="text-sm">Polski (PL)</span>
                                                     </label>
 
                                                     <label className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors flex-1 border border-transparent hover:border-gray-200">
@@ -249,7 +249,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                             onChange={(e) => setSelectedLanguage(e.target.value)}
                                                             className="text-[#1F4E5A] focus:ring-[#2A7B88] w-4 h-4"
                                                         />
-                                                        <span className="text-sm">🇬🇧 Angielski (EN)</span>
+                                                        <span className="text-sm">Angielski (EN)</span>
                                                     </label>
                                                 </div>
                                                 <p className="text-xs text-gray-400 mt-2">
