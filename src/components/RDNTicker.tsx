@@ -74,7 +74,7 @@ export default function RDNTicker() {
                         <p className="text-xs text-gray-500">Rynek Dnia Następnego (PLN/MWh)</p>
                     </div>
                 </div>
-                <Link href="/apps/rdn" className="text-gray-400 hover:text-[#2DD4BF] transition-colors" title="Otwórz pełny dashboard">
+                <Link href="/apps/rdn2" className="text-gray-400 hover:text-[#2DD4BF] transition-colors" title="Otwórz pełny dashboard">
                     <ExternalLink size={18} />
                 </Link>
             </div>
@@ -102,7 +102,7 @@ export default function RDNTicker() {
                 </div>
 
                 {/* Sparkline - Mint Color */}
-                <Link href="/apps/rdn" className="h-16 w-32 cursor-pointer hover:opacity-80 transition-opacity">
+                <Link href="/apps/rdn2" className="h-16 w-32 cursor-pointer hover:opacity-80 transition-opacity">
                     <AreaChart width={128} height={64} data={graphData}>
                         <defs>
                             <linearGradient id="gradient-rdn" x1="0" y1="0" x2="0" y2="1">

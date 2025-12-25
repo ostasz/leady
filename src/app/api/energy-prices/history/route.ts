@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
             .sort((a, b) => a.date.localeCompare(b.date)) // Sort ascending by date (oldest first)
             .slice(-days); // Take requested number of days
 
-        return NextResponse.json({ history, hourlyProfile, overallAverage, weeklyProfile }, {
+        return NextResponse.json({ history, hourlyProfile, overallAverage, weeklyProfile, fullHourlyHistory }, {
             headers: {
                 'Cache-Control': 'no-store, max-age=0'
             }
