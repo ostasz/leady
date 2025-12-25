@@ -112,6 +112,36 @@ export async function processEnergyPriceData(data: any[], userEmail: string): Pr
     // Actually, `adminDb.batch()` creates a NEW batch instance.
     // So we need to manage currentBatch.
 
+    // 0. Pre-process: Identify unique dates to clean up old/start data
+    // This allows "Self-Healing" - re-importing overwrites bad data (e.g. weird hours)
+    const uniqueDates = new Set<string>();
+    data.forEach(row => {
+        const dateVal = findVal(row, 'datadostawy') || findVal(row, 'data');
+        if (dateVal) {
+            uniqueDates.add(normalizeDate(String(dateVal)));
+        }
+    });
+
+    console.log(`[Import] Cleaning up data for dates: ${Array.from(uniqueDates).join(', ')}`);
+
+    // Clean up existing records for these dates
+    const deleteBatch = adminDb.batch();
+    let deleteCount = 0;
+
+    for (const date of Array.from(uniqueDates)) {
+        if (!date || date.length !== 10) continue; // Skip invalid
+        const snapshot = await adminDb.collection('energy_prices').where('date', '==', date).get();
+        snapshot.docs.forEach(doc => {
+            deleteBatch.delete(doc.ref);
+            deleteCount++;
+        });
+    }
+
+    if (deleteCount > 0) {
+        await deleteBatch.commit();
+        console.log(`[Import] Deleted ${deleteCount} old records.`);
+    }
+
     let currentBatch = adminDb.batch();
 
     for (let i = 0; i < data.length; i++) {

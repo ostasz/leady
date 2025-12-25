@@ -100,65 +100,41 @@ export default function Rdn2Page() {
 
         // 4. Construct KPI Stats
         const prices = targetEntry.prices;
-        const volumes = targetEntry.volumes || new Array(24).fill(0);
+        // TGE Indices are Arithmetic Means of hourly prices (not VWAP)
+        const avgPrice = prices.reduce((a: number, b: number) => a + b, 0) / prices.length;
 
-        // TGeBase (Volume Weighted Average - VWAP)
-        const totalVolume = volumes.reduce((a: number, b: number) => a + b, 0);
-        const weightedSum = prices.reduce((acc: number, price: number, i: number) => acc + price * (volumes[i] || 0), 0);
-        const tgeBase = totalVolume > 0 ? weightedSum / totalVolume : 0;
-
-        // Previous Day Base (VWAP)
         const prevPrices = prevEntry?.prices || [];
-        const prevVolumes = prevEntry?.volumes || new Array(24).fill(0);
-        const prevTotalVol = prevVolumes.reduce((a: number, b: number) => a + b, 0);
-        const prevWeightedSum = prevPrices.reduce((acc: number, price: number, i: number) => acc + price * (prevVolumes[i] || 0), 0);
-        const prevTgeBase = prevTotalVol > 0 ? prevWeightedSum / prevTotalVol : 0;
+        const prevAvg = prevPrices.length > 0 ? prevPrices.reduce((a: number, b: number) => a + b, 0) / prevPrices.length : 0;
 
-
-        // Peak (07-22) indices 7..21
+        // Peak (07-22) indices 7..21 (hours 08:00 - 22:00? No, usually 07:00-22:00 is Peak 15h block)
+        // Standard Peak is 07:00 - 22:00 (Hours ending 8 to 22. Index 7 to 21)
         const peakIndices = Array.from({ length: 15 }, (_, i) => i + 7);
+        const peakPrices = peakIndices.map(i => prices[i]).filter(p => p !== undefined);
+        const avgPeak = peakPrices.reduce((a: number, b: number) => a + b, 0) / peakPrices.length;
 
-        // TGePeak (Volume Weighted Average for Peak Hours)
-        const peakWeightedSum = peakIndices.reduce((acc, i) => acc + (prices[i] || 0) * (volumes[i] || 0), 0);
-        const peakTotalVolume = peakIndices.reduce((acc, i) => acc + (volumes[i] || 0), 0);
-        const tgePeak = peakTotalVolume > 0 ? peakWeightedSum / peakTotalVolume : 0;
+        const prevPeakPrices = peakIndices.map(i => prevPrices[i]).filter(p => p !== undefined);
+        const prevAvgPeak = prevPeakPrices.length > 0 ? prevPeakPrices.reduce((a: number, b: number) => a + b, 0) / prevPeakPrices.length : 0;
 
-        // Previous Day Peak (VWAP)
-        const prevPeakWeightedSum = peakIndices.reduce((acc, i) => acc + (prevPrices[i] || 0) * (prevVolumes[i] || 0), 0);
-        const prevPeakTotalVolume = peakIndices.reduce((acc, i) => acc + (prevVolumes[i] || 0), 0);
-        const prevTgePeak = prevPeakTotalVolume > 0 ? prevPeakWeightedSum / prevPeakTotalVolume : 0;
-
-
-        // Sparkline history: 30 days ending at selectedDate
+        // Sparkline history
         const relevantHistoryForSparktips = history.filter(h => h.date <= selectedDate).slice(-30);
 
-        const currentTotalVolume = totalVolume;
-        const prevTotalVolume = prevTotalVol; // reused from above
+        const currentTotalVolume = targetEntry.volumes ? targetEntry.volumes.reduce((a: number, b: number) => a + b, 0) : 0;
+        const prevTotalVolume = prevEntry?.volumes ? prevEntry.volumes.reduce((a: number, b: number) => a + b, 0) : 0;
 
         const stats = {
-            tgeBase: tgeBase,
-            tgeBaseChange: prevTgeBase !== 0 ? ((tgeBase - prevTgeBase) / prevTgeBase) * 100 : 0,
-            tgePeak: tgePeak,
-            tgePeakChange: prevTgePeak !== 0 ? ((tgePeak - prevTgePeak) / prevTgePeak) * 100 : 0,
+            tgeBase: avgPrice,
+            tgeBaseChange: prevAvg !== 0 ? ((avgPrice - prevAvg) / prevAvg) * 100 : 0,
+            tgePeak: avgPeak,
+            tgePeakChange: prevAvgPeak !== 0 ? ((avgPeak - prevAvgPeak) / prevAvgPeak) * 100 : 0,
             minPrice: Math.min(...prices),
             maxPrice: Math.max(...prices),
             volume: currentTotalVolume,
             volumeChange: prevTotalVolume !== 0 ? ((currentTotalVolume - prevTotalVolume) / prevTotalVolume) * 100 : 0,
-            history: relevantHistoryForSparktips.map((h: any) => {
-                // Return VWAP for daily history sparklines too? Or keep arithmetic?
-                // Usually sparkline follows the main metric. Let's try to do VWAP if volumes exist, else Arithmetic.
-                const hVols = h.volumes || new Array(24).fill(0);
-                const hTotVol = hVols.reduce((a: any, b: any) => a + b, 0);
-                const hWSum = h.prices.reduce((a: any, p: any, i: number) => a + p * (hVols[i] || 0), 0);
-                return {
-                    date: h.date,
-                    val: hTotVol > 0 ? hWSum / hTotVol : (h.prices.reduce((a: any, b: any) => a + b, 0) / h.prices.length)
-                };
-            }),
+            history: relevantHistoryForSparktips.map((h: any) => ({
+                date: h.date,
+                val: h.prices.reduce((a: number, b: number) => a + b, 0) / h.prices.length
+            })),
             peakHistory: relevantHistoryForSparktips.map((h: any) => {
-                const hVols = h.volumes || new Array(24).fill(0);
-                const hPeakWS = peakIndices.reduce((a, i) => a + (h.prices[i] || 0) * (hVols[i] || 0), 0);
-                const hPeakVol = peakIndices.reduce((a, i) => a + (hVols[i] || 0), 0);
                 const hAvg = hPeakVol > 0 ? hPeakWS / hPeakVol : 0; // fallback to 0 or arithmetic if needed, but 0 is safer for "missing vol"
                 // Fallback to arithmetic if volume is 0 but prices exist (edge case)
                 if (hPeakVol === 0 && h.prices.length > 0) {
