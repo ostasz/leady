@@ -110,7 +110,7 @@ export default function Rdn2KpiCards({ stats, onDateSelect }: Rdn2KpiCardsProps)
             />
             <KpiCard
                 title="Wolumen Całkowity"
-                value={stats.volume.toFixed(1)}
+                value={stats.volume.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u00A0/g, ' ')}
                 unit="MWh"
                 change={stats.volumeChange}
                 data={stats.history.map(h => ({ ...h, val: 0 }))}
