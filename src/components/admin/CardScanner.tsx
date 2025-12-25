@@ -422,7 +422,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                             setLoading(false);
                                                         }
                                                     }}
-                                                    className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 transition-colors flex items-center gap-1 font-medium"
+                                                    className="text-xs bg-[#F0FDFA] text-[#1F4E5A] px-2 py-1 rounded-md hover:bg-[#CCFBF1] transition-colors flex items-center gap-1 font-medium border border-[#4FD1C5]/30"
                                                     disabled={loading}
                                                 >
                                                     {loading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
@@ -502,7 +502,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                                 setLoading(false);
                                                             }
                                                         }}
-                                                        className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-md hover:bg-blue-100 transition-colors flex items-center gap-1 font-medium"
+                                                        className="text-xs bg-[#F0FDFA] text-[#2A7B88] px-2 py-1 rounded-md hover:bg-[#CCFBF1] transition-colors flex items-center gap-1 font-medium border border-[#2A7B88]/20"
                                                         disabled={loading}
                                                     >
                                                         <ImagePlus size={12} />
@@ -588,8 +588,8 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                             )}
 
                                             {formData.photo && (
-                                                <div className="flex items-center gap-3 bg-green-50 p-2 rounded-lg border border-green-200">
-                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-green-300 relative">
+                                                <div className="flex items-center gap-3 bg-[#F0FDFA] p-2 rounded-lg border border-[#4FD1C5]">
+                                                    <div className="w-10 h-10 rounded-full overflow-hidden border border-[#2A7B88] relative">
                                                         <img
                                                             src={`data:${formData.photo.contentType};base64,${formData.photo.base64}`}
                                                             alt="Selected"
@@ -597,13 +597,13 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                         />
                                                     </div>
                                                     <div className="flex-1">
-                                                        <p className="text-xs font-medium text-green-800">Zdjęcie dodane</p>
-                                                        <p className="text-[10px] text-green-600">Będzie widoczne w kontaktach</p>
+                                                        <p className="text-xs font-medium text-[#1F4E5A]">Zdjęcie dodane</p>
+                                                        <p className="text-[10px] text-[#2A7B88]">Będzie widoczne w kontaktach</p>
                                                     </div>
                                                     <button
                                                         type="button"
                                                         onClick={() => setFormData(prev => ({ ...prev, photo: null }))}
-                                                        className="text-red-500 hover:text-red-700 p-1"
+                                                        className="text-[#6B7280] hover:text-red-500 p-1 transition-colors"
                                                     >
                                                         <X size={14} />
                                                     </button>
@@ -631,7 +631,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                         <button
                                             type="button"
                                             onClick={handleSaveToContacts}
-                                            className="px-4 py-2.5 bg-green-600 text-white rounded-xl font-medium hover:bg-green-700 transition-colors flex-[2] flex items-center justify-center gap-2 shadow-lg shadow-green-200"
+                                            className="px-4 py-2.5 bg-[#1F4E5A] text-white rounded-xl font-medium hover:bg-[#163a43] transition-colors flex-[2] flex items-center justify-center gap-2 shadow-lg shadow-[#2A7B88]/20"
                                         >
                                             <Contact size={18} />
                                             Zapisz w Telefonie (vCard)
