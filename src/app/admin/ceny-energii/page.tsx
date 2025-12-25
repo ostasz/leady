@@ -122,6 +122,7 @@ export default function EnergyPricesAdminPage() {
                                 <li><code className="bg-blue-100 px-1 rounded">Data</code> - format <strong>YYYY-MM-DD</strong> lub <strong>DD.MM.YYYY</strong></li>
                                 <li><code className="bg-blue-100 px-1 rounded">h_num</code> - godzina (1-24)</li>
                                 <li><code className="bg-blue-100 px-1 rounded">Average of Cena</code> - cena w PLN/MWh</li>
+                                <li><code className="bg-blue-100 px-1 rounded">Wolumen</code> - wolumen (opcjonalne, domyślnie 0)</li>
                             </ul>
                         </div>
                     </div>

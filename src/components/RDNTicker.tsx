@@ -14,9 +14,13 @@ export default function RDNTicker() {
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!user) return;
             try {
+                const token = await user.getIdToken();
                 // Fetch last 30 days to match Futures ticker
-                const res = await fetch('/api/energy-prices/history?days=30');
+                const res = await fetch('/api/energy-prices/history?days=30', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (res.ok) {
                     const json = await res.json();
                     if (json.history && Array.isArray(json.history)) {

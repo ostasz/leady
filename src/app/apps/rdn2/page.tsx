@@ -11,7 +11,10 @@ import Rdn2TrendChart from '@/components/rdn2/Rdn2TrendChart';
 import Link from 'next/link';
 import { Home } from 'lucide-react';
 
+import { useAuth } from '@/components/AuthProvider';
+
 export default function Rdn2Page() {
+    const { user } = useAuth();
     const [history, setHistory] = useState<any[]>([]);
     const [selectedDate, setSelectedDate] = useState<string>('');
     const [loading, setLoading] = useState(true);
@@ -19,9 +22,14 @@ export default function Rdn2Page() {
     // Initial Fetch
     useEffect(() => {
         const fetchData = async () => {
+            if (!user) return; // Don't fetch if not logged in (will be handled by protected route, but good safety)
+
             try {
+                const token = await user.getIdToken();
                 // Fetch larger history to allow calendar selection
-                const res = await fetch('/api/energy-prices/history?days=365');
+                const res = await fetch('/api/energy-prices/history?days=365', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (!res.ok) throw new Error('Failed to fetch data');
 
                 const json = await res.json();
@@ -40,8 +48,10 @@ export default function Rdn2Page() {
             }
         };
 
-        fetchData();
-    }, []);
+        if (user) {
+            fetchData();
+        }
+    }, [user]);
 
     // Derive Dashboard Data based on selectedDate
     const data = useMemo(() => {
@@ -76,12 +86,14 @@ export default function Rdn2Page() {
             });
             const priceAvgWeek = count7 > 0 ? sum7 / count7 : 0;
 
+            const volume = targetEntry.volumes ? targetEntry.volumes[hour] : 0;
+
             return {
                 hour: (hour + 1).toString().padStart(2, '0'),
                 price,
                 priceYesterday,
                 priceAvgWeek,
-                volume: 0,
+                volume,
                 change: priceYesterday !== 0 ? ((price - priceYesterday) / priceYesterday) * 100 : 0
             };
         });
@@ -104,6 +116,9 @@ export default function Rdn2Page() {
         // Sparkline history: 30 days ending at selectedDate
         const relevantHistoryForSparktips = history.filter(h => h.date <= selectedDate).slice(-30);
 
+        const currentTotalVolume = targetEntry.volumes ? targetEntry.volumes.reduce((a: number, b: number) => a + b, 0) : 0;
+        const prevTotalVolume = prevEntry?.volumes ? prevEntry.volumes.reduce((a: number, b: number) => a + b, 0) : 0;
+
         const stats = {
             tgeBase: avgPrice,
             tgeBaseChange: prevAvg !== 0 ? ((avgPrice - prevAvg) / prevAvg) * 100 : 0,
@@ -111,8 +126,8 @@ export default function Rdn2Page() {
             tgePeakChange: prevAvgPeak !== 0 ? ((avgPeak - prevAvgPeak) / prevAvgPeak) * 100 : 0,
             minPrice: Math.min(...prices),
             maxPrice: Math.max(...prices),
-            volume: 0,
-            volumeChange: 0,
+            volume: currentTotalVolume,
+            volumeChange: prevTotalVolume !== 0 ? ((currentTotalVolume - prevTotalVolume) / prevTotalVolume) * 100 : 0,
             history: relevantHistoryForSparktips.map((h: any) => ({
                 date: h.date,
                 val: h.prices.reduce((a: number, b: number) => a + b, 0) / h.prices.length

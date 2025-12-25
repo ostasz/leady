@@ -1,4 +1,5 @@
 'use client';
+import React from 'react';
 
 function getColor(value: number, min: number, max: number) {
     // Normalize value between 0 and 1
@@ -67,7 +68,7 @@ export default function Rdn2Heatmap({ data }: { data: HeatmapData }) {
 
                             {/* Rows (Hours) */}
                             {data.hours.map((hour, rowIdx) => (
-                                <>
+                                <React.Fragment key={hour}>
                                     {/* Y Axis Label */}
                                     <div key={`label-${hour}`} className="text-[10px] text-gray-400 font-mono flex items-center justify-end pr-2">
                                         {hour}
@@ -90,7 +91,7 @@ export default function Rdn2Heatmap({ data }: { data: HeatmapData }) {
                                             </div>
                                         )
                                     })}
-                                </>
+                                </React.Fragment>
                             ))}
                         </div>
                     </div>

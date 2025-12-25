@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
             const dateVal = findVal(row, 'data');
             const hourVal = findVal(row, 'h_num') || findVal(row, 'godzina'); // Fallback to 'godzina' just in case
             const priceVal = findVal(row, 'average of cena') || findVal(row, 'cena');
+            const volumeVal = findVal(row, 'wolumen') || findVal(row, 'volume');
 
             if (!dateVal) {
                 if (skippedRows.length < 5) skippedRows.push({ row: rowNumber, reason: 'Missing Data field', data: row });
@@ -139,10 +140,13 @@ export async function POST(request: NextRequest) {
                 continue;
             }
 
+            const parsedVolume = volumeVal ? parsePolishNumber(volumeVal) : 0;
+
             const entry: any = {
                 date: normalizeDate(String(dateVal)),
                 hour: typeof hourVal === 'string' ? parseInt(hourVal) : Number(hourVal),
                 price: parsePolishNumber(priceVal),
+                volume: isNaN(parsedVolume) ? 0 : parsedVolume,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 createdBy: userData?.email || 'unknown'
             };

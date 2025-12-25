@@ -8,6 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { useAuth } from '@/components/AuthProvider';
 
 interface PriceData {
     date: string;
@@ -15,15 +16,20 @@ interface PriceData {
 }
 
 export default function RdnPage() {
+    const { user } = useAuth();
     const [data, setData] = useState<PriceData[]>([]);
     const [timeRange, setTimeRange] = useState<number>(30); // Default to 30 days
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!user) return;
             try {
+                const token = await user.getIdToken();
                 // Fetch last 365 days for full context
-                const res = await fetch('/api/energy-prices/history?days=365');
+                const res = await fetch('/api/energy-prices/history?days=365', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (res.ok) {
                     const json = await res.json();
                     if (json.history && Array.isArray(json.history)) {
@@ -43,8 +49,10 @@ export default function RdnPage() {
             }
         };
 
-        fetchData();
-    }, []);
+        if (user) {
+            fetchData();
+        }
+    }, [user]);
 
     // Filter data based on selected time range
     const filteredData = data.slice(-timeRange);

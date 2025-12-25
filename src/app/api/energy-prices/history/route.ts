@@ -1,8 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, adminAuth } from '@/lib/firebase-admin';
 
 export async function GET(request: NextRequest) {
     try {
+        // Enforce Authentication
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const token = authHeader.split('Bearer ')[1];
+        try {
+            await adminAuth.verifyIdToken(token);
+        } catch (error) {
+            console.error('Token verification failed:', error);
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
         const { searchParams } = new URL(request.url);
         const days = parseInt(searchParams.get('days') || '30');
 
@@ -33,8 +47,8 @@ export async function GET(request: NextRequest) {
         const dailyData = new Map<string, { sum: number; count: number }>();
         // Group by hour (1-24) for profile
         const hourlyData = new Map<number, { sum: number; count: number }>();
-        // Group by date for heat map
-        const heatMapData = new Map<string, { hour: number; price: number }[]>();
+        // Group by date for heat map and full history
+        const heatMapData = new Map<string, { hour: number; price: number; volume: number }[]>();
 
         let totalSum = 0;
         let totalCount = 0;
@@ -43,6 +57,7 @@ export async function GET(request: NextRequest) {
             const data = doc.data();
             const date = data.date;
             const price = data.price;
+            const volume = data.volume || 0;
             const hour = data.hour;
             const dayOfWeek = new Date(date).getDay(); // 0 = Sunday, 1 = Monday, ...
 
@@ -74,7 +89,7 @@ export async function GET(request: NextRequest) {
             if (!heatMapData.has(date)) {
                 heatMapData.set(date, []);
             }
-            heatMapData.get(date)!.push({ hour, price });
+            heatMapData.get(date)!.push({ hour, price, volume });
         });
 
         const overallAverage = totalCount > 0 ? Math.round((totalSum / totalCount) * 100) / 100 : 0;
@@ -115,10 +130,14 @@ export async function GET(request: NextRequest) {
 
         // Prepare full hourly history for heat map
         const fullHourlyHistory = Array.from(heatMapData.entries())
-            .map(([date, prices]) => ({
-                date,
-                prices: prices.sort((a, b) => a.hour - b.hour).map(p => p.price)
-            }))
+            .map(([date, items]) => {
+                const sortedItems = items.sort((a, b) => a.hour - b.hour);
+                return {
+                    date,
+                    prices: sortedItems.map(p => p.price),
+                    volumes: sortedItems.map(p => p.volume)
+                };
+            })
             .sort((a, b) => a.date.localeCompare(b.date)) // Sort ascending by date (oldest first)
             .slice(-days); // Take requested number of days
 

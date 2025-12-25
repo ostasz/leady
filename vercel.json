@@ -21,5 +21,11 @@
                 }
             ]
         }
+    ],
+    "crons": [
+        {
+            "path": "/api/cron/import-email",
+            "schedule": "0 7 * * *"
+        }
     ]
 }
