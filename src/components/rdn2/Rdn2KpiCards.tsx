@@ -88,7 +88,8 @@ export default function Rdn2KpiCards({ stats, onDateSelect }: Rdn2KpiCardsProps)
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
-                title="TGEBase (Średnia Dnia)"
+                title="TGEPEAK (FIX I)"
+                tooltip="Średnia ważona dla godzin szczytowych (07:00 - 22:00, Fix I)"
                 value={stats.tgeBase.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u00A0/g, ' ')}
                 change={stats.tgeBaseChange}
                 data={stats.history}
