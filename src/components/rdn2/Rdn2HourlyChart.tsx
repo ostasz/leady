@@ -70,7 +70,10 @@ export default function Rdn2HourlyChart({ data }: { data: HourlyData[] }) {
                             contentStyle={{ backgroundColor: '#fff', borderColor: '#e2e8f0', color: '#0f172a', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             itemStyle={{ fontSize: '12px' }}
                             labelStyle={{ color: '#64748B', marginBottom: '5px' }}
-                            formatter={(value: number, name: string) => [value.toFixed(2), name]}
+                            formatter={(value: number, name: string) => [
+                                value.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u00A0/g, ' '),
+                                name
+                            ]}
                         />
                         <Legend verticalAlign="top" height={36} wrapperStyle={{ top: -10 }} />
 

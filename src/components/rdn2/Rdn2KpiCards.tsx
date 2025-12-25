@@ -89,22 +89,22 @@ export default function Rdn2KpiCards({ stats, onDateSelect }: Rdn2KpiCardsProps)
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <KpiCard
                 title="TGEBase (Średnia Dnia)"
-                value={stats.tgeBase.toFixed(2)}
+                value={stats.tgeBase.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u00A0/g, ' ')}
                 change={stats.tgeBaseChange}
                 data={stats.history}
                 color="mint"
             />
             <KpiCard
                 title="TGEPeak (07-22h)"
-                value={stats.tgePeak.toFixed(2)}
+                value={stats.tgePeak.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u00A0/g, ' ')}
                 change={stats.tgePeakChange}
                 data={stats.peakHistory || stats.history}
                 color="orange"
             />
             <KpiCard
                 title="Cena Max / Min"
-                value={`${stats.maxPrice.toFixed(2)} / ${stats.minPrice.toFixed(2)}`}
-                subValue={`Spread: ${(stats.maxPrice - stats.minPrice).toFixed(2)} PLN`}
+                value={`${stats.maxPrice.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u00A0/g, ' ')} / ${stats.minPrice.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u00A0/g, ' ')}`}
+                subValue={`Spread: ${(stats.maxPrice - stats.minPrice).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace(/\u00A0/g, ' ')} PLN`}
                 data={stats.spreadHistory || stats.history}
                 color="purple"
             />
