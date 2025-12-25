@@ -69,7 +69,8 @@ export async function checkEmailsAndImport() {
                     const parseResult = Papa.parse(csvContent, {
                         header: true,
                         skipEmptyLines: true,
-                        dynamicTyping: false // Keep as strings to safely parse Polish numbers later
+                        dynamicTyping: false, // Keep as strings to safely parse Polish numbers later
+                        delimitersToGuess: [',', ';', '\t', '|']
                     });
 
                     if (parseResult.errors.length > 0) {

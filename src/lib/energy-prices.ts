@@ -56,8 +56,17 @@ export const normalizeDate = (dateStr: string): string => {
 // Helper for fuzzy column matching
 export const findVal = (row: any, keyPart: string) => {
     const keys = Object.keys(row);
-    // Prioritize exact or strongly specific matches first if needed
-    // But simple includes is fine for now as long as we use distinct parts.
+    // 1. Try case-insensitive exact match first (or cleaned key)
+    const exact = keys.find(k => k.toLowerCase().trim() === keyPart.toLowerCase().trim());
+    if (exact) return row[exact];
+
+    // 2. Try priority TGE keys if searching for specific concepts
+    if (keyPart === 'godzinanazwa' || keyPart === 'godzina') {
+        const tgeKey = keys.find(k => k.toLowerCase().includes('tge_rdn_kontrakty_godzinanazwa'));
+        if (tgeKey) return row[tgeKey];
+    }
+
+    // 3. Fallback to simple includes
     const foundKey = keys.find(k => k.toLowerCase().includes(keyPart.toLowerCase()));
     return foundKey ? row[foundKey] : undefined;
 };
@@ -132,6 +141,13 @@ export async function processEnergyPriceData(data: any[], userEmail: string): Pr
         const parsedVolume = volumeVal ? parsePolishNumber(volumeVal) : 0;
         const normalizedDateStr = normalizeDate(String(dateVal));
         const hourInt = typeof hourVal === 'string' ? parseInt(hourVal) : Number(hourVal);
+
+        // Sanity Check for Hour (1-24, maybe 25 for DST ext)
+        // TGE usually uses 1-24. If we get 33, it's garbage.
+        if (isNaN(hourInt) || hourInt < 1 || hourInt > 25) {
+            if (skippedRows.length < 5) skippedRows.push({ row: rowNumber, reason: `Invalid Hour: ${hourInt}`, data: row });
+            continue;
+        }
 
         // Generate Doc ID: YYYY-MM-DD-HH
         // Pad hour to 2 digits
