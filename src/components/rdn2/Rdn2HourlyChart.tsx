@@ -74,24 +74,26 @@ export default function Rdn2HourlyChart({ data }: { data: HourlyData[] }) {
                         />
                         <Legend verticalAlign="top" height={36} wrapperStyle={{ top: -10 }} />
 
-                        {/* Volume as subtle area/bars in background */}
+                        {/* Volume as bars in background */}
                         <Bar
                             yAxisId="right"
                             dataKey="volume"
                             name="Wolumen"
-                            fill="#64748B"
-                            opacity={0.1}
+                            fill="#334155"
+                            opacity={0.3}
                             barSize={20}
                         />
 
-                        {/* Main Price Bars */}
-                        <Bar
+                        {/* Main Price as Thick Line */}
+                        <Line
                             yAxisId="left"
+                            type="monotone"
                             dataKey="price"
                             name="Ceny (PLN/MWh)"
-                            fill="url(#colorPrice)"
-                            radius={[4, 4, 0, 0]}
-                            barSize={30}
+                            stroke="#134E4A" // Darkest Mint/Teal
+                            strokeWidth={4}
+                            dot={false}
+                            activeDot={{ r: 6, fill: '#134E4A' }}
                         />
 
                         {/* Benchmarks */}
