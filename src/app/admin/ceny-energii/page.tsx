@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { Upload, FileText, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
+import { Upload, FileText, CheckCircle, XCircle, ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
 
 interface UploadStatus {
@@ -18,6 +18,7 @@ export default function EnergyPricesAdminPage() {
     const router = useRouter();
     const [file, setFile] = useState<File | null>(null);
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ status: 'idle' });
+    const [emailStatus, setEmailStatus] = useState<UploadStatus>({ status: 'idle' });
 
     // Auth guard
     if (authLoading) {
@@ -32,6 +33,29 @@ export default function EnergyPricesAdminPage() {
         router.push('/');
         return null;
     }
+
+    const handleCheckEmail = async () => {
+        setEmailStatus({ status: 'uploading', message: 'Sprawdzanie poczty...' });
+        try {
+            const response = await fetch('/api/cron/import-email');
+            const data = await response.json();
+
+            if (!data.success) throw new Error(data.error || 'Failed to check email');
+
+            const count = data.processed;
+            if (count > 0) {
+                setEmailStatus({
+                    status: 'success',
+                    message: `Przetworzono ${count} wiadomości.`,
+                    count: data.details[0]?.processedCount
+                });
+            } else {
+                setEmailStatus({ status: 'success', message: 'Brak nowych wiadomości (CSV).' });
+            }
+        } catch (error: any) {
+            setEmailStatus({ status: 'error', message: error.message });
+        }
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
@@ -180,8 +204,17 @@ export default function EnergyPricesAdminPage() {
 
                     {/* Quick Actions */}
                     <div className="mb-8 pt-8 border-t border-gray-200">
-                        <h3 className="font-semibold text-gray-900 mb-4">Szybkie akcje (RDN)</h3>
-                        <div className="flex gap-4">
+                        <h3 className="font-semibold text-gray-900 mb-4">Szybkie akcje</h3>
+                        <div className="flex flex-wrap gap-4">
+                            <button
+                                onClick={handleCheckEmail}
+                                disabled={emailStatus.status === 'uploading'}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                                <Mail size={18} />
+                                Sprawdź Gmail (TGE)
+                            </button>
+
                             <button
                                 onClick={async () => {
                                     if (!confirm('Czy na pewno chcesz usunąć WSZYSTKIE dane cenowe RDN? Ta operacja jest nieodwracalna!')) return;
@@ -202,11 +235,24 @@ export default function EnergyPricesAdminPage() {
                                         alert('Błąd: ' + e.message);
                                     }
                                 }}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
                             >
+                                <XCircle size={18} />
                                 Wyczyść bazę RDN
                             </button>
                         </div>
+
+                        {/* Email Status */}
+                        {emailStatus.status !== 'idle' && (
+                            <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 text-sm ${emailStatus.status === 'success' ? 'bg-green-50 text-green-800' :
+                                    emailStatus.status === 'error' ? 'bg-red-50 text-red-800' : 'bg-blue-50 text-blue-800'
+                                }`}>
+                                {emailStatus.status === 'uploading' && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>}
+                                {emailStatus.status === 'success' && <CheckCircle size={16} />}
+                                {emailStatus.status === 'error' && <XCircle size={16} />}
+                                <span>{emailStatus.message}</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Futures Upload Section */}
