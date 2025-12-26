@@ -4,25 +4,29 @@ import { adminDb } from '@/lib/firebase-admin';
 export async function GET(request: NextRequest) {
     try {
         const today = new Date();
-        const nextYear = today.getFullYear() + 1;
-        const nextNextYear = today.getFullYear() + 2;
+        const currentYear = today.getFullYear();
+        const nextYear = currentYear + 1;
+        const nextNextYear = currentYear + 2;
+
+        const nextYearShort = nextYear.toString().slice(-2);
+        const nextNextYearShort = nextNextYear.toString().slice(-2);
+
+        // Contract names e.g., "BASE_Y-26", "BASE_Y-27"
+        const contractY1 = `BASE_Y-${nextYearShort}`;
+        const contractY2 = `BASE_Y-${nextNextYearShort}`;
 
         const { searchParams } = new URL(request.url);
         const limitParam = searchParams.get('limit');
-        const limit = limitParam ? parseInt(limitParam) : 30; // Default to 30 if not specified
+        const limit = limitParam ? parseInt(limitParam) : 30;
 
-        console.log(`Fetching futures for Y+1 (${nextYear}) and Y+2 (${nextNextYear}) with limit: ${limit === 0 ? 'ALL' : limit}`);
+        console.log(`Fetching futures for ${contractY1} and ${contractY2}`);
 
-        // Fetch ALL data for the requested years to avoid composite index requirements
-        // The dataset is small (one quote per day), so in-memory sorting is fine.
         const [y1Snapshot, y2Snapshot] = await Promise.all([
-            adminDb.collection('energy_futures')
-                .where('contractType', '==', 'BASE')
-                .where('deliveryYear', '==', nextYear)
+            adminDb.collection('futures_data')
+                .where('contract', '==', contractY1)
                 .get(),
-            adminDb.collection('energy_futures')
-                .where('contractType', '==', 'BASE')
-                .where('deliveryYear', '==', nextNextYear)
+            adminDb.collection('futures_data')
+                .where('contract', '==', contractY2)
                 .get()
         ]);
 
@@ -32,24 +36,25 @@ export async function GET(request: NextRequest) {
                     const data = doc.data();
                     return {
                         date: data.date,
-                        price: data.price,
+                        price: data.DKR || data.closingPrice || 0, // DKR (formerly closingPrice)
+                        max: data.maxPrice,
+                        min: data.minPrice,
+                        volume: data.volume,
+                        openInterest: data.openInterest
                     };
                 })
-                .sort((a, b) => a.date.localeCompare(b.date)); // Sort ASC by date string (YYYY-MM-DD works with string sort)
+                .sort((a, b) => a.date.localeCompare(b.date));
         };
 
         const y1History = formatData(y1Snapshot);
         const y2History = formatData(y2Snapshot);
 
-        // Return sliced data based on limit (0 means all data)
-        const y1Sliced = limit > 0 ? y1History.slice(-limit) : y1History;
-        const y2Sliced = limit > 0 ? y2History.slice(-limit) : y2History;
-
-        console.log(`Found ${y1History.length} entries for ${nextYear}, ${y2History.length} for ${nextNextYear}`);
+        const y1Sliced = limit > 0 && limit < y1History.length ? y1History.slice(-limit) : y1History;
+        const y2Sliced = limit > 0 && limit < y2History.length ? y2History.slice(-limit) : y2History;
 
         return NextResponse.json({
             futures: {
-                [nextYear]: y1Sliced, // Return sorted ASC for charts
+                [nextYear]: y1Sliced,
                 [nextNextYear]: y2Sliced
             }
         });

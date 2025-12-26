@@ -19,7 +19,7 @@ interface FuturesResponse {
     };
 }
 
-export default function FuturesPage() {
+export default function FuturesPage2() {
     const [dataY1, setDataY1] = useState<FutureData[]>([]);
     const [dataY2, setDataY2] = useState<FutureData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -65,19 +65,19 @@ export default function FuturesPage() {
                         <div className="flex items-center gap-3">
                             <span className="text-2xl">⚡</span>
                             <h1 className="text-xl font-bold text-gray-900">
-                                Centrum Analiz Futures
+                                Centrum Analiz Futures (Zaawansowane)
                             </h1>
                         </div>
                     </div>
 
                     {/* View Toggle */}
                     <div className="bg-gray-100 p-1 rounded-lg flex items-center">
-                        <span className="px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm cursor-default">
+                        <Link href="/apps/futures" className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
                             Dane podstawowe
-                        </span>
-                        <Link href="/apps/futures2" className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-                            Dane zaawansowane
                         </Link>
+                        <span className="px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm cursor-default">
+                            Dane zaawansowane
+                        </span>
                     </div>
                 </div>
             </div>

@@ -34,10 +34,10 @@ export default function EnergyPricesAdminPage() {
         return null;
     }
 
-    const handleCheckEmail = async () => {
-        setEmailStatus({ status: 'uploading', message: 'Sprawdzanie poczty...' });
+    const handleCheckEmail = async (type: 'RDN' | 'FUTURES') => {
+        setEmailStatus({ status: 'uploading', message: `Sprawdzanie poczty (${type})...` });
         try {
-            const response = await fetch('/api/cron/import-email');
+            const response = await fetch(`/api/cron/import-email?type=${type}`);
             const data = await response.json();
 
             if (!data.success) throw new Error(data.error || 'Failed to check email');
@@ -46,11 +46,11 @@ export default function EnergyPricesAdminPage() {
             if (count > 0) {
                 setEmailStatus({
                     status: 'success',
-                    message: `Przetworzono ${count} wiadomości.`,
+                    message: `Przetworzono ${count} wiadomości (${type}).`,
                     count: data.details[0]?.processedCount
                 });
             } else {
-                setEmailStatus({ status: 'success', message: 'Brak nowych wiadomości (CSV).' });
+                setEmailStatus({ status: 'success', message: `Brak nowych wiadomości ${type} (CSV).` });
             }
         } catch (error: any) {
             setEmailStatus({ status: 'error', message: error.message });
@@ -207,12 +207,21 @@ export default function EnergyPricesAdminPage() {
                         <h3 className="font-semibold text-gray-900 mb-4">Szybkie akcje</h3>
                         <div className="flex flex-wrap gap-4">
                             <button
-                                onClick={handleCheckEmail}
+                                onClick={() => handleCheckEmail('RDN')}
                                 disabled={emailStatus.status === 'uploading'}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                             >
                                 <Mail size={18} />
-                                Sprawdź Gmail (TGE)
+                                Sprawdź Gmail (RDN)
+                            </button>
+
+                            <button
+                                onClick={() => handleCheckEmail('FUTURES')}
+                                disabled={emailStatus.status === 'uploading'}
+                                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                                <Mail size={18} />
+                                Sprawdź Gmail (Futures)
                             </button>
 
                             <button
@@ -245,7 +254,7 @@ export default function EnergyPricesAdminPage() {
                         {/* Email Status */}
                         {emailStatus.status !== 'idle' && (
                             <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 text-sm ${emailStatus.status === 'success' ? 'bg-green-50 text-green-800' :
-                                    emailStatus.status === 'error' ? 'bg-red-50 text-red-800' : 'bg-blue-50 text-blue-800'
+                                emailStatus.status === 'error' ? 'bg-red-50 text-red-800' : 'bg-blue-50 text-blue-800'
                                 }`}>
                                 {emailStatus.status === 'uploading' && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>}
                                 {emailStatus.status === 'success' && <CheckCircle size={16} />}

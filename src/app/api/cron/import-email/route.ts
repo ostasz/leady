@@ -2,9 +2,13 @@ import { NextResponse } from 'next/server';
 import { checkEmailsAndImport } from '@/lib/gmail';
 
 // Vercel Cron logic usually requires a GET request
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const results = await checkEmailsAndImport();
+        const { searchParams } = new URL(request.url);
+        const typeParam = searchParams.get('type');
+        const targetType = (typeParam === 'RDN' || typeParam === 'FUTURES') ? typeParam : undefined;
+
+        const results = await checkEmailsAndImport(targetType);
 
         return NextResponse.json({
             success: true,
