@@ -160,10 +160,21 @@ export default function Rdn2Page() {
             maxPrice: Math.max(...prices),
             volume: currentTotalVolume,
             volumeChange: prevTotalVolume !== 0 ? ((currentTotalVolume - prevTotalVolume) / prevTotalVolume) * 100 : 0,
-            history: relevantHistoryForSparktips.map((h: any) => ({
-                date: h.date,
-                val: h.prices.reduce((a: number, b: number) => a + b, 0) / h.prices.length // Daily history can stay arithmetic or match VWAP if we had data for all history easily accessible in same shape
-            })),
+            history: relevantHistoryForSparktips.map((h: any) => {
+                const hVols = h.volumes || [];
+                const hTotVol = hVols.reduce((a: number, b: number) => a + b, 0);
+                let val = 0;
+
+                if (hTotVol > 0 && hVols.length === h.prices.length) {
+                    const hWSum = h.prices.reduce((acc: number, p: number, i: number) => acc + p * (hVols[i] || 0), 0);
+                    val = hWSum / hTotVol;
+                } else {
+                    // Fallback to arithmetic mean
+                    val = h.prices.reduce((a: number, b: number) => a + b, 0) / h.prices.length;
+                }
+
+                return { date: h.date, val };
+            }),
             peakHistory: relevantHistoryForSparktips.map((h: any) => {
                 const hPeakPrices = peakIndices.map(i => h.prices[i]).filter(p => p !== undefined);
                 const hAvgPeak = hPeakPrices.length > 0 ? hPeakPrices.reduce((a: number, b: number) => a + b, 0) / hPeakPrices.length : 0;
