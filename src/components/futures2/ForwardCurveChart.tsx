@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface CurvePoint {
     label: string;
     price: number;
+    sma15?: number;
     contract: string;
 }
 
@@ -33,7 +34,21 @@ export default function ForwardCurveChart({ data }: ForwardCurveProps) {
                         <Tooltip
                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff' }}
                             itemStyle={{ color: '#fff' }}
-                            formatter={(val: number) => [`${val.toFixed(2)} PLN`, 'Cena']}
+                            formatter={(val: number, name: string) => [
+                                `${val.toFixed(2)} PLN`,
+                                name === 'price' ? 'Cena' : (name === 'sma15' ? 'SMA15' : name)
+                            ]}
+                            labelStyle={{ color: '#9ca3af', marginBottom: '0.25rem' }}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey="sma15"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            strokeDasharray="5 5"
+                            dot={false}
+                            activeDot={{ r: 4, fill: '#3b82f6' }}
+                            name="sma15"
                         />
                         <Line
                             type="monotone"
@@ -42,6 +57,7 @@ export default function ForwardCurveChart({ data }: ForwardCurveProps) {
                             strokeWidth={3}
                             dot={{ fill: '#009D8F', r: 4 }}
                             activeDot={{ r: 6, fill: '#009D8F' }}
+                            name="price"
                         />
                     </LineChart>
                 </ResponsiveContainer>

@@ -163,14 +163,24 @@ export async function GET(request: NextRequest) {
         const curveData = [];
         for (const c of allForwardContracts) {
             // Pass latestDate to match Snapshot view
-            const docs = await getLatestDocs(c.name, 1, latestDate);
+            const docs = await getLatestDocs(c.name, 15, latestDate);
 
             if (docs.length > 0) {
                 const d = docs[0];
+                let sma15 = 0;
+
+                // Calculate SMA15 if we have enough data (let's say partial is fine for now, or strict 15)
+                // Using valid days count
+                if (docs.length > 0) {
+                    const sum = docs.reduce((acc, doc) => acc + (doc.DKR || doc.closingPrice || 0), 0);
+                    sma15 = sum / docs.length;
+                }
+
                 curveData.push({
                     label: c.label,
                     period: c.label,
                     price: d.DKR || d.closingPrice || 0,
+                    sma15: sma15,
                     contract: c.name
                 });
             }
