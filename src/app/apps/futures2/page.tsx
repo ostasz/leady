@@ -1,140 +1,154 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import FuturesKPI from '@/components/futures/FuturesKPI';
-import FuturesChart from '@/components/futures/FuturesChart';
-import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { format, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
-
-interface FutureData {
-    date: string;
-    price: number;
-}
-
-interface FuturesResponse {
-    futures: {
-        [year: string]: FutureData[];
-    };
-}
+import { RefreshCw } from 'lucide-react';
+import FuturesHeader from '@/components/futures2/FuturesHeader';
+import FuturesAdvKPI from '@/components/futures2/FuturesAdvKPI';
+import FuturesTechnicalKPI from '@/components/futures2/FuturesTechnicalKPI';
+import FuturesCandleChart from '@/components/futures2/FuturesCandleChart';
+import ForwardCurveChart from '@/components/futures2/ForwardCurveChart';
+import FuturesTicker from '@/components/futures2/FuturesTicker';
 
 export default function FuturesPage2() {
-    const [dataY1, setDataY1] = useState<FutureData[]>([]);
-    const [dataY2, setDataY2] = useState<FutureData[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [timeRange, setTimeRange] = useState<number>(30); // Default to 30 days
+    const today = new Date().toISOString().split('T')[0];
+    const nextYear = (new Date().getFullYear() + 1).toString().slice(-2);
+    const [selectedContract, setSelectedContract] = useState(`BASE_Y-${nextYear}`);
+    const [selectedDate, setSelectedDate] = useState(today);
+    const [timeRange, setTimeRange] = useState('6M'); // 1M, 3M, 6M, YTD, 1Y
 
-    const currentYear = new Date().getFullYear();
-    const year1 = (currentYear + 1).toString();
-    const year2 = (currentYear + 2).toString();
+    // Data State
+    const [history, setHistory] = useState<any[]>([]);
+    const [kpi, setKpi] = useState<any>(null);
+    const [technical, setTechnical] = useState<any>(null);
+    const [forwardCurve, setForwardCurve] = useState<any[]>([]);
+    const [ticker, setTicker] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
+            setLoading(true);
             try {
-                // Limit=0 fetches ALL history
-                const res = await fetch('/api/energy-prices/futures?limit=0');
+                const res = await fetch(`/api/energy-prices/futures/details?contract=${selectedContract}&date=${selectedDate}`);
                 if (res.ok) {
-                    const json: FuturesResponse = await res.json();
-                    setDataY1(json.futures[year1] || []);
-                    setDataY2(json.futures[year2] || []);
+                    const json = await res.json();
+                    setHistory(json.history || []);
+                    setKpi(json.kpi || {});
+                    setTechnical(json.technical || null);
+                    setForwardCurve(json.forwardCurve || []);
+                    setTicker(json.ticker || []);
+
+                    // If API returns an effective date (e.g. snapped to latest available), update UI
+                    if (json.effectiveDate && json.effectiveDate !== selectedDate) {
+                        setSelectedDate(json.effectiveDate);
+                    }
                 }
             } catch (error) {
-                console.error('Failed to fetch futures data', error);
+                console.error('Failed to fetch futures details', error);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [year1, year2]);
+    }, [selectedContract, selectedDate]);
 
-    // Filter data based on selected time range
-    const filteredDataY1 = dataY1.slice(-timeRange);
-    const filteredDataY2 = dataY2.slice(-timeRange);
+    // Filter history based on time range
+    const filterData = () => {
+        if (!history.length) return [];
+        const now = new Date();
+        let cutoff = new Date();
+
+        switch (timeRange) {
+            case '1M': cutoff.setMonth(now.getMonth() - 1); break;
+            case '3M': cutoff.setMonth(now.getMonth() - 3); break;
+            case '6M': cutoff.setMonth(now.getMonth() - 6); break;
+            case 'YTD': cutoff = new Date(now.getFullYear(), 0, 1); break;
+            case 'ALL': return history;
+            default: cutoff.setMonth(now.getMonth() - 6);
+        }
+
+        return history.filter(d => new Date(d.date) >= cutoff);
+    };
+
+    const filteredHistory = filterData();
 
     return (
-        <div className="min-h-screen bg-white text-gray-900">
+        <div className="min-h-screen bg-[#0B1120] text-gray-100 font-sans">
             {/* Navbar / Header */}
-            <div className="bg-white sticky top-0 z-50 shadow-sm border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+            <div className="bg-[#111827] sticky top-0 z-50 border-b border-gray-800 shadow-sm">
+                <div className="max-w-[1600px] mx-auto px-4 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link href="/" className="p-2 -ml-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-900 transition-colors">
-                            <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
-                        </Link>
-                        <div className="flex items-center gap-3">
+                        <Link href="/" className="p-2 -ml-2 hover:bg-gray-800 rounded-lg transition-colors">
                             <span className="text-2xl">⚡</span>
-                            <h1 className="text-xl font-bold text-gray-900">
-                                Centrum Analiz Futures (Zaawansowane)
-                            </h1>
+                        </Link>
+                        <div>
+                            <h1 className="text-xl font-bold text-white tracking-tight">System Analiz</h1>
                         </div>
                     </div>
 
-                    {/* View Toggle */}
-                    <div className="bg-gray-100 p-1 rounded-lg flex items-center">
-                        <Link href="/apps/futures" className="px-3 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors">
-                            Dane podstawowe
-                        </Link>
-                        <span className="px-3 py-1.5 rounded-md text-sm font-medium bg-white text-gray-900 shadow-sm cursor-default">
-                            Dane zaawansowane
-                        </span>
+                    {/* Integrated Controls */}
+                    <div className="hidden md:block">
+                        <FuturesHeader
+                            selectedContract={selectedContract}
+                            onContractChange={setSelectedContract}
+                            range={timeRange}
+                            onRangeChange={setTimeRange}
+                            selectedDate={selectedDate}
+                            onDateChange={setSelectedDate}
+                        />
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-full transition-all"
+                        >
+                            <RefreshCw size={18} />
+                        </button>
+                        <div className="bg-gray-900 p-1 rounded-lg flex items-center border border-gray-800">
+                            <Link href="/apps/futures" className="px-3 py-1.5 rounded-md text-xs font-medium text-gray-400 hover:text-white transition-colors">
+                                Podstawowy
+                            </Link>
+                            <span className="px-3 py-1.5 rounded-md text-xs font-bold bg-[#009D8F] text-white shadow-sm cursor-default">
+                                PRO (Trader)
+                            </span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <main className="max-w-[1600px] mx-auto px-4 py-8 space-y-6">
+
+                {/* Control Panel - Moved to Header */}
 
                 {loading ? (
-                    <div className="h-96 flex items-center justify-center">
-                        <div className="w-12 h-12 border-4 border-gray-200 border-t-[#2DD4BF] rounded-full animate-spin"></div>
+                    <div className="h-96 flex flex-col items-center justify-center gap-4">
+                        <div className="w-12 h-12 border-4 border-blue-900 border-t-blue-500 rounded-full animate-spin"></div>
+                        <div className="text-blue-400 font-mono text-sm animate-pulse">Ładowanie danych giełdowych...</div>
                     </div>
                 ) : (
                     <>
-                        {/* KPI Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FuturesKPI year={year1} data={filteredDataY1} label={`BASELINE ${year1}`} />
-                            <FuturesKPI year={year2} data={filteredDataY2} label={`BASELINE ${year2}`} />
+                        {/* KPI SECTION */}
+                        {kpi && <FuturesAdvKPI data={kpi} contract={selectedContract} />}
+
+                        {/* TECHNICAL INDICATORS */}
+                        {technical && <FuturesTechnicalKPI data={technical} contract={selectedContract} />}
+
+                        {/* MAIN CHART */}
+                        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+                            <FuturesCandleChart data={filteredHistory} contract={selectedContract} />
                         </div>
 
-                        {/* Main Chart */}
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center flex-wrap gap-4">
-                                <div>
-                                    <h2 className="text-lg font-semibold text-gray-700">Analiza Cenowa</h2>
-                                    <div className="text-sm text-gray-500">
-                                        Porównanie kontraktów rocznych
-                                        {filteredDataY1.length > 0 && (
-                                            <span className="ml-1 text-gray-400">
-                                                (za okres od {format(parseISO(filteredDataY1[0].date), 'dd.MM.yyyy')} do {format(parseISO(filteredDataY1[filteredDataY1.length - 1].date), 'dd.MM.yyyy')})
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-lg border border-gray-200">
-                                    {[30, 90, 365].map((days) => (
-                                        <button
-                                            key={days}
-                                            onClick={() => setTimeRange(days)}
-                                            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${timeRange === days
-                                                ? 'bg-[#C1F232] text-gray-900 shadow-sm'
-                                                : 'text-gray-500 hover:text-gray-900 hover:bg-white/60'
-                                                }`}
-                                        >
-                                            {days} Dni
-                                        </button>
-                                    ))}
-                                </div>
+                        {/* BOTTOM SECTION: CURVE + TICKER */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div>
+                                <ForwardCurveChart data={forwardCurve} />
                             </div>
-                            <FuturesChart
-                                dataY1={filteredDataY1}
-                                dataY2={filteredDataY2}
-                                year1={year1}
-                                year2={year2}
-                            />
+                            <div>
+                                <FuturesTicker data={ticker} />
+                            </div>
                         </div>
-
-
                     </>
                 )}
             </main>

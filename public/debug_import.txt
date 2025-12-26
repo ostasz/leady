@@ -21023,3 +21023,14 @@
 [2025-12-26T15:41:44.757Z][FUTURES-LIB] Successfully processed and committed 6006 futures entries.
 [2025-12-26T15:41:44.758Z] FUTURES Processed: {"success":true,"count":6006}
 [2025-12-26T15:41:45.132Z] Marked as read.
+[2025-12-26T18:24:52.384Z] Searching Gmail with query: is:unread subject:"Subscription for tge_f" has:attachment (Target: FUTURES)
+[2025-12-26T18:24:52.688Z] Found 1 messages.
+[2025-12-26T18:24:53.478Z] Processing email: "Subscription for tge_f" from "Microsoft Power BI" <no-reply-powerbi@microsoft.com>
+[2025-12-26T18:24:53.480Z] Found CSV: tge_f.csv, Type: FUTURES, Length: 1143737
+[2025-12-26T18:24:53.480Z] CSV Snippet: ﻿tge_rtpe_DataNotowania,tge_rtpe_Kontrakt,tge_rtpe_KursMax,tge_rtpe_KursMin,tge_rtpe_KursRozliczeniowy,tge_rtpe_LiczbaKontraktow,tge_rtpe_LiczbaOtwartychPozycji,tge_rtpe_LiczbaTransakcji,tge_rtpe_Wart
+[2025-12-26T18:24:53.481Z][FUTURES-LIB] Starting processFuturesData. Content length: 1143737
+[2025-12-26T18:24:53.510Z][FUTURES-LIB] Parsed 19905 rows. First row keys: ["tge_rtpe_DataNotowania","tge_rtpe_Kontrakt","tge_rtpe_KursMax","tge_rtpe_KursMin","tge_rtpe_KursRozliczeniowy","tge_rtpe_LiczbaKontraktow","tge_rtpe_LiczbaOtwartychPozycji","tge_rtpe_LiczbaTransakcji","tge_rtpe_WartoscObrotu","tge_rtpe_WolumenObrotu"]
+[2025-12-26T18:24:53.510Z][FUTURES-LIB] First row sample: {"tge_rtpe_DataNotowania":"1/2/2024 12:00:00 AM","tge_rtpe_Kontrakt":"BASE_M-02-24","tge_rtpe_KursMax":"","tge_rtpe_KursMin":"","tge_rtpe_KursRozliczeniowy":"495.01","tge_rtpe_LiczbaKontraktow":"","tge_rtpe_LiczbaOtwartychPozycji":"","tge_rtpe_LiczbaTransakcji":"","tge_rtpe_WartoscObrotu":"","tge_rtpe_WolumenObrotu":""}
+[2025-12-26T18:25:08.817Z][FUTURES-LIB] Successfully processed and committed 10072 futures entries.
+[2025-12-26T18:25:08.817Z] FUTURES Processed: {"success":true,"count":10072}
+[2025-12-26T18:25:09.123Z] Marked as read.
