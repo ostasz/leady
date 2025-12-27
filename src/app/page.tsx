@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useAuth } from '@/components/AuthProvider';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -81,10 +82,12 @@ export default function Dashboard() {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {/* Hero Banner */}
                 <div className="relative rounded-2xl overflow-hidden mb-8 shadow-sm group h-48">
-                    <img
+                    <Image
                         src="/dashboard-cover.png"
                         alt="Ekovoltis Cover"
-                        className="w-full h-full object-cover object-center"
+                        fill
+                        className="object-cover object-center"
+                        priority
                     />
                     <div className="absolute inset-0 flex flex-col justify-center px-8">
                         <div className="backdrop-blur-md bg-white/10 border border-white/20 p-6 rounded-2xl shadow-lg max-w-xl">
