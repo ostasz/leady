@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 
 // Configuration
-const SUBJECT_RDN = process.env.GMAIL_IMPORT_SUBJECT || 'tge_p';
+const SUBJECT_RDN = process.env.GMAIL_IMPORT_SUBJECT || 'Subscription for tge_p';
 const SUBJECT_FUTURES = 'Subscription for tge_f';
 
 const logDebug = (msg: string) => {
@@ -83,9 +83,11 @@ export async function checkEmailsAndImport(targetType?: 'RDN' | 'FUTURES') {
             let processedFile = false;
             let importType = 'unknown';
 
-            if (subject.includes(SUBJECT_RDN)) {
+            const lowerSubject = subject.toLowerCase();
+
+            if (lowerSubject.includes(SUBJECT_RDN.toLowerCase())) {
                 importType = 'RDN';
-            } else if (subject.includes('tge_f')) {
+            } else if (lowerSubject.includes('tge_f')) {
                 importType = 'FUTURES';
             } else {
                 logDebug(`Unknown subject pattern: ${subject}`);

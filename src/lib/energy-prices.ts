@@ -88,59 +88,10 @@ export interface ProcessingResult {
 }
 
 export async function processEnergyPriceData(data: any[], userEmail: string): Promise<ProcessingResult> {
-    const batch = adminDb.batch();
     let batchCount = 0;
     let processedCount = 0;
     const skippedRows: any[] = [];
-    const maxBatchSize = 450; // Firestore limit is 500
-
-    // We will commit batches periodically
-    const commitBatch = async () => {
-        if (batchCount > 0) {
-            await batch.commit();
-            batchCount = 0;
-        }
-    };
-
-    // Need to handle multiple batches if data > 500 rows
-    // Note: Firestore batch object cannot be reused after commit.
-    // For simplicity in this refactor, we'll assume the caller might need to handle huge files,
-    // but here we will implement a "chunking" strategy if we were rewriting fully.
-    // However, to keep it simple and compatible with the existing route structure which used a single batch (mostly),
-    // we will implement a loop that creates new batches.
-
-    // Actually, `adminDb.batch()` creates a NEW batch instance.
-    // So we need to manage currentBatch.
-
-    // 0. Pre-process: Identify unique dates to clean up old/start data
-    // This allows "Self-Healing" - re-importing overwrites bad data (e.g. weird hours)
-    const uniqueDates = new Set<string>();
-    data.forEach(row => {
-        const dateVal = findVal(row, 'datadostawy') || findVal(row, 'data');
-        if (dateVal) {
-            uniqueDates.add(normalizeDate(String(dateVal)));
-        }
-    });
-
-    console.log(`[Import] Cleaning up data for dates: ${Array.from(uniqueDates).join(', ')}`);
-
-    // Clean up existing records for these dates
-    const deleteBatch = adminDb.batch();
-    let deleteCount = 0;
-
-    for (const date of Array.from(uniqueDates)) {
-        if (!date || date.length !== 10) continue; // Skip invalid
-        const snapshot = await adminDb.collection('energy_prices').where('date', '==', date).get();
-        snapshot.docs.forEach(doc => {
-            deleteBatch.delete(doc.ref);
-            deleteCount++;
-        });
-    }
-
-    if (deleteCount > 0) {
-        await deleteBatch.commit();
-        console.log(`[Import] Deleted ${deleteCount} old records.`);
-    }
+    const maxBatchSize = 250; // Reduced from 450 to safe 250 to avoid Firestore Transaction Too Big error
 
     let currentBatch = adminDb.batch();
 
@@ -200,6 +151,7 @@ export async function processEnergyPriceData(data: any[], userEmail: string): Pr
         processedCount++;
 
         if (batchCount >= maxBatchSize) {
+            console.log(`[EnergyPrices] Committing batch of ${batchCount} records...`);
             await currentBatch.commit();
             currentBatch = adminDb.batch(); // Start new batch
             batchCount = 0;

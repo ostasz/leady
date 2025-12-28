@@ -141,7 +141,8 @@ export async function processFuturesData(csvContent: string): Promise<{ success:
             writeCount++;
             totalCount++;
 
-            if (writeCount >= 450) {
+            if (writeCount >= 250) {
+                console.log(`[Futures] Committing batch of ${writeCount} records...`);
                 await batch.commit(); // Commit current batch
                 batch = adminDb.batch(); // Re-init batch
                 writeCount = 0;
