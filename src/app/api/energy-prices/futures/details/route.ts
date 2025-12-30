@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { format, addMonths, addQuarters, startOfQuarter } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import { FuturesHistoryPoint } from '@/types/energy-prices';
 
 // Helper to generate contract names dynamically
 const getContractNames = (baseYear: number) => {
@@ -42,7 +43,7 @@ const getContractNames = (baseYear: number) => {
 };
 
 // Helper for RSI
-const calculateRSI = (history: any[], period: number = 14) => {
+const calculateRSI = (history: FuturesHistoryPoint[], period: number = 14) => {
     if (history.length < period + 1) return { value: 0, status: 'Neutral' };
 
     // Simple RSI calculation
@@ -56,8 +57,8 @@ const calculateRSI = (history: any[], period: number = 14) => {
         else losses -= change;
     }
 
-    let avgGain = gains / period;
-    let avgLoss = losses / period;
+    const avgGain = gains / period;
+    const avgLoss = losses / period;
 
     // For more precision, we should do smoothing, but simple avg is okay for now on snapshot
     const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
@@ -71,7 +72,7 @@ const calculateRSI = (history: any[], period: number = 14) => {
 };
 
 // Helper for ATR
-const calculateATR = (history: any[], period: number = 14) => {
+const calculateATR = (history: FuturesHistoryPoint[], period: number = 14) => {
     if (history.length < period + 1) return { value: 0 };
 
     let sumTR = 0;
@@ -141,7 +142,7 @@ export async function GET(request: NextRequest) {
             sortedDocs = sortedDocs.filter(d => d.date <= targetDate);
         }
 
-        const history: any[] = [];
+        const history: FuturesHistoryPoint[] = [];
         let prevClose = 0;
 
         for (const d of sortedDocs) {
@@ -358,8 +359,6 @@ export async function GET(request: NextRequest) {
                 calendarSpread: calendarSpread.value,
                 trend: trendEnum
             },
-            effectiveDate: latestDate
-        }, {
             effectiveDate: latestDate
         }, {
             headers: {
