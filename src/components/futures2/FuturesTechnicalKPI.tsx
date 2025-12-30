@@ -1,32 +1,50 @@
 import { TrendingUp, TrendingDown, Activity, AlertTriangle, Layers, BarChart2 } from 'lucide-react';
 
+import { FuturesTechnicalDto } from '@/types/energy-prices';
+
 interface TechnicalKPIProps {
-    data: {
-        rsi: { value: number; status: string };
-        atr: { value: number };
-        calendarSpread: { value: number; label: string };
-        trend?: { sma50: number; diffPct: number; status: string };
-    };
+    data: FuturesTechnicalDto;
     contract: string;
 }
 
 export default function FuturesTechnicalKPI({ data, contract }: TechnicalKPIProps) {
-    const formatNumber = (v: number) => v ? v.toFixed(2) : '-.--';
+    const formatNumber = (v: number | null | undefined | string) => {
+        if (v === null || v === undefined || v === '') return '-.--';
+        const num = typeof v === 'number' ? v : Number(v);
+        return isNaN(num) ? '-.--' : num.toFixed(2);
+    };
 
     // RSI Config
-    const rsiColor = data.rsi.value > 70 ? 'text-red-400' : (data.rsi.value < 30 ? 'text-[#00C1B5]' : 'text-yellow-400');
-    const rsiLabelColor = data.rsi.value > 70 ? 'text-red-500' : (data.rsi.value < 30 ? 'text-[#00C1B5]' : 'text-gray-500');
+    const rsiValue = data.rsi ?? 50;
+    const rsiStatus = rsiValue > 70 ? 'WYKUPIONY' : (rsiValue < 30 ? 'WYPRZEDANY' : 'NEUTRALNY');
+
+    const rsiColor = rsiValue > 70 ? 'text-red-400' : (rsiValue < 30 ? 'text-[#00C1B5]' : 'text-yellow-400');
+    const rsiLabelColor = rsiValue > 70 ? 'text-red-500' : (rsiValue < 30 ? 'text-[#00C1B5]' : 'text-gray-500');
 
     // ATR Context
-    const isVolatile = data.atr.value > 15;
+    const atrValue = data.atr ?? 0;
+    const isVolatile = atrValue > 15;
 
     // Spread Config
-    const isBackwardation = data.calendarSpread.value > 0;
+    const spreadValue = data.calendarSpread ?? 0;
+    // We don't have label in DTO, assuming Backend sends only numeric value for now. 
+    // Ideally Backend should return object or we infer label. 
+    // For now: value only.
+    const isBackwardation = spreadValue > 0;
 
     // Trend Config
-    const trend = data.trend || { sma50: 0, diffPct: 0, status: 'N/A' };
-    const isBullish = trend.diffPct > 5;
-    const isBearish = trend.diffPct < -5;
+    let trendStatus = 'NEUTRAL';
+    // DEFENSIVE CODING: Handle legacy/stale object data from cache
+    if (typeof data.trend === 'object' && data.trend !== null) {
+        const t = data.trend as any;
+        if (t.diffPct > 5) trendStatus = 'BULLISH';
+        else if (t.diffPct < -5) trendStatus = 'BEARISH';
+    } else {
+        trendStatus = data.trend || 'NEUTRAL';
+    }
+
+    const isBullish = trendStatus === 'BULLISH';
+    const isBearish = trendStatus === 'BEARISH';
     const trendColor = isBullish ? 'text-[#00C1B5]' : (isBearish ? 'text-red-400' : 'text-gray-400');
 
     return (
@@ -42,15 +60,15 @@ export default function FuturesTechnicalKPI({ data, contract }: TechnicalKPIProp
                     RSI (14) - Momentum
                 </div>
                 <div className={`text-3xl font-bold ${rsiColor}`}>
-                    {formatNumber(data.rsi.value)}
+                    {formatNumber(rsiValue)}
                 </div>
                 <div className={`text-sm mt-1 font-medium ${rsiLabelColor}`}>
-                    {data.rsi.status}
+                    {rsiStatus}
                 </div>
                 <div className="mt-4 w-full bg-gray-700 h-1.5 rounded-full overflow-hidden">
                     <div
-                        className={`h-full transition-all duration-500 ${data.rsi.value > 70 ? 'bg-red-500' : (data.rsi.value < 30 ? 'bg-[#00C1B5]' : 'bg-yellow-500')}`}
-                        style={{ width: `${Math.min(data.rsi.value, 100)}%` }}
+                        className={`h-full transition-all duration-500 ${rsiValue > 70 ? 'bg-red-500' : (rsiValue < 30 ? 'bg-[#00C1B5]' : 'bg-yellow-500')}`}
+                        style={{ width: `${Math.min(rsiValue, 100)}%` }}
                     ></div>
                 </div>
             </div>
@@ -65,7 +83,7 @@ export default function FuturesTechnicalKPI({ data, contract }: TechnicalKPIProp
                     ATR (14) - Ryzyko Zmienności
                 </div>
                 <div className="text-3xl font-bold text-white">
-                    {formatNumber(data.atr.value)} <span className="text-sm font-normal text-gray-500">PLN</span>
+                    {formatNumber(atrValue)} <span className="text-sm font-normal text-gray-500">PLN</span>
                 </div>
                 <div className="text-sm mt-1 text-gray-500">
                     Średnia dzienna zmiana ceny
@@ -88,10 +106,10 @@ export default function FuturesTechnicalKPI({ data, contract }: TechnicalKPIProp
                     Calendar Spread (Y vs Y+1)
                 </div>
                 <div className={`text-3xl font-bold ${isBackwardation ? 'text-[#00C1B5]' : 'text-[#009D8F]'}`}>
-                    {formatNumber(data.calendarSpread.value)} <span className="text-sm font-normal text-gray-500">PLN</span>
+                    {formatNumber(spreadValue)} <span className="text-sm font-normal text-gray-500">PLN</span>
                 </div>
                 <div className="text-sm mt-1 font-medium text-gray-500">
-                    Struktura: <span className={isBackwardation ? 'text-[#00C1B5]' : 'text-[#009D8F]'}>{data.calendarSpread.label}</span>
+                    Struktura: <span className={isBackwardation ? 'text-[#00C1B5]' : 'text-[#009D8F]'}>{isBackwardation ? 'Backwardation' : 'Contango'}</span>
                 </div>
                 <div className="text-xs text-gray-400 mt-2">
                     {isBackwardation
@@ -110,13 +128,14 @@ export default function FuturesTechnicalKPI({ data, contract }: TechnicalKPIProp
                     Siła Trendu (vs SMA50)
                 </div>
                 <div className={`text-3xl font-bold ${trendColor}`}>
-                    {trend.diffPct > 0 ? '+' : ''}{formatNumber(trend.diffPct)}%
+                    {trendStatus === 'NEUTRAL' ? 'NEUTRALNY' : trendStatus}
                 </div>
                 <div className="text-sm mt-1 font-medium text-gray-500">
-                    Stan: <span className={trendColor}>{trend.status}</span>
+                    Stan: <span className={trendColor}>{trendStatus}</span>
                 </div>
                 <div className="text-xs text-gray-400 mt-2">
-                    SMA50: {formatNumber(trend.sma50)} PLN
+                    {/* SMA50 not calculated in frontend anymore, handled via Trend ENUM */}
+                    Analiza Trendu
                 </div>
                 <div className="mt-3 w-full bg-gray-700 h-1.5 rounded-full overflow-hidden flex">
                     <div className="w-1/2 h-full border-r border-gray-600 bg-transparent"></div>

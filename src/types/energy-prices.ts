@@ -155,3 +155,44 @@ export interface FuturesCSVRow {
     'Typ kontraktu': string;
     'Rok dostawy': string | number;
 }
+
+export interface FuturesHistoryPoint {
+    date: string;
+    open?: number;
+    high?: number;
+    low?: number;
+    close: number;
+    volume?: number;
+    openInterest?: number;
+    change?: number;
+}
+
+export interface FuturesKpiDto {
+    basePrice: number;
+    peakPrice: number;
+    spread: number;
+    spreadChange: number;
+    volume: number;
+    openInterest: number;
+}
+
+export interface FuturesTechnicalDto {
+    rsi: number | null;
+    atr: number | null;
+    calendarSpread: number | null;
+    trend: 'BULLISH' | 'BEARISH' | 'NEUTRAL';
+}
+
+export interface ForwardCurvePoint {
+    contract: string;
+    price: number;
+    date?: string;
+}
+
+export interface FuturesTickerRow {
+    contract: string;
+    last: number;
+    change: number;
+    volume: number;
+    openInterest: number;
+}

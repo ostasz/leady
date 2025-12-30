@@ -1,8 +1,7 @@
 'use client';
 
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/components/AuthProvider';
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { RefreshCw } from 'lucide-react';
 import FuturesHeader from '@/components/futures2/FuturesHeader';
@@ -11,22 +10,33 @@ import FuturesTechnicalKPI from '@/components/futures2/FuturesTechnicalKPI';
 import FuturesCandleChart from '@/components/futures2/FuturesCandleChart';
 import ForwardCurveChart from '@/components/futures2/ForwardCurveChart';
 import FuturesTicker from '@/components/futures2/FuturesTicker';
+import {
+    FuturesHistoryPoint,
+    FuturesKpiDto,
+    FuturesTechnicalDto,
+    ForwardCurvePoint,
+    FuturesTickerRow
+} from '@/types/energy-prices';
 
 export default function FuturesPage2() {
     const today = new Date().toISOString().split('T')[0];
     const nextYear = (new Date().getFullYear() + 1).toString().slice(-2);
+    // UI State
     const [selectedContract, setSelectedContract] = useState(`BASE_Y-${nextYear}`);
     const [selectedDate, setSelectedDate] = useState(today);
     const [timeRange, setTimeRange] = useState('6M'); // 1M, 3M, 6M, YTD, 1Y
     const [refreshKey, setRefreshKey] = useState(0);
 
-    // Data State
-    const [history, setHistory] = useState<any[]>([]);
-    const [kpi, setKpi] = useState<any>(null);
-    const [technical, setTechnical] = useState<any>(null);
-    const [forwardCurve, setForwardCurve] = useState<any[]>([]);
-    const [ticker, setTicker] = useState<any[]>([]);
+    // Data State (Typed)
+    const [history, setHistory] = useState<FuturesHistoryPoint[]>([]);
+    const [kpi, setKpi] = useState<FuturesKpiDto | null>(null);
+    const [technical, setTechnical] = useState<FuturesTechnicalDto | null>(null);
+    const [forwardCurve, setForwardCurve] = useState<ForwardCurvePoint[]>([]);
+    const [ticker, setTicker] = useState<FuturesTickerRow[]>([]);
+
+    // Status State
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const { user } = useAuth();
 
@@ -35,6 +45,7 @@ export default function FuturesPage2() {
 
         const fetchData = async () => {
             setLoading(true);
+            setError(null); // Clear previous errors
             try {
                 let headers: any = {};
                 if (user) {
@@ -54,7 +65,7 @@ export default function FuturesPage2() {
                     if (controller.signal.aborted) return;
 
                     setHistory(json.history || []);
-                    setKpi(json.kpi || {});
+                    setKpi(json.kpi || null);
                     setTechnical(json.technical || null);
                     setForwardCurve(json.forwardCurve || []);
                     setTicker(json.ticker || []);
@@ -62,14 +73,24 @@ export default function FuturesPage2() {
                     // Double Fetch Fix: We do NOT update selectedDate here causing a loop.
                     // We just accept that displayed data might correspond to valid trading day (effectiveDate)
                     // if (json.effectiveDate && json.effectiveDate !== selectedDate) {
-                    //      setSelectedDate(json.effectiveDate); 
+                    //      setSelectedDate(json.effectiveDate);
                     // }
                 } else {
-                    console.error('API Error:', res.status, res.statusText);
+                    const errorJson = await res.json().catch(() => ({}));
+                    const errorMessage = errorJson.error || `Błąd serwera: ${res.status}`;
+                    console.error('API Error:', errorMessage);
+
+                    if (!controller.signal.aborted) {
+                        setError(errorMessage);
+                        // Optional: Clear data on error or keep stale?
+                        // Let's clear to avoid confusion if it's a critical error
+                        setKpi(null);
+                    }
                 }
             } catch (error: any) {
                 if (error.name !== 'AbortError') {
                     console.error('Failed to fetch futures details', error);
+                    setError('Wystąpił błąd podczas pobierania danych.');
                 }
             } finally {
                 if (!controller.signal.aborted) {
@@ -87,8 +108,8 @@ export default function FuturesPage2() {
         };
     }, [selectedContract, selectedDate, user, refreshKey]);
 
-    // Filter history based on time range
-    const filterData = () => {
+    // Optimize filtering with useMemo
+    const filteredHistory = useMemo(() => {
         if (!history.length) return [];
         const now = new Date();
         let cutoff = new Date();
@@ -102,10 +123,12 @@ export default function FuturesPage2() {
             default: cutoff.setMonth(now.getMonth() - 6);
         }
 
-        return history.filter(d => new Date(d.date) >= cutoff);
-    };
-
-    const filteredHistory = filterData();
+        const cutoffTime = cutoff.getTime();
+        // Optimization: Parsing date strings in loop is expensive if array is huge.
+        // If history.date is standard 'YYYY-MM-DD', new Date() is okay but string compare is faster for sorting.
+        // For filtering '>= cutoff', we have to parse.
+        return history.filter(d => new Date(d.date).getTime() >= cutoffTime);
+    }, [history, timeRange]);
 
     return (
         <div className="min-h-screen bg-[#0B1120] text-gray-100 font-sans">
@@ -132,6 +155,12 @@ export default function FuturesPage2() {
                             onDateChange={setSelectedDate}
                         />
                     </div>
+
+                    {error && (
+                        <div className="absolute top-16 left-0 w-full bg-red-500/10 border-b border-red-500/50 text-red-400 px-4 py-2 text-sm text-center">
+                            ⚠️ {error}
+                        </div>
+                    )}
 
                     <div className="flex items-center gap-3">
                         <button

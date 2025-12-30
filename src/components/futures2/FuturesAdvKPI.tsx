@@ -1,14 +1,8 @@
 import { TrendingUp, TrendingDown, Activity, Battery } from 'lucide-react';
+import { FuturesKpiDto } from '@/types/energy-prices';
 
 interface KPIProps {
-    data: {
-        basePrice: number;
-        peakPrice: number;
-        spread: number;
-        spreadChange?: number;
-        volume: number;
-        openInterest: number;
-    };
+    data: FuturesKpiDto;
     contract: string;
 }
 

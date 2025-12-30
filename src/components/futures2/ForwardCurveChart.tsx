@@ -1,14 +1,9 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-interface CurvePoint {
-    label: string;
-    price: number;
-    sma15?: number;
-    contract: string;
-}
+import { ForwardCurvePoint } from '@/types/energy-prices';
 
 interface ForwardCurveProps {
-    data: CurvePoint[];
+    data: ForwardCurvePoint[];
 }
 
 export default function ForwardCurveChart({ data }: ForwardCurveProps) {
@@ -22,7 +17,7 @@ export default function ForwardCurveChart({ data }: ForwardCurveProps) {
                     <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
                         <XAxis
-                            dataKey="label"
+                            dataKey="contract"
                             stroke="#4b5563"
                             tick={{ fill: '#9ca3af', fontSize: 11 }}
                         />

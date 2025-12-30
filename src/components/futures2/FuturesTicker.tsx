@@ -1,15 +1,7 @@
-interface TickerItem {
-    instrument: string;
-    price: number;
-    change: number;
-    open: number;
-    max: number;
-    min: number;
-    volume: number;
-}
+import { FuturesTickerRow } from '@/types/energy-prices';
 
 interface FuturesTickerProps {
-    data: TickerItem[];
+    data: FuturesTickerRow[];
 }
 
 export default function FuturesTicker({ data }: FuturesTickerProps) {
@@ -29,15 +21,15 @@ export default function FuturesTicker({ data }: FuturesTickerProps) {
                     </thead>
                     <tbody className="divide-y divide-gray-800">
                         {data.map((item) => (
-                            <tr key={item.instrument} className="hover:bg-gray-800/50 transition-colors">
-                                <td className="px-3 py-3 font-medium text-white">{item.instrument}</td>
+                            <tr key={item.contract} className="hover:bg-gray-800/50 transition-colors">
+                                <td className="px-3 py-3 font-medium text-white">{item.contract}</td>
                                 <td className="px-3 py-3 text-right text-xs font-bold text-gray-200">
-                                    {item.price.toFixed(2)}
+                                    {(item.last ?? 0).toFixed(2)}
                                 </td>
                                 <td className={`px-3 py-3 text-right font-medium ${item.change >= 0 ? 'text-[#00C1B5]' : 'text-red-400'}`}>
                                     {item.change > 0 ? '+' : ''}{item.change.toFixed(2)}%
                                 </td>
-                                <td className="px-3 py-3 text-right">{item.min?.toFixed(2) || '-'}</td>
+                                <td className="px-3 py-3 text-right">{'-'}</td>
                                 <td className="px-3 py-3 text-right text-[#A78BFA] font-medium">{item.volume}</td>
                             </tr>
                         ))}

@@ -255,18 +255,19 @@ export async function GET(request: NextRequest) {
                 const change = prevPrice > 0 ? ((currentPrice - prevPrice) / prevPrice) * 100 : 0;
 
                 return {
-                    instrument: d.contract,
-                    price: currentPrice,
+                    contract: d.contract,
+                    last: currentPrice,
                     change: change,
                     open: d.minPrice, // Approx
                     max: d.maxPrice,
                     min: d.minPrice,
-                    volume: d.volume || 0
+                    volume: d.volume || 0,
+                    openInterest: d.openInterest || 0
                 };
             }));
 
-            // Sort alphabetically by instrument
-            ticker.sort((a, b) => a.instrument.localeCompare(b.instrument));
+            // Sort alphabetically by contract
+            ticker.sort((a, b) => a.contract.localeCompare(b.contract));
         }
 
         // 3. KPI Calculations
@@ -334,6 +335,11 @@ export async function GET(request: NextRequest) {
             trend = { sma50, diffPct, status };
         }
 
+        // Map Trend Object to Enum
+        let trendEnum = 'NEUTRAL';
+        if (trend.diffPct > 5) trendEnum = 'BULLISH';
+        if (trend.diffPct < -5) trendEnum = 'BEARISH';
+
         return NextResponse.json({
             history,
             forwardCurve: curveData,
@@ -347,15 +353,17 @@ export async function GET(request: NextRequest) {
                 openInterest: latestPoint.openInterest || 0
             },
             technical: {
-                rsi: rsi,
-                atr: atr,
-                calendarSpread: calendarSpread,
-                trend: trend
+                rsi: rsi.value,
+                atr: atr.value,
+                calendarSpread: calendarSpread.value,
+                trend: trendEnum
             },
             effectiveDate: latestDate
         }, {
+            effectiveDate: latestDate
+        }, {
             headers: {
-                'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
+                'Cache-Control': 'no-store, max-age=0'
             }
         });
 

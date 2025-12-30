@@ -2,17 +2,10 @@ import { ComposedChart, BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Toolti
 import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
-interface ChartData {
-    date: string;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    volume: number;
-}
+import { FuturesHistoryPoint } from '@/types/energy-prices';
 
 interface FuturesCandleChartProps {
-    data: ChartData[];
+    data: FuturesHistoryPoint[];
     contract: string;
 }
 
@@ -30,17 +23,22 @@ export default function FuturesCandleChart({ data, contract }: FuturesCandleChar
     if (!data || data.length === 0) return <div className="h-96 flex items-center justify-center text-gray-400">Brak danych do wykresu</div>;
 
     // Enhance data with candle ranges and SMA
-    let processedData = data.map(d => ({
-        ...d,
-        // Recharts floating bar expects [min, max]
-        // But for coloring we need to know direction. 
-        // We'll store body as [min(open, close), max(open, close)]
-        // and separate color logic.
-        candleBody: [Math.min(d.open, d.close), Math.max(d.open, d.close)],
-        // Wick is [low, high]
-        candleWick: [d.low, d.high],
-        isBullish: d.close >= d.open,
-    }));
+    let processedData = data.map(d => {
+        const open = d.open ?? d.close;
+        const high = d.high ?? d.close;
+        const low = d.low ?? d.close;
+
+        return {
+            ...d,
+            // Recharts floating bar expects [min, max]
+            candleBody: [Math.min(open, d.close), Math.max(open, d.close)],
+            // Wick is [low, high]
+            candleWick: [low, high],
+            isBullish: d.close >= open,
+            // Ensure fields exist for tooltip
+            open, high, low
+        };
+    });
 
     processedData = calculateSMA(processedData, 15);
     processedData = calculateSMA(processedData, 50);
