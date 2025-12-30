@@ -180,7 +180,7 @@ export async function GET(request: NextRequest) {
             return docs.slice(0, limit);
         };
 
-        const structure = getContractNames(new Date().getFullYear());
+        const structure = getContractNames();
         const allForwardContracts = [...structure.months, ...structure.quarters, ...structure.years];
 
         // Fetch Forward Curve Data
