@@ -1,5 +1,7 @@
 'use client';
 
+import { useAuth } from '@/components/AuthProvider';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { RefreshCw } from 'lucide-react';
@@ -16,6 +18,7 @@ export default function FuturesPage2() {
     const [selectedContract, setSelectedContract] = useState(`BASE_Y-${nextYear}`);
     const [selectedDate, setSelectedDate] = useState(today);
     const [timeRange, setTimeRange] = useState('6M'); // 1M, 3M, 6M, YTD, 1Y
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Data State
     const [history, setHistory] = useState<any[]>([]);
@@ -25,33 +28,64 @@ export default function FuturesPage2() {
     const [ticker, setTicker] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const { user } = useAuth();
+
     useEffect(() => {
+        const controller = new AbortController();
+
         const fetchData = async () => {
             setLoading(true);
             try {
-                const res = await fetch(`/api/energy-prices/futures/details?contract=${selectedContract}&date=${selectedDate}`);
+                let headers: any = {};
+                if (user) {
+                    const token = await user.getIdToken();
+                    headers = { 'Authorization': `Bearer ${token}` };
+                }
+
+                const res = await fetch(`/api/energy-prices/futures/details?contract=${selectedContract}&date=${selectedDate}`, {
+                    headers,
+                    signal: controller.signal
+                });
+
                 if (res.ok) {
                     const json = await res.json();
+
+                    // Prevent memory leak / race condition update
+                    if (controller.signal.aborted) return;
+
                     setHistory(json.history || []);
                     setKpi(json.kpi || {});
                     setTechnical(json.technical || null);
                     setForwardCurve(json.forwardCurve || []);
                     setTicker(json.ticker || []);
 
-                    // If API returns an effective date (e.g. snapped to latest available), update UI
-                    if (json.effectiveDate && json.effectiveDate !== selectedDate) {
-                        setSelectedDate(json.effectiveDate);
-                    }
+                    // Double Fetch Fix: We do NOT update selectedDate here causing a loop.
+                    // We just accept that displayed data might correspond to valid trading day (effectiveDate)
+                    // if (json.effectiveDate && json.effectiveDate !== selectedDate) {
+                    //      setSelectedDate(json.effectiveDate); 
+                    // }
+                } else {
+                    console.error('API Error:', res.status, res.statusText);
                 }
-            } catch (error) {
-                console.error('Failed to fetch futures details', error);
+            } catch (error: any) {
+                if (error.name !== 'AbortError') {
+                    console.error('Failed to fetch futures details', error);
+                }
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) {
+                    setLoading(false);
+                }
             }
         };
 
-        fetchData();
-    }, [selectedContract, selectedDate]);
+        if (user !== undefined) { // Wait for auth init
+            fetchData();
+        }
+
+        return () => {
+            controller.abort();
+        };
+    }, [selectedContract, selectedDate, user, refreshKey]);
 
     // Filter history based on time range
     const filterData = () => {
@@ -101,8 +135,9 @@ export default function FuturesPage2() {
 
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={() => window.location.reload()}
+                            onClick={() => setRefreshKey(prev => prev + 1)}
                             className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-full transition-all"
+                            title="Odśwież dane"
                         >
                             <RefreshCw size={18} />
                         </button>

@@ -21034,3 +21034,49 @@
 [2025-12-26T18:25:08.817Z][FUTURES-LIB] Successfully processed and committed 10072 futures entries.
 [2025-12-26T18:25:08.817Z] FUTURES Processed: {"success":true,"count":10072}
 [2025-12-26T18:25:09.123Z] Marked as read.
+[2025-12-27T08:32:22.247Z] Searching Gmail with query: is:unread subject:tge_p has:attachment (Target: RDN)
+[2025-12-27T08:32:22.938Z] Found 2 messages.
+[2025-12-27T08:32:25.036Z] Processing email: "Subscription for tge_p" from "Microsoft Power BI" <no-reply-powerbi@microsoft.com>
+[2025-12-27T08:32:25.041Z] Found CSV: tge_p.csv, Type: RDN, Length: 3188736
+[2025-12-27T08:32:25.041Z] CSV Snippet: ﻿tge_rdn_kontrakty_DataNotowania,tge_rdn_kontrakty_DataDostawy,tge_rdn_kontrakty_GodzinaNazwa,tge_rdn_kontrakty_KursFixing1,tge_rdn_kontrakty_WolumenFixing1,tge_rdn_kontrakty_KursFixing2,tge_rdn_kontr
+[2025-12-27T08:34:03.163Z] Error processing message 19b5e8f11ec21c5f: 3 INVALID_ARGUMENT: Transaction too big. Decrease transaction size.
+[2025-12-27T08:34:06.075Z] Processing email: "Subscription for tge_p" from "Microsoft Power BI" <no-reply-powerbi@microsoft.com>
+[2025-12-27T08:34:06.079Z] Found CSV: tge_p.csv, Type: RDN, Length: 3183933
+[2025-12-27T08:34:06.079Z] CSV Snippet: ﻿tge_rdn_kontrakty_DataNotowania,tge_rdn_kontrakty_DataDostawy,tge_rdn_kontrakty_GodzinaNazwa,tge_rdn_kontrakty_KursFixing1,tge_rdn_kontrakty_WolumenFixing1,tge_rdn_kontrakty_KursFixing2,tge_rdn_kontr
+[2025-12-27T08:34:52.870Z] Searching Gmail with query: is:unread subject:"Subscription for tge_f" has:attachment (Target: FUTURES)
+[2025-12-27T08:34:53.631Z] Found 1 messages.
+[2025-12-27T08:34:54.961Z] Processing email: "Subscription for tge_f" from "Microsoft Power BI" <no-reply-powerbi@microsoft.com>
+[2025-12-27T08:34:54.963Z] Found CSV: tge_f.csv, Type: FUTURES, Length: 1143737
+[2025-12-27T08:34:54.963Z] CSV Snippet: ﻿tge_rtpe_DataNotowania,tge_rtpe_Kontrakt,tge_rtpe_KursMax,tge_rtpe_KursMin,tge_rtpe_KursRozliczeniowy,tge_rtpe_LiczbaKontraktow,tge_rtpe_LiczbaOtwartychPozycji,tge_rtpe_LiczbaTransakcji,tge_rtpe_Wart
+[2025-12-27T08:34:54.963Z][FUTURES-LIB] Starting processFuturesData. Content length: 1143737
+[2025-12-27T08:34:54.990Z][FUTURES-LIB] Parsed 19905 rows. First row keys: ["tge_rtpe_DataNotowania","tge_rtpe_Kontrakt","tge_rtpe_KursMax","tge_rtpe_KursMin","tge_rtpe_KursRozliczeniowy","tge_rtpe_LiczbaKontraktow","tge_rtpe_LiczbaOtwartychPozycji","tge_rtpe_LiczbaTransakcji","tge_rtpe_WartoscObrotu","tge_rtpe_WolumenObrotu"]
+[2025-12-27T08:34:54.990Z][FUTURES-LIB] First row sample: {"tge_rtpe_DataNotowania":"1/2/2024 12:00:00 AM","tge_rtpe_Kontrakt":"BASE_M-02-24","tge_rtpe_KursMax":"","tge_rtpe_KursMin":"","tge_rtpe_KursRozliczeniowy":"495.01","tge_rtpe_LiczbaKontraktow":"","tge_rtpe_LiczbaOtwartychPozycji":"","tge_rtpe_LiczbaTransakcji":"","tge_rtpe_WartoscObrotu":"","tge_rtpe_WolumenObrotu":""}
+[2025-12-27T08:35:03.683Z][FUTURES-LIB] Successfully processed and committed 10072 futures entries.
+[2025-12-27T08:35:03.684Z] FUTURES Processed: {"success":true,"count":10072}
+[2025-12-27T08:35:04.128Z] Marked as read.
+[2025-12-27T08:35:39.728Z] Error processing message 19b5968d4c6d9ad2: 3 INVALID_ARGUMENT: Transaction too big. Decrease transaction size.
+[2025-12-27T08:41:20.108Z] Searching Gmail with query: is:unread subject:tge_p has:attachment (Target: RDN)
+[2025-12-27T08:41:20.770Z] Found 2 messages.
+[2025-12-27T08:41:22.747Z] Processing email: "Subscription for tge_p" from "Microsoft Power BI" <no-reply-powerbi@microsoft.com>
+[2025-12-27T08:41:22.752Z] Found CSV: tge_p.csv, Type: RDN, Length: 3188736
+[2025-12-27T08:41:22.752Z] CSV Snippet: ﻿tge_rdn_kontrakty_DataNotowania,tge_rdn_kontrakty_DataDostawy,tge_rdn_kontrakty_GodzinaNazwa,tge_rdn_kontrakty_KursFixing1,tge_rdn_kontrakty_WolumenFixing1,tge_rdn_kontrakty_KursFixing2,tge_rdn_kontr
+[2025-12-27T08:42:56.130Z] Error processing message 19b5e8f11ec21c5f: 3 INVALID_ARGUMENT: Transaction too big. Decrease transaction size.
+[2025-12-27T08:42:58.486Z] Processing email: "Subscription for tge_p" from "Microsoft Power BI" <no-reply-powerbi@microsoft.com>
+[2025-12-27T08:42:58.490Z] Found CSV: tge_p.csv, Type: RDN, Length: 3183933
+[2025-12-27T08:42:58.490Z] CSV Snippet: ﻿tge_rdn_kontrakty_DataNotowania,tge_rdn_kontrakty_DataDostawy,tge_rdn_kontrakty_GodzinaNazwa,tge_rdn_kontrakty_KursFixing1,tge_rdn_kontrakty_WolumenFixing1,tge_rdn_kontrakty_KursFixing2,tge_rdn_kontr
+[2025-12-27T08:44:35.700Z] Error processing message 19b5968d4c6d9ad2: 3 INVALID_ARGUMENT: Transaction too big. Decrease transaction size.
+[2025-12-27T08:48:50.392Z] Searching Gmail with query: is:unread subject:Subscription for tge_p has:attachment (Target: RDN)
+[2025-12-27T08:48:51.095Z] Found 1 messages.
+[2025-12-27T08:48:53.144Z] Processing email: "Subscription for tge_p" from "Microsoft Power BI" <no-reply-powerbi@microsoft.com>
+[2025-12-27T08:48:53.148Z] Found CSV: tge_p.csv, Type: RDN, Length: 3183933
+[2025-12-27T08:48:53.148Z] CSV Snippet: ﻿tge_rdn_kontrakty_DataNotowania,tge_rdn_kontrakty_DataDostawy,tge_rdn_kontrakty_GodzinaNazwa,tge_rdn_kontrakty_KursFixing1,tge_rdn_kontrakty_WolumenFixing1,tge_rdn_kontrakty_KursFixing2,tge_rdn_kontr
+[2025-12-27T08:50:30.458Z] Error processing message 19b5968d4c6d9ad2: 3 INVALID_ARGUMENT: Transaction too big. Decrease transaction size.
+[2025-12-27T08:50:47.223Z] Searching Gmail with query: is:unread subject:"Subscription for tge_f" has:attachment (Target: FUTURES)
+[2025-12-27T08:50:48.034Z] Found 0 messages.
+[2025-12-27T08:53:15.597Z] Searching Gmail with query: is:unread subject:Subscription for tge_p has:attachment (Target: RDN)
+[2025-12-27T08:53:16.282Z] Found 1 messages.
+[2025-12-27T08:53:18.430Z] Processing email: "Subscription for tge_p" from "Microsoft Power BI" <no-reply-powerbi@microsoft.com>
+[2025-12-27T08:53:18.434Z] Found CSV: tge_p.csv, Type: RDN, Length: 3183933
+[2025-12-27T08:53:18.434Z] CSV Snippet: ﻿tge_rdn_kontrakty_DataNotowania,tge_rdn_kontrakty_DataDostawy,tge_rdn_kontrakty_GodzinaNazwa,tge_rdn_kontrakty_KursFixing1,tge_rdn_kontrakty_WolumenFixing1,tge_rdn_kontrakty_KursFixing2,tge_rdn_kontr
+[2025-12-27T08:53:50.069Z] RDN Processed: {"processedCount":15624,"skippedCount":0,"skippedRows":[],"errors":[]}
+[2025-12-27T08:53:50.568Z] Marked as read.

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb } from '@/lib/firebase-admin';
+import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { format, addMonths, addQuarters, startOfQuarter } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -90,9 +90,43 @@ const calculateATR = (history: any[], period: number = 14) => {
 
 export async function GET(request: NextRequest) {
     try {
+        // 0. SECURITY: Authorization Check
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized: Missing or invalid token' }, { status: 401 });
+        }
+
+        const token = authHeader.split('Bearer ')[1];
+        try {
+            await adminAuth.verifyIdToken(token);
+        } catch (authError) {
+            console.error('Auth verification failed:', authError);
+            return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
+        }
+
         const { searchParams } = new URL(request.url);
         const mainContract = searchParams.get('contract') || `BASE_Y-${(new Date().getFullYear() + 1).toString().slice(-2)}`;
         const targetDate = searchParams.get('date'); // Optional date filter (YYYY-MM-DD)
+
+        // 0. SECURITY: Input Validation
+        // Contract Pattern: BASE_[YQM]-XX (e.g. BASE_Y-26, BASE_Q-1-25, BASE_M-12-25)
+        // Note: The previous code generated dynamic names like BASE_M-01-26, BASE_Q-1-26, BASE_Y-26
+        // Let's use a regex that covers these patterns safely.
+        // M: BASE_M-\d{2}-\d{2}
+        // Q: BASE_Q-\d-\d{2}
+        // Y: BASE_Y-\d{2}
+        // Combined rough regex: /^BASE_[YQM]-(\d{1,2}-)?\d{2}$/
+        const contractRegex = /^BASE_[YQM]-(?:\d{1,2}-)?\d{2}$/;
+        if (!contractRegex.test(mainContract)) {
+            return NextResponse.json({ error: 'Invalid contract format' }, { status: 400 });
+        }
+
+        if (targetDate) {
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!dateRegex.test(targetDate)) {
+                return NextResponse.json({ error: 'Invalid date format (KPI: YYYY-MM-DD)' }, { status: 400 });
+            }
+        }
 
         // 1. Fetch Main Contract History (Chart Data)
         // Optimization: Fetch all (unordered), then sort in memory to avoid Composite Index (Contract + Date)
@@ -319,6 +353,10 @@ export async function GET(request: NextRequest) {
                 trend: trend
             },
             effectiveDate: latestDate
+        }, {
+            headers: {
+                'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400'
+            }
         });
 
     } catch (error: any) {
