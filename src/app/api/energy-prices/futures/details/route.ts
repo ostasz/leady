@@ -5,7 +5,7 @@ import { pl } from 'date-fns/locale';
 import { FuturesHistoryPoint } from '@/types/energy-prices';
 
 // Helper to generate contract names dynamically
-const getContractNames = (baseYear: number) => {
+const getContractNames = () => {
     const now = new Date();
     // const currentYearShort = now.getFullYear().toString().slice(-2);
     const nextYearShort = (now.getFullYear() + 1).toString().slice(-2);
@@ -78,9 +78,10 @@ const calculateATR = (history: FuturesHistoryPoint[], period: number = 14) => {
     let sumTR = 0;
     // Calculate TR for last N days
     for (let i = history.length - period; i < history.length; i++) {
-        const h = history[i].high;
-        const l = history[i].low;
         const cp = history[i - 1].close;
+        // Default to close if high/low missing
+        const h = history[i].high ?? history[i].close;
+        const l = history[i].low ?? history[i].close;
 
         const tr = Math.max(h - l, Math.abs(h - cp), Math.abs(l - cp));
         sumTR += tr;
@@ -110,13 +111,6 @@ export async function GET(request: NextRequest) {
         const targetDate = searchParams.get('date'); // Optional date filter (YYYY-MM-DD)
 
         // 0. SECURITY: Input Validation
-        // Contract Pattern: BASE_[YQM]-XX (e.g. BASE_Y-26, BASE_Q-1-25, BASE_M-12-25)
-        // Note: The previous code generated dynamic names like BASE_M-01-26, BASE_Q-1-26, BASE_Y-26
-        // Let's use a regex that covers these patterns safely.
-        // M: BASE_M-\d{2}-\d{2}
-        // Q: BASE_Q-\d-\d{2}
-        // Y: BASE_Y-\d{2}
-        // Combined rough regex: /^BASE_[YQM]-(\d{1,2}-)?\d{2}$/
         const contractRegex = /^BASE_[YQM]-(?:\d{1,2}-)?\d{2}$/;
         if (!contractRegex.test(mainContract)) {
             return NextResponse.json({ error: 'Invalid contract format' }, { status: 400 });
@@ -130,7 +124,6 @@ export async function GET(request: NextRequest) {
         }
 
         // 1. Fetch Main Contract History (Chart Data)
-        // Optimization: Fetch all (unordered), then sort in memory to avoid Composite Index (Contract + Date)
         const historySnapshot = await adminDb.collection('futures_data')
             .where('contract', '==', mainContract)
             .get();
@@ -164,14 +157,10 @@ export async function GET(request: NextRequest) {
         }
 
         // Determine reference dates from Main Contract History
-        // If history is empty (e.g. data missing for selected date), fallback safe
         const latestDate = history.length > 0 ? history[history.length - 1].date : (targetDate || new Date().toISOString().split('T')[0]);
         const prevDate = history.length > 1 ? history[history.length - 2].date : null;
 
         // 2. Helper to fetch latest docs for curve/ticker WITHOUT requiring composite index
-        // Strategy: Query by 'contract' only, then sort in memory and take top 1 or 2.
-        // Since each contract has limited history (e.g. 1 year ~250 records), this is performant enough.
-
         const getLatestDocs = async (contractName: string, limit: number, maxDate?: string) => {
             const snap = await adminDb.collection('futures_data')
                 .where('contract', '==', contractName)
@@ -197,15 +186,12 @@ export async function GET(request: NextRequest) {
         // Fetch Forward Curve Data
         const curveData = [];
         for (const c of allForwardContracts) {
-            // Pass latestDate to match Snapshot view
             const docs = await getLatestDocs(c.name, 15, latestDate);
 
             if (docs.length > 0) {
                 const d = docs[0];
                 let sma15 = 0;
 
-                // Calculate SMA15 if we have enough data (let's say partial is fine for now, or strict 15)
-                // Using valid days count
                 if (docs.length > 0) {
                     const sum = docs.reduce((acc, doc) => acc + (doc.DKR || doc.closingPrice || 0), 0);
                     sma15 = sum / docs.length;
@@ -224,18 +210,13 @@ export async function GET(request: NextRequest) {
         // 3. Fetch Ticker Data (ALL Contracts for latestDate)
         const ticker = [];
 
-        // Even if history is empty (main contract missing), try to fetch ticker for requested date
-        // But we need prevDate. If main contract missing, we can't easily guess prev trading day.
-        // We'll rely on latestDate/prevDate derived above.
-
         if (latestDate) {
-            // Fetch all contracts for "latest" (snapshot) date
+            // Fetch all contracts for "prev" date (change calc)
+            const prevPrices = new Map<string, number>();
             const snapToday = await adminDb.collection('futures_data')
                 .where('date', '==', latestDate)
                 .get();
 
-            // Fetch all contracts for "prev" date (change calc)
-            let prevPrices = new Map<string, number>();
             if (prevDate) {
                 const snapPrev = await adminDb.collection('futures_data')
                     .where('date', '==', prevDate)
@@ -247,11 +228,10 @@ export async function GET(request: NextRequest) {
                 });
             }
 
-            // Build Ticker List
             ticker.push(...snapToday.docs.map(doc => {
                 const d = doc.data();
                 const currentPrice = d.DKR || d.closingPrice || 0;
-                const prevPrice = prevPrices.get(d.contract) || currentPrice; // Fallback to 0% change if no prev
+                const prevPrice = prevPrices.get(d.contract) || currentPrice;
 
                 const change = prevPrice > 0 ? ((currentPrice - prevPrice) / prevPrice) * 100 : 0;
 
@@ -259,7 +239,7 @@ export async function GET(request: NextRequest) {
                     contract: d.contract,
                     last: currentPrice,
                     change: change,
-                    open: d.minPrice, // Approx
+                    open: d.minPrice,
                     max: d.maxPrice,
                     min: d.minPrice,
                     volume: d.volume || 0,
@@ -267,13 +247,12 @@ export async function GET(request: NextRequest) {
                 };
             }));
 
-            // Sort alphabetically by contract
             ticker.sort((a, b) => a.contract.localeCompare(b.contract));
         }
 
         // 3. KPI Calculations
-        const latestPoint = history[history.length - 1] || {};
-        const prevPoint = history.length > 1 ? history[history.length - 2] : {};
+        const latestPoint = history[history.length - 1] as FuturesHistoryPoint | undefined;
+        const prevPoint = (history.length > 1 ? history[history.length - 2] : undefined) as FuturesHistoryPoint | undefined;
 
         const peakContract = mainContract.replace('BASE', 'PEAK5');
         const peakDocs = await getLatestDocs(peakContract, 1, latestDate);
@@ -282,8 +261,11 @@ export async function GET(request: NextRequest) {
         const peakPrice = peakDocs.length > 0 ? (peakDocs[0].DKR || 0) : 0;
         const prevPeakPrice = prevPeakDocs.length > 0 ? (prevPeakDocs[0].DKR || 0) : 0;
 
-        const spread = (peakPrice > 0 && latestPoint.close > 0) ? (peakPrice - latestPoint.close) : 0;
-        const prevSpread = (prevPeakPrice > 0 && prevPoint.close > 0) ? (prevPeakPrice - prevPoint.close) : 0;
+        const latestClose = latestPoint?.close ?? 0;
+        const kpiPrevClose = prevPoint?.close ?? 0;
+
+        const spread = (peakPrice > 0 && latestClose > 0) ? (peakPrice - latestClose) : 0;
+        const prevSpread = (prevPeakPrice > 0 && kpiPrevClose > 0) ? (prevPeakPrice - kpiPrevClose) : 0;
 
         const spreadChange = spread - prevSpread;
 
@@ -291,13 +273,7 @@ export async function GET(request: NextRequest) {
         const rsi = calculateRSI(history, 14);
         const atr = calculateATR(history, 14);
 
-        // Calendar Spread (Y vs Y+1)
-        // mainContract (e.g. BASE_Y-26) vs next year (BASE_Y-27)
-        // We need to parse year from mainContract or just assume standard flow
         let calendarSpread = { value: 0, label: 'N/A' };
-
-        // Find Y+1 contract name from curve or construct it
-        // If main is Y-26, next is Y-27
         const mainYearMatch = mainContract.match(/Y-(\d{2})/);
         if (mainYearMatch) {
             const currentY = parseInt(mainYearMatch[1]);
@@ -305,12 +281,9 @@ export async function GET(request: NextRequest) {
             const nextYearContract = mainContract.replace(currentY.toString(), nextY.toString());
 
             const nextYearDocs = await getLatestDocs(nextYearContract, 1, latestDate);
-            if (nextYearDocs.length > 0 && latestPoint.close > 0) {
+            if (nextYearDocs.length > 0 && latestPoint && latestPoint.close > 0) {
                 const nextPrice = nextYearDocs[0].DKR || 0;
-                const val = latestPoint.close - nextPrice; // Spread = Near - Far (Backwardation is positive, Contango is negative usually defined, but let's stick to diff)
-                // Interpretation:
-                // If Near > Far (Positive) -> Backwardation
-                // If Near < Far (Negative) -> Contango
+                const val = latestPoint.close - nextPrice;
                 const type = val > 0 ? 'Backwardation' : 'Contango';
                 calendarSpread = { value: val, label: type };
             }
@@ -320,20 +293,13 @@ export async function GET(request: NextRequest) {
         let trend = { sma50: 0, diffPct: 0, status: 'Neutral' };
         if (history.length >= 50) {
             let sum = 0;
-            // Last 50 points
             for (let i = history.length - 50; i < history.length; i++) {
                 sum += history[i].close;
             }
             const sma50 = sum / 50;
-            const currentPrice = latestPoint.close;
+            const currentPrice = latestPoint?.close ?? 0;
             const diffPct = sma50 > 0 ? ((currentPrice - sma50) / sma50) * 100 : 0;
-
-            let status = 'Neutral';
-            if (diffPct > 5) status = 'Silny Wzrostowy (Bullish)';
-            else if (diffPct < -5) status = 'Spadkowy (Bearish)';
-            else status = 'Konsolidacja (Neutral)';
-
-            trend = { sma50, diffPct, status };
+            trend = { sma50, diffPct, status: 'Neutral' };
         }
 
         // Map Trend Object to Enum
@@ -346,12 +312,12 @@ export async function GET(request: NextRequest) {
             forwardCurve: curveData,
             ticker,
             kpi: {
-                basePrice: latestPoint.close || 0,
+                basePrice: latestPoint?.close || 0,
                 peakPrice: peakPrice,
                 spread: spread,
                 spreadChange: spreadChange,
-                volume: latestPoint.volume || 0,
-                openInterest: latestPoint.openInterest || 0
+                volume: latestPoint?.volume || 0,
+                openInterest: latestPoint?.openInterest || 0
             },
             technical: {
                 rsi: rsi.value,
