@@ -51,7 +51,6 @@ export async function GET(request: NextRequest) {
         const fetchContractHistory = async (contract: string) => {
             const snapshot = await adminDb.collection('futures_data')
                 .where('contract', '==', contract)
-                .where('date', '>=', startDateString)
                 .get();
 
             return snapshot.docs
@@ -68,6 +67,7 @@ export async function GET(request: NextRequest) {
                     };
                     return point;
                 })
+                .filter(point => point.date >= startDateString)
                 .sort((a, b) => a.date.localeCompare(b.date));
         };
 
