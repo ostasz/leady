@@ -2,29 +2,36 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { TrendingUp, TrendingDown, Minus, Zap, ExternalLink } from 'lucide-react';
+import { TrendingUp, TrendingDown, Zap, ExternalLink } from 'lucide-react';
 import { AreaChart, Area, YAxis, Tooltip } from 'recharts';
-
-interface FutureData {
-    date: string;
-    price: number;
-}
+import { useAuth } from '@/components/AuthProvider';
+import { FuturesHistoryPoint } from '@/types/energy-prices';
 
 interface FuturesResponse {
     futures: {
-        [year: string]: FutureData[];
+        [year: string]: FuturesHistoryPoint[];
     };
 }
 
 export default function FuturesTicker() {
+    const { user } = useAuth();
     const [data, setData] = useState<FuturesResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
         const fetchFutures = async () => {
+            if (!user) return; // Wait for user
+
             try {
-                const res = await fetch('/api/energy-prices/futures');
+                const token = await user.getIdToken();
+                // Fetch small amount of data for ticker (e.g. 30-90 days)
+                const res = await fetch('/api/energy-prices/futures?days=90', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
                 if (!res.ok) throw new Error('Failed to fetch data');
                 const json = await res.json();
                 setData(json);
@@ -37,11 +44,11 @@ export default function FuturesTicker() {
         };
 
         fetchFutures();
-    }, []);
+    }, [user]);
 
     if (loading) return (
-        <div className="bg-gray-900 rounded-xl p-6 shadow-sm border border-gray-800 h-48 animate-pulse flex items-center justify-center">
-            <div className="w-8 h-8 border-2 border-gray-600 border-t-cyan-500 rounded-full animate-spin"></div>
+        <div className="bg-white rounded-xl p-6 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100 h-[210px] animate-pulse flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-gray-200 border-t-[#2DD4BF] rounded-full animate-spin"></div>
         </div>
     );
 
@@ -75,8 +82,8 @@ export default function FuturesTicker() {
 
                     const latest = history[history.length - 1];
                     const prev = history[0];
-                    const change = latest.price - prev.price;
-                    const changePercent = prev.price ? (change / prev.price) * 100 : 0;
+                    const change = latest.close - prev.close;
+                    const changePercent = prev.close ? (change / prev.close) * 100 : 0;
 
                     // Specific Color Logic per year/trend
                     // Grow: Mint/Turquoise Chart, Lime Indicator
@@ -98,7 +105,7 @@ export default function FuturesTicker() {
                                 <div>
                                     <div className="text-sm font-medium text-gray-500 mb-1">BASE {year}</div>
                                     <div className="text-2xl font-bold tracking-tight text-gray-900">
-                                        {latest.price.toFixed(2)} <span className="text-sm font-normal text-gray-400">PLN</span>
+                                        {latest.close.toFixed(2)} <span className="text-sm font-normal text-gray-400">PLN</span>
                                     </div>
                                     <div className="flex items-center gap-2 mt-1">
                                         <div className={`flex items-center text-xs font-bold px-2 py-0.5 rounded-md ${indicatorClass}`}>
@@ -123,7 +130,7 @@ export default function FuturesTicker() {
                                         </defs>
                                         <Area
                                             type="monotone"
-                                            dataKey="price"
+                                            dataKey="close"
                                             stroke={chartColor}
                                             strokeWidth={2}
                                             fill={`url(#gradient-${year})`}
