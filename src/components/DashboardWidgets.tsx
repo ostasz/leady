@@ -81,7 +81,7 @@ export default function DashboardWidgets() {
             },
             () => {
                 // Fallback to Warsaw on error/deny
-                console.log("Geolocation denied or failed, falling back to Warsaw");
+                // Fallback to Warsaw on error/deny
                 fetchWeatherForLocation(52.2297, 21.0122, "Warszawa (Domyślna)");
             }
         );
