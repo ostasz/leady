@@ -1,29 +1,36 @@
 'use client';
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, TooltipProps, Brush } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
 import { format, parseISO } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
-interface FutureData {
-    date: string;
-    price: number;
-}
+import { FuturesHistoryPoint } from '@/types/energy-prices';
 
 interface ChartProps {
-    dataY1: FutureData[];
-    dataY2: FutureData[];
+    dataY1: FuturesHistoryPoint[];
+    dataY2: FuturesHistoryPoint[];
     year1: string;
     year2: string;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface CustomTooltipProps {
+    active?: boolean;
+    payload?: {
+        value?: number;
+        name?: string;
+        color?: string;
+    }[];
+    label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-lg text-sm z-50">
                 <p className="text-gray-500 mb-2 font-medium">
-                    {format(parseISO(label), 'd MMMM yyyy (EEEE)', { locale: pl })}
+                    {label && format(parseISO(label), 'd MMMM yyyy (EEEE)', { locale: pl })}
                 </p>
-                {payload.map((entry: any, index: number) => (
+                {payload.map((entry, index: number) => (
                     <div key={index} className="flex items-center gap-2 mb-1">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
                         <span className="text-gray-500 font-medium">{entry.name}:</span>
@@ -41,7 +48,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export default function FuturesChart({ dataY1, dataY2, year1, year2 }: ChartProps) {
     // Merge data by date
     // Create a map of all unique dates
-    const dateMap = new Map<string, { date: string;[key: string]: any }>();
+    const dateMap = new Map<string, { date: string } & Record<string, number | string>>();
 
     [...dataY1, ...dataY2].forEach(d => {
         if (!dateMap.has(d.date)) {
@@ -51,13 +58,13 @@ export default function FuturesChart({ dataY1, dataY2, year1, year2 }: ChartProp
 
     dataY1.forEach(d => {
         if (dateMap.has(d.date)) {
-            dateMap.get(d.date)![year1] = d.price;
+            dateMap.get(d.date)![year1] = d.close;
         }
     });
 
     dataY2.forEach(d => {
         if (dateMap.has(d.date)) {
-            dateMap.get(d.date)![year2] = d.price;
+            dateMap.get(d.date)![year2] = d.close;
         }
     });
 

@@ -1,29 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import FuturesKPI from '@/components/futures/FuturesKPI';
 import FuturesChart from '@/components/futures/FuturesChart';
-import { ArrowLeft } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import Link from 'next/link';
-import { format, parseISO } from 'date-fns';
-import { pl } from 'date-fns/locale';
-
-interface FutureData {
-    date: string;
-    price: number;
-}
+import { format, parseISO, isValid } from 'date-fns';
+import { useAuth } from '@/components/AuthProvider';
+import { FuturesHistoryPoint } from '@/types/energy-prices';
 
 interface FuturesResponse {
     futures: {
-        [year: string]: FutureData[];
+        [year: string]: FuturesHistoryPoint[];
     };
 }
 
 export default function FuturesPage() {
-    const [dataY1, setDataY1] = useState<FutureData[]>([]);
-    const [dataY2, setDataY2] = useState<FutureData[]>([]);
+    const { user } = useAuth();
+
+    // We store full fetched history in state, and filter by timeRange for display
+    const [dataY1, setDataY1] = useState<FuturesHistoryPoint[]>([]);
+    const [dataY2, setDataY2] = useState<FuturesHistoryPoint[]>([]);
+
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [timeRange, setTimeRange] = useState<number>(30); // Default to 30 days
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const currentYear = new Date().getFullYear();
     const year1 = (currentYear + 1).toString();
@@ -31,27 +33,65 @@ export default function FuturesPage() {
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!user) return;
+
+            setLoading(true);
+            setError(null);
+
             try {
-                // Limit=0 fetches ALL history
-                const res = await fetch('/api/energy-prices/futures?limit=0');
-                if (res.ok) {
-                    const json: FuturesResponse = await res.json();
-                    setDataY1(json.futures[year1] || []);
-                    setDataY2(json.futures[year2] || []);
+                const token = await user.getIdToken();
+                // Request enough data for 365 days view max
+                const res = await fetch('/api/energy-prices/futures?days=400', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Błąd pobierania danych: ${res.statusText}`);
                 }
-            } catch (error) {
+
+                const json: FuturesResponse = await res.json();
+                setDataY1(json.futures[year1] || []);
+                setDataY2(json.futures[year2] || []);
+            } catch (error: unknown) {
                 console.error('Failed to fetch futures data', error);
+                setError(error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd podczas pobierania danych.');
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [year1, year2]);
+    }, [user, year1, year2, refreshKey]);
 
-    // Filter data based on selected time range
-    const filteredDataY1 = dataY1.slice(-timeRange);
-    const filteredDataY2 = dataY2.slice(-timeRange);
+    // Use useMemo for filtering to improve render performance and stability
+    const filteredDataY1 = useMemo(() => {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - timeRange);
+        const cutoffStr = cutoff.toISOString().split('T')[0];
+        return dataY1.filter(d => d.date >= cutoffStr);
+    }, [dataY1, timeRange]);
+
+    const filteredDataY2 = useMemo(() => {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - timeRange);
+        const cutoffStr = cutoff.toISOString().split('T')[0];
+        return dataY2.filter(d => d.date >= cutoffStr);
+    }, [dataY2, timeRange]);
+
+    // Safe date formatting helper
+    const getDateRangeLabel = (data: FuturesHistoryPoint[]) => {
+        if (!data || data.length === 0) return '';
+        try {
+            const first = data[0].date;
+            const last = data[data.length - 1].date;
+            if (!isValid(parseISO(first)) || !isValid(parseISO(last))) return '';
+            return `(od ${format(parseISO(first), 'dd.MM.yyyy')} do ${format(parseISO(last), 'dd.MM.yyyy')})`;
+        } catch {
+            return '';
+        }
+    };
 
     return (
         <div className="min-h-screen bg-white text-gray-900">
@@ -84,7 +124,24 @@ export default function FuturesPage() {
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
-                {loading ? (
+                {/* Error Banner */}
+                {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3 text-red-700">
+                        <AlertCircle className="w-5 h-5 shrink-0" />
+                        <div className="flex-1">
+                            <h3 className="font-semibold text-sm">Błąd pobierania danych</h3>
+                            <p className="text-sm opacity-90">{error}</p>
+                        </div>
+                        <button
+                            onClick={() => setRefreshKey(k => k + 1)}
+                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-800 rounded text-sm font-medium transition-colors"
+                        >
+                            Spróbuj ponownie
+                        </button>
+                    </div>
+                )}
+
+                {loading && !error ? (
                     <div className="h-96 flex items-center justify-center">
                         <div className="w-12 h-12 border-4 border-gray-200 border-t-[#2DD4BF] rounded-full animate-spin"></div>
                     </div>
@@ -92,8 +149,8 @@ export default function FuturesPage() {
                     <>
                         {/* KPI Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FuturesKPI year={year1} data={filteredDataY1} label={`BASELINE ${year1}`} />
-                            <FuturesKPI year={year2} data={filteredDataY2} label={`BASELINE ${year2}`} />
+                            <FuturesKPI data={filteredDataY1} label={`BASELINE ${year1}`} />
+                            <FuturesKPI data={filteredDataY2} label={`BASELINE ${year2}`} />
                         </div>
 
                         {/* Main Chart */}
@@ -105,7 +162,7 @@ export default function FuturesPage() {
                                         Porównanie kontraktów rocznych
                                         {filteredDataY1.length > 0 && (
                                             <span className="ml-1 text-gray-400">
-                                                (za okres od {format(parseISO(filteredDataY1[0].date), 'dd.MM.yyyy')} do {format(parseISO(filteredDataY1[filteredDataY1.length - 1].date), 'dd.MM.yyyy')})
+                                                {getDateRangeLabel(filteredDataY1)}
                                             </span>
                                         )}
                                     </div>

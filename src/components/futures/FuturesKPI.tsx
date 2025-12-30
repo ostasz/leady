@@ -1,30 +1,26 @@
 'use client';
 
-import { TrendingUp, TrendingDown, Minus, ArrowUp, ArrowDown } from 'lucide-react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
-interface FutureData {
-    date: string;
-    price: number;
-}
+import { FuturesHistoryPoint } from '@/types/energy-prices';
 
 interface KPIProps {
-    year: string;
-    data: FutureData[]; // Expecting sorted ASC
+    data: FuturesHistoryPoint[]; // Expecting sorted ASC
     label: string;
 }
 
-export default function FuturesKPI({ year, data, label }: KPIProps) {
+export default function FuturesKPI({ data, label }: KPIProps) {
     if (!data || data.length === 0) return null;
 
     const latest = data[data.length - 1];
     const prev = data[0]; // Compare to start of period
 
     // Price Stats
-    const change = latest.price - prev.price;
-    const changePercent = prev.price ? (change / prev.price) * 100 : 0;
+    const change = latest.close - prev.close;
+    const changePercent = prev.close ? (change / prev.close) * 100 : 0;
 
     // Period Stats
-    const prices = data.map(d => d.price);
+    const prices = data.map(d => d.close);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
 
@@ -37,7 +33,7 @@ export default function FuturesKPI({ year, data, label }: KPIProps) {
                 <div>
                     <p className="text-gray-500 text-sm font-semibold uppercase tracking-wide mb-1 opacity-75">{label}</p>
                     <h2 className="text-4xl font-extrabold text-gray-700 tracking-tight">
-                        {latest.price.toFixed(2)} <span className="text-lg font-normal text-gray-400">PLN</span>
+                        {latest.close.toFixed(2)} <span className="text-lg font-normal text-gray-400">PLN</span>
                     </h2>
                 </div>
                 {/* 
