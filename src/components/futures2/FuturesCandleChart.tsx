@@ -64,7 +64,7 @@ export default function FuturesCandleChart({ data, contract }: FuturesCandleChar
                                 <span className="text-gray-400">SMA50:</span> <span className="text-yellow-500">{d.sma50.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </>
                         )}
-                        <span className="text-gray-400 mt-2">Wolumen:</span> <span className="mt-2 text-purple-400">{d.volume.toLocaleString('pl-PL', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
+                        <span className="text-gray-400 mt-2">Wolumen:</span> <span className="mt-2 text-purple-400">{d.volume?.toLocaleString('pl-PL', { maximumFractionDigits: 0 }) ?? '-'}</span>
                     </div>
                 </div>
             );

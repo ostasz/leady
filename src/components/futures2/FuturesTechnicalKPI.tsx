@@ -33,15 +33,7 @@ export default function FuturesTechnicalKPI({ data, contract }: TechnicalKPIProp
     const isBackwardation = spreadValue > 0;
 
     // Trend Config
-    let trendStatus = 'NEUTRAL';
-    // DEFENSIVE CODING: Handle legacy/stale object data from cache
-    if (typeof data.trend === 'object' && data.trend !== null) {
-        const t = data.trend as any;
-        if (t.diffPct > 5) trendStatus = 'BULLISH';
-        else if (t.diffPct < -5) trendStatus = 'BEARISH';
-    } else {
-        trendStatus = data.trend || 'NEUTRAL';
-    }
+    const trendStatus = data.trend || 'NEUTRAL';
 
     const isBullish = trendStatus === 'BULLISH';
     const isBearish = trendStatus === 'BEARISH';

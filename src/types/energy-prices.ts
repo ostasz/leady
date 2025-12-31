@@ -169,7 +169,9 @@ export interface FuturesHistoryPoint {
 
 export interface FuturesKpiDto {
     basePrice: number;
+    baseChangePct?: number; // Added for dynamic KPI
     peakPrice: number;
+    peakChangePct?: number; // Added for dynamic KPI
     spread: number;
     spreadChange: number;
     volume: number;

@@ -307,13 +307,19 @@ export async function GET(request: NextRequest) {
         if (trend.diffPct > 5) trendEnum = 'BULLISH';
         if (trend.diffPct < -5) trendEnum = 'BEARISH';
 
+        // Calculate Percent Changes
+        const baseChangePct = kpiPrevClose > 0 ? ((latestClose - kpiPrevClose) / kpiPrevClose) * 100 : 0;
+        const peakChangePct = prevPeakPrice > 0 ? ((peakPrice - prevPeakPrice) / prevPeakPrice) * 100 : 0;
+
         return NextResponse.json({
             history,
             forwardCurve: curveData,
             ticker,
             kpi: {
                 basePrice: latestPoint?.close || 0,
+                baseChangePct: baseChangePct,
                 peakPrice: peakPrice,
+                peakChangePct: peakChangePct,
                 spread: spread,
                 spreadChange: spreadChange,
                 volume: latestPoint?.volume || 0,

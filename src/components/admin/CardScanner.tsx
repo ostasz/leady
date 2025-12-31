@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Camera, Upload, X, Loader2, ScanLine, Save, RotateCw, Image as ImageIcon, Contact, Sparkles, ImagePlus } from 'lucide-react';
+import { Camera, Upload, X, Loader2, ScanLine, Save, RotateCw, Image as ImageIcon, Contact, Sparkles, ImagePlus, FileText, Smartphone } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { resizeImage } from '@/lib/image-utils';
 import { downloadVCard } from '@/lib/vcard-generator';
@@ -17,6 +17,8 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
     const { getAuthHeaders } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [step, setStep] = useState<'upload' | 'scanning' | 'verify'>('upload');
+    const [mode, setMode] = useState<'image' | 'text'>('image'); // Added scan mode state
+    const [textInput, setTextInput] = useState(''); // Added text input state
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [formData, setFormData] = useState<Partial<ParsedCardData>>({});
     const [loading, setLoading] = useState(false);
@@ -53,23 +55,30 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
     };
 
     const handleScan = async () => {
-        if (!base64Image) return;
+        if (mode === 'image' && !base64Image) return;
+        if (mode === 'text' && !textInput.trim()) return;
+
         setLoading(true);
         setStep('scanning');
+        setPhotoCandidates([]); // Reset previous search results
 
         try {
             const headers = await getAuthHeaders();
-            const res = await fetch('/api/scan-card', {
-                method: 'POST',
-                headers: {
-                    ...headers,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    image: base64Image,
-                    language: selectedLanguage
-                })
-            });
+            let res;
+
+            if (mode === 'image') {
+                res = await fetch('/api/scan-card', {
+                    method: 'POST',
+                    headers: { ...headers, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64Image, language: selectedLanguage })
+                });
+            } else {
+                res = await fetch('/api/parse-text', {
+                    method: 'POST',
+                    headers: { ...headers, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: textInput, language: selectedLanguage })
+                });
+            }
 
             const result = await res.json();
 
@@ -105,7 +114,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                 phone: formData.phone,
                 website: formData.website,
                 description: `Zeskanowano z wizytówki.\nStanowisko: ${formData.jobTitle || '-'}\nOsoba: ${formData.name || '-'}`,
-                notes: `Email: ${formData.email || '-'}\nPełny tekst OCR:\n${formData.fullText || ''}`, // Store email in notes or custom field if available
+                notes: `Data utworzenia: ${new Date().toLocaleString('pl-PL')}\nEmail: ${formData.email || '-'}\nPełny tekst OCR:\n${formData.fullText || ''}`, // Store email in notes or custom field if available
                 status: 'new',
                 priority: 'medium',
                 leadSource: 'business_card'
@@ -142,13 +151,16 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
         };
         const filename = formData.name ? `${formData.name.replace(/\s+/g, '_')}.vcf` : 'contact.vcf';
         downloadVCard(safeData, filename);
+        close();
     };
 
     const resetState = () => {
         setStep('upload');
         setImagePreview(null);
         setBase64Image(null);
+        setTextInput('');
         setFormData({});
+        // Not resetting mode to keep user choice
     };
 
     const close = () => {
@@ -189,43 +201,79 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                         <div className="p-6 overflow-y-auto custom-scrollbar">
                             {step === 'upload' && (
                                 <div className="space-y-6 text-center pt-2">
-                                    <div
-                                        className="relative group border-2 border-dashed border-[#2A7B88] hover:border-[#1F4E5A] hover:border-solid rounded-xl p-8 bg-gradient-to-b from-[#F0FDFA] to-white cursor-pointer transition-all duration-300 hover:shadow-md"
-                                        onClick={() => fileInputRef.current?.click()}
-                                    >
-                                        {imagePreview ? (
-                                            <div className="relative">
-                                                <img src={imagePreview} alt="Preview" className="max-h-64 mx-auto rounded-lg shadow-md object-contain" />
-                                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors rounded-lg">
-                                                    <RotateCw className="text-white opacity-0 group-hover:opacity-100" />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-4 text-[#6B7280]">
-                                                <div className="w-20 h-20 bg-[#F0FDFA] rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
-                                                    <Camera size={40} className="text-[#1F4E5A]" />
-                                                </div>
-                                                <p className="font-medium text-[#111827] text-lg">
-                                                    Dotknij, aby zrobić zdjęcie lub <span className="font-bold underline decoration-[#4FD1C5] decoration-2 underline-offset-4">wybrać plik</span>
-                                                </p>
-                                                <p className="text-sm text-[#6B7280]">JPG, PNG (Max 5MB)</p>
-                                            </div>
-                                        )}
-                                        <input
-                                            ref={fileInputRef}
-                                            type="file"
-                                            accept="image/*"
-                                            capture="environment"
-                                            className="hidden"
-                                            onChange={handleFileChange}
-                                        />
+                                    {/* Mode Toggle Tabs */}
+                                    <div className="flex p-1 bg-gray-100 rounded-xl mb-6">
+                                        <button
+                                            onClick={() => setMode('image')}
+                                            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${mode === 'image'
+                                                ? 'bg-white text-[#1F4E5A] shadow-sm ring-1 ring-black/5'
+                                                : 'text-gray-500 hover:text-gray-700'}`}
+                                        >
+                                            <Camera size={16} />
+                                            Zdjęcie
+                                        </button>
+                                        <button
+                                            onClick={() => setMode('text')}
+                                            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${mode === 'text'
+                                                ? 'bg-white text-[#1F4E5A] shadow-sm ring-1 ring-black/5'
+                                                : 'text-gray-500 hover:text-gray-700'}`}
+                                        >
+                                            <FileText size={16} />
+                                            Tekst / Stopka
+                                        </button>
                                     </div>
 
-                                    {imagePreview && (
+                                    {mode === 'image' ? (
+                                        <div
+                                            className="relative group border-2 border-dashed border-[#2A7B88] hover:border-[#1F4E5A] hover:border-solid rounded-xl p-8 bg-gradient-to-b from-[#F0FDFA] to-white cursor-pointer transition-all duration-300 hover:shadow-md"
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
+                                            {imagePreview ? (
+                                                <div className="relative">
+                                                    <img src={imagePreview} alt="Preview" className="max-h-64 mx-auto rounded-lg shadow-md object-contain" />
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors rounded-lg">
+                                                        <RotateCw className="text-white opacity-0 group-hover:opacity-100" />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-4 text-[#6B7280]">
+                                                    <div className="w-20 h-20 bg-[#F0FDFA] rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
+                                                        <Camera size={40} className="text-[#1F4E5A]" />
+                                                    </div>
+                                                    <p className="font-medium text-[#111827] text-lg">
+                                                        Dotknij, aby zrobić zdjęcie lub <span className="font-bold underline decoration-[#4FD1C5] decoration-2 underline-offset-4">wybrać plik</span>
+                                                    </p>
+                                                    <p className="text-sm text-[#6B7280]">JPG, PNG (Max 5MB)</p>
+                                                </div>
+                                            )}
+                                            <input
+                                                ref={fileInputRef}
+                                                type="file"
+                                                accept="image/*"
+                                                capture="environment"
+                                                className="hidden"
+                                                onChange={handleFileChange}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="relative">
+                                            <textarea
+                                                value={textInput}
+                                                onChange={(e) => setTextInput(e.target.value)}
+                                                placeholder="Wklej tutaj stopkę mailową lub inny tekst z danymi kontaktowymi..."
+                                                className="w-full h-64 p-4 rounded-xl border-2 border-[#E5E7EB] focus:border-[#2A7B88] focus:ring-4 focus:ring-[#2A7B88]/10 outline-none resize-none text-gray-700 placeholder:text-gray-400 bg-gray-50 font-mono text-sm"
+                                            />
+                                            <div className="absolute bottom-4 right-4 text-xs text-gray-400">
+                                                {textInput.length} znaków
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {(imagePreview || (mode === 'text' && textInput)) && (
                                         <div className="flex flex-col gap-4 text-left">
                                             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                                                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                                                    Język wizytówki
+                                                    Język danych
                                                 </label>
                                                 <div className="flex gap-4">
                                                     <label className="flex items-center space-x-2 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors flex-1 border border-transparent hover:border-gray-200">
@@ -252,9 +300,6 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                         <span className="text-sm">Angielski (EN)</span>
                                                     </label>
                                                 </div>
-                                                <p className="text-xs text-gray-400 mt-2">
-                                                    Polski tryb lepiej rozpoznaje znaki diakrytyczne (ą, ę, ś).
-                                                </p>
                                             </div>
 
                                             <button
@@ -262,7 +307,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 className="w-full bg-[#1F4E5A] hover:bg-[#153e48] text-white py-3 rounded-xl font-bold text-lg shadow-lg shadow-teal-100 transition-all flex items-center justify-center gap-2"
                                             >
                                                 <ScanLine size={20} />
-                                                Analizuj Obraz
+                                                {mode === 'image' ? 'Analizuj Obraz' : 'Analizuj Tekst'}
                                             </button>
                                         </div>
                                     )}
@@ -276,8 +321,10 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                         <ScanLine className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#1F4E5A]" size={24} />
                                     </div>
                                     <div>
-                                        <h4 className="text-lg font-bold text-gray-800">Przetwarzanie wizytówki...</h4>
-                                        <p className="text-sm text-gray-500">Analiza obrazu i ekstrakcja danych...</p>
+                                        <h4 className="text-lg font-bold text-gray-800">Przetwarzanie...</h4>
+                                        <p className="text-sm text-gray-500">
+                                            {mode === 'image' ? 'Analiza obrazu i ekstrakcja danych...' : 'Analiza tekstu przez AI...'}
+                                        </p>
                                     </div>
                                 </div>
                             )}
@@ -505,8 +552,8 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                         className="text-xs bg-[#F0FDFA] text-[#2A7B88] px-2 py-1 rounded-md hover:bg-[#CCFBF1] transition-colors flex items-center gap-1 font-medium border border-[#2A7B88]/20"
                                                         disabled={loading}
                                                     >
-                                                        <ImagePlus size={12} />
-                                                        Szukaj zdjęć (Brave)
+                                                        {loading ? <Loader2 size={12} className="animate-spin" /> : <ImagePlus size={12} />}
+                                                        {loading ? "Szukanie..." : "Szukaj zdjęć (Brave)"}
                                                     </button>
                                                 )}
                                             </div>
@@ -520,8 +567,12 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                                 alt={c.title ?? "Candidate"}
                                                                 className="w-full h-full object-cover rounded-md cursor-pointer hover:opacity-80 border border-transparent hover:border-[#2A7B88] transition-all"
                                                                 onError={(e) => {
-                                                                    // fallback: try full image if thumbnail fails
-                                                                    (e.currentTarget as HTMLImageElement).src = c.imageUrl;
+                                                                    // fallback: try full image via proxy if thumbnail fails
+                                                                    const target = e.currentTarget as HTMLImageElement;
+                                                                    // Avoid infinite loop if proxy also fails
+                                                                    if (!target.src.includes('url=' + encodeURIComponent(c.imageUrl || ''))) {
+                                                                        target.src = `/api/image-proxy?url=${encodeURIComponent(c.imageUrl || '')}`;
+                                                                    }
                                                                 }}
                                                                 onClick={async () => {
                                                                     setLoading(true);

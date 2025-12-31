@@ -46,14 +46,28 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing BRAVE_SEARCH_API_KEY" }, { status: 500 });
         }
 
-        // zapytanie: imię nazwisko + firma, bez agresywnego profilowania
-        const q = `"${firstName} ${lastName}" "${company}"`;
+        // Helper to clean company name
+        const cleanCompany = (name: string) => {
+            return name
+                .replace(/\s+(Sp\.|Spółka)\s+(z\s+o\.o\.|z\s+ograniczoną\s+odpowiedzialnością|komandytowa|akcyjna|jawna|j\.|k\.|a\.|z\.o\.o)/gi, '')
+                .replace(/\s+(S\.A\.|GmbH|Inc\.|Ltd\.|LLC|S\.J\.)/gi, '')
+                .trim();
+        };
+
+        const companySimple = cleanCompany(company);
+
+        // zapytanie: "Imie Nazwisko" CompanySimple LinkedIn
+        // Dodajemy "LinkedIn" bo tam zazwyczaj są zdjęcia profilowe, a Brave dobrze indeksuje LinkedIn.
+        const q = `"${firstName} ${lastName}" ${companySimple} LinkedIn`;
 
         const url = new URL("https://api.search.brave.com/res/v1/images/search");
         url.searchParams.set("q", q);
         url.searchParams.set("count", "12");
         url.searchParams.set("country", country);        // np. PL
         url.searchParams.set("search_lang", lang);       // pl/en
+
+        // Safe search off for better profile matching? Default is moderate. 
+        // Let's explicitly set safe_search to generic strict/moderate if needed, but default usually ok.
 
         const res = await fetch(url.toString(), {
             headers: {

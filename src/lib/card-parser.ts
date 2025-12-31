@@ -115,6 +115,19 @@ export async function parseBusinessCard(text: string, languageHints: string[] = 
             modelName: modelName,
         };
 
+        // Fallback: If website is missing but we have an email, try to extract domain
+        if (!data.website && data.email) {
+            const parts = data.email.split('@');
+            if (parts.length === 2) {
+                const domain = parts[1];
+                // Filter out common public domains (basic list)
+                const publicDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'wp.pl', 'onet.pl', 'interia.pl', 'o2.pl'];
+                if (!publicDomains.includes(domain.toLowerCase())) {
+                    data.website = 'www.' + domain;
+                }
+            }
+        }
+
         return data;
     };
 
@@ -261,5 +274,23 @@ function parseBusinessCardRegex(text: string): ParsedCardData {
         }
     }
 
+    // 5. Fallback: Website from Email
+    if (!data.website && data.email) {
+        const parts = data.email.split('@');
+        if (parts.length === 2) {
+            const domain = parts[1];
+            const publicDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'wp.pl', 'onet.pl', 'interia.pl', 'o2.pl'];
+            if (!publicDomains.includes(domain.toLowerCase())) {
+                data.website = 'www.' + domain;
+            }
+        }
+    }
+
     return data;
 }
+
+// Ensure the regex parser also benefits from this logic if used directly or as fallback
+// Actually, let's wrap the regex return as well or just add logic inside parseBusinessCardRegex
+// But parseBusinessCardRegex is exported? No, it's local function.
+// Let's add it before return data in parseBusinessCardRegex.
+
