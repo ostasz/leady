@@ -80,7 +80,7 @@ export function generateVCard(input: ParsedCardData): string {
     }
 
     // Note
-    parts.push(`NOTE:${esc(data.notes || 'Zeskanowano przez SalesApp')}`);
+    if (data.notes) parts.push(`NOTE:${esc(data.notes)}`);
 
     parts.push('END:VCARD');
 

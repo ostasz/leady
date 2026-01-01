@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Camera, Upload, X, Loader2, ScanLine, Save, RotateCw, Image as ImageIcon, Contact, Sparkles, ImagePlus, FileText, Smartphone } from 'lucide-react';
+import { Camera, Upload, X, Loader2, ScanLine, Save, RotateCw, Image as ImageIcon, Contact, Sparkles, ImagePlus, FileText, Smartphone, FileUp } from 'lucide-react';
 import { useAuth } from '@/components/AuthProvider';
 import { resizeImage } from '@/lib/image-utils';
 import { downloadVCard } from '@/lib/vcard-generator';
@@ -17,8 +17,11 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
     const { getAuthHeaders } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [step, setStep] = useState<'upload' | 'scanning' | 'verify'>('upload');
-    const [mode, setMode] = useState<'image' | 'text'>('image'); // Added scan mode state
+    const [mode, setMode] = useState<'image' | 'text' | 'vcard'>('image'); // Added scan mode state
     const [textInput, setTextInput] = useState(''); // Added text input state
+    const [vCardContent, setVCardContent] = useState<string | null>(null); // vCard content
+    const [vCardFileName, setVCardFileName] = useState<string | null>(null);
+    const [isDragging, setIsDragging] = useState(false); // Drag state
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [formData, setFormData] = useState<Partial<ParsedCardData>>({});
     const [loading, setLoading] = useState(false);
@@ -38,6 +41,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
     };
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const vCardInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -54,9 +58,113 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
         }
     };
 
+    const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file && (file.name.endsWith('.vcf') || file.name.endsWith('.vcard'))) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const content = event.target?.result as string;
+                setVCardContent(content);
+                setVCardFileName(file.name);
+            };
+            reader.readAsText(file);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isDragging) setIsDragging(true);
+    };
+
+    const handleVCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const content = event.target?.result as string;
+                setVCardContent(content);
+                setVCardFileName(file.name);
+            };
+            reader.readAsText(file);
+        }
+    };
+
+    const parseVCard = (content: string): Partial<ParsedCardData> => {
+        const getLine = (prefix: string) => {
+            const regex = new RegExp(`^${prefix}[;:]*(.*)$`, 'm');
+            const match = content.match(regex);
+            return match ? match[1].trim() : null;
+        };
+
+        const getLines = (prefix: string) => {
+            const regex = new RegExp(`^${prefix}.*:(.*)$`, 'gm');
+            const matches = [...content.matchAll(regex)];
+            return matches.map(m => m[1].trim());
+        };
+
+        // Name
+        const fn = getLine('FN');
+        const n = getLine('N')?.split(';');
+        const lastName = n?.[0] || null;
+        const firstName = n?.[1] || null;
+
+        // Contact
+        const emails = getLines('EMAIL');
+        const email = emails.length > 0 ? emails[0] : null;
+
+        const phones = getLines('TEL');
+        const phone = phones.find(p => p.includes('CELL')) || phones[0] || null;
+
+        // Org
+        const org = getLine('ORG');
+        const title = getLine('TITLE');
+
+        // Web
+        const urls = getLines('URL');
+        const website = urls.length > 0 ? urls[0] : null;
+
+        // Addr
+        const adrParts = getLine('ADR')?.split(';');
+        const address = adrParts ? adrParts.filter(Boolean).join(', ') : null;
+
+        // Notes
+        const note = getLines('NOTE').join('\n');
+
+        return {
+            name: fn || [firstName, lastName].filter(Boolean).join(' ') || null,
+            firstName: firstName,
+            lastName: lastName,
+            email: email,
+            phone: phone,
+            company: org,
+            jobTitle: title,
+            website: website,
+            address: address,
+            notes: note,
+            fullText: content
+        };
+    };
+
     const handleScan = async () => {
         if (mode === 'image' && !base64Image) return;
         if (mode === 'text' && !textInput.trim()) return;
+        if (mode === 'vcard' && !vCardContent) return;
 
         setLoading(true);
         setStep('scanning');
@@ -72,6 +180,16 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                     headers: { ...headers, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ image: base64Image, language: selectedLanguage })
                 });
+            } else if (mode === 'vcard') {
+                // Local parsing for vCard
+                const parsed = parseVCard(vCardContent!);
+                setFormData({
+                    ...parsed,
+                    notes: `Data importu vCard: ${new Date().toLocaleString('pl-PL')}\nOrginalna notatka: ${parsed.notes || '-'}`
+                });
+                setStep('verify');
+                setLoading(false);
+                return; // Skip API call
             } else {
                 res = await fetch('/api/parse-text', {
                     method: 'POST',
@@ -87,7 +205,8 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                 throw new Error(result.error || result.details || 'Scan failed');
             }
 
-            setFormData(result.data);
+            const initialNotes = `Data utworzenia: ${new Date().toLocaleString('pl-PL')}`;
+            setFormData({ ...result.data, notes: initialNotes });
             setStep('verify');
         } catch (error: any) {
             console.error("Scan Error:", error);
@@ -113,8 +232,8 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                 address: formData.address || null,
                 phone: formData.phone,
                 website: formData.website,
-                description: `Zeskanowano z wizytówki.\nStanowisko: ${formData.jobTitle || '-'}\nOsoba: ${formData.name || '-'}`,
-                notes: `Data utworzenia: ${new Date().toLocaleString('pl-PL')}\nEmail: ${formData.email || '-'}\nPełny tekst OCR:\n${formData.fullText || ''}`, // Store email in notes or custom field if available
+                description: `Stanowisko: ${formData.jobTitle || '-'}\nOsoba: ${formData.name || '-'}`,
+                notes: formData.notes || '',
                 status: 'new',
                 priority: 'medium',
                 leadSource: 'business_card'
@@ -147,7 +266,9 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
         // We guarantee fullText usually, but let's default it.
         const safeData: ParsedCardData = {
             ...formData,
-            fullText: formData.fullText || ''
+            fullText: formData.fullText || '',
+            // Notes are already in formData.notes (pre-filled + user edits + enrichment)
+            notes: formData.notes || ''
         };
         const filename = formData.name ? `${formData.name.replace(/\s+/g, '_')}.vcf` : 'contact.vcf';
         downloadVCard(safeData, filename);
@@ -160,6 +281,8 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
         setBase64Image(null);
         setTextInput('');
         setFormData({});
+        setVCardContent(null);
+        setVCardFileName(null);
         // Not resetting mode to keep user choice
     };
 
@@ -221,6 +344,15 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                             <FileText size={16} />
                                             Tekst / Stopka
                                         </button>
+                                        <button
+                                            onClick={() => setMode('vcard')}
+                                            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${mode === 'vcard'
+                                                ? 'bg-white text-[#1F4E5A] shadow-sm ring-1 ring-black/5'
+                                                : 'text-gray-500 hover:text-gray-700'}`}
+                                        >
+                                            <FileUp size={16} />
+                                            vCard
+                                        </button>
                                     </div>
 
                                     {mode === 'image' ? (
@@ -255,7 +387,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 onChange={handleFileChange}
                                             />
                                         </div>
-                                    ) : (
+                                    ) : mode === 'text' ? (
                                         <div className="relative">
                                             <textarea
                                                 value={textInput}
@@ -267,9 +399,46 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 {textInput.length} znaków
                                             </div>
                                         </div>
+                                    ) : (
+                                        <div
+                                            className={`relative group border-2 border-dashed rounded-xl p-8 cursor-pointer transition-all duration-300 hover:shadow-md ${isDragging
+                                                    ? 'border-[#2A7B88] bg-[#F0FDFA] scale-[1.02]'
+                                                    : 'border-[#2A7B88] hover:border-[#1F4E5A] hover:border-solid bg-gradient-to-b from-[#F0FDFA] to-white'
+                                                }`}
+                                            onClick={() => vCardInputRef.current?.click()}
+                                            onDrop={handleDrop}
+                                            onDragOver={handleDragOver}
+                                            onDragEnter={handleDragEnter}
+                                            onDragLeave={handleDragLeave}
+                                        >
+                                            {vCardFileName ? (
+                                                <div className="flex flex-col items-center gap-4 text-[#1F4E5A]">
+                                                    <FileText size={48} />
+                                                    <p className="font-bold text-lg">{vCardFileName}</p>
+                                                    <button onClick={(e) => { e.stopPropagation(); setVCardContent(null); setVCardFileName(null); }} className="text-sm text-red-500 hover:underline">Usuń</button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-4 text-[#6B7280]">
+                                                    <div className="w-20 h-20 bg-[#F0FDFA] rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-300">
+                                                        <FileUp size={40} className="text-[#1F4E5A]" />
+                                                    </div>
+                                                    <p className="font-medium text-[#111827] text-lg">
+                                                        Wybierz plik <span className="font-bold underline decoration-[#4FD1C5] decoration-2 underline-offset-4">.vcf / .vcard</span>
+                                                    </p>
+                                                    <p className="text-sm text-[#6B7280]">Format vCard 3.0/4.0</p>
+                                                </div>
+                                            )}
+                                            <input
+                                                ref={vCardInputRef}
+                                                type="file"
+                                                accept=".vcf,.vcard"
+                                                className="hidden"
+                                                onChange={handleVCardChange}
+                                            />
+                                        </div>
                                     )}
 
-                                    {(imagePreview || (mode === 'text' && textInput)) && (
+                                    {(imagePreview || (mode === 'text' && textInput) || (mode === 'vcard' && vCardContent)) && (
                                         <div className="flex flex-col gap-4 text-left">
                                             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                                                 <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -307,7 +476,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                 className="w-full bg-[#1F4E5A] hover:bg-[#153e48] text-white py-3 rounded-xl font-bold text-lg shadow-lg shadow-teal-100 transition-all flex items-center justify-center gap-2"
                                             >
                                                 <ScanLine size={20} />
-                                                {mode === 'image' ? 'Analizuj Obraz' : 'Analizuj Tekst'}
+                                                {mode === 'image' ? 'Analizuj Obraz' : mode === 'text' ? 'Analizuj Tekst' : 'Wczytaj vCard'}
                                             </button>
                                         </div>
                                     )}
@@ -323,7 +492,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                     <div>
                                         <h4 className="text-lg font-bold text-gray-800">Przetwarzanie...</h4>
                                         <p className="text-sm text-gray-500">
-                                            {mode === 'image' ? 'Analiza obrazu i ekstrakcja danych...' : 'Analiza tekstu przez AI...'}
+                                            {mode === 'image' ? 'Analiza obrazu i ekstrakcja danych...' : mode === 'text' ? 'Analiza tekstu przez AI...' : 'Przetwarzanie pliku vCard...'}
                                         </p>
                                     </div>
                                 </div>
@@ -452,7 +621,7 @@ export default function CardScanner({ onSaveSuccess, customTrigger }: CardScanne
                                                             const newNote = [
                                                                 formData.notes, // Keep existing notes if any
                                                                 "—",
-                                                                "🤖 AI Info o firmie:",
+                                                                `🤖 AI Info o firmie (${new Date().toLocaleString('pl-PL')}):`,
                                                                 enr.companySummary,
                                                                 enr.industry ? `Branża: ${enr.industry}` : "",
                                                                 enr.hqOrLocation ? `Lokalizacja: ${enr.hqOrLocation}` : "",
