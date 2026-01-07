@@ -38,12 +38,20 @@ export async function verifyAuth(request: NextRequest): Promise<{
 
 /**
  * Verify Vercel Cron Secret for scheduled jobs
+ * Accepts either CRON_SECRET (for manual calls) or x-vercel-cron header (for Vercel Cron)
  * @returns Object with authorization status and error response if unauthorized
  */
 export async function verifyCronSecret(request: NextRequest): Promise<{
     authorized: boolean;
     error?: NextResponse;
 }> {
+    // Check for Vercel Cron header (automatic cron jobs)
+    const vercelCronHeader = request.headers.get('x-vercel-cron');
+    if (vercelCronHeader === '1') {
+        return { authorized: true };
+    }
+
+    // Check for manual CRON_SECRET (for testing/manual calls)
     const authHeader = request.headers.get('authorization');
     const expectedSecret = process.env.CRON_SECRET;
 
@@ -55,14 +63,14 @@ export async function verifyCronSecret(request: NextRequest): Promise<{
         };
     }
 
-    if (authHeader !== `Bearer ${expectedSecret}`) {
-        return {
-            authorized: false,
-            error: NextResponse.json({ error: 'Unauthorized - Invalid cron secret' }, { status: 401 })
-        };
+    if (authHeader === `Bearer ${expectedSecret}`) {
+        return { authorized: true };
     }
 
-    return { authorized: true };
+    return {
+        authorized: false,
+        error: NextResponse.json({ error: 'Unauthorized - Invalid cron secret' }, { status: 401 })
+    };
 }
 
 /**
