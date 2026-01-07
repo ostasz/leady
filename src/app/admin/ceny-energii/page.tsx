@@ -37,7 +37,12 @@ export default function EnergyPricesAdminPage() {
     const handleCheckEmail = async (type: 'RDN' | 'FUTURES') => {
         setEmailStatus({ status: 'uploading', message: `Sprawdzanie poczty (${type})...` });
         try {
-            const response = await fetch(`/api/cron/import-email?type=${type}`);
+            const authHeaders = await getAuthHeaders();
+            const response = await fetch(`/api/cron/import-email?type=${type}`, {
+                headers: {
+                    'Authorization': (authHeaders as any).Authorization
+                }
+            });
             const data = await response.json();
 
             if (!data.success) throw new Error(data.error || 'Failed to check email');

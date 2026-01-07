@@ -25,7 +25,10 @@
     "crons": [
         {
             "path": "/api/cron/import-email",
-            "schedule": "0 7 * * *"
+            "schedule": "0 7 * * *",
+            "headers": {
+                "authorization": "Bearer CRON_SECRET"
+            }
         }
     ]
 }

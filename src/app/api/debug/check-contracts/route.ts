@@ -1,7 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase-admin';
+import { verifyAuth } from '@/lib/auth-middleware';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+    // Enforce Authentication
+    const auth = await verifyAuth(request);
+    if (!auth.authorized) return auth.error!;
+
     try {
         const snap = await adminDb.collection('futures_data').select('contract').get();
         const contracts = new Set(snap.docs.map(d => d.data().contract));

@@ -35,14 +35,14 @@ export async function checkEmailsAndImport(targetType?: 'RDN' | 'FUTURES') {
 
     const gmail = google.gmail({ version: 'v1', auth: oAuth2Client });
 
-    // 1. List unread messages with specific subjects
+    // 1. List messages with specific subjects (latest only)
     let query = '';
     if (targetType === 'RDN') {
-        query = `is:unread subject:${SUBJECT_RDN} has:attachment`;
+        query = `subject:${SUBJECT_RDN} has:attachment`;
     } else if (targetType === 'FUTURES') {
-        query = `is:unread subject:"${SUBJECT_FUTURES}" has:attachment`;
+        query = `subject:"${SUBJECT_FUTURES}" has:attachment`;
     } else {
-        query = `is:unread (subject:${SUBJECT_RDN} OR subject:"${SUBJECT_FUTURES}") has:attachment`;
+        query = `(subject:${SUBJECT_RDN} OR subject:"${SUBJECT_FUTURES}") has:attachment`;
     }
 
     logDebug(`Searching Gmail with query: ${query} (Target: ${targetType || 'ALL'})`);
@@ -50,7 +50,7 @@ export async function checkEmailsAndImport(targetType?: 'RDN' | 'FUTURES') {
     const listRes = await gmail.users.messages.list({
         userId: 'me',
         q: query,
-        maxResults: 10
+        maxResults: 1  // Only fetch the latest email
     });
 
     const messages = listRes.data.messages || [];
@@ -124,14 +124,9 @@ export async function checkEmailsAndImport(targetType?: 'RDN' | 'FUTURES') {
                 }
             }
 
-            // 4. Mark as read if processed
+            // Note: We don't mark as read anymore - we always fetch the latest email
             if (processedFile) {
-                await gmail.users.messages.modify({
-                    userId: 'me',
-                    id: msg.id,
-                    requestBody: { removeLabelIds: ['UNREAD'] }
-                });
-                logDebug('Marked as read.');
+                logDebug('File processed successfully.');
             } else {
                 logDebug('No file processed, NOT marking as read.');
             }

@@ -42,3 +42,9 @@ out/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Documentation with sensitive data (local only)
+GMAIL_API_FIX.md
+OAUTH_PLAYGROUND_FIX.md
+CRON_SECRET_VERIFICATION.md
+GMAIL_WEB_APP_OAUTH.md

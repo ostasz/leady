@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email';
+import { verifyAuth, isDevelopment } from '@/lib/auth-middleware';
 
 export async function POST(req: NextRequest) {
+    // Only allow in development or with valid authentication
+    if (!isDevelopment()) {
+        const auth = await verifyAuth(req);
+        if (!auth.authorized) return auth.error!;
+    }
+
     try {
         const body = await req.json();
         const { to, subject, text } = body;
