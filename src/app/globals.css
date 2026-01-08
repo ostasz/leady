@@ -86,3 +86,92 @@ body {
 .animate-pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
 }
+
+/* ========================================
+   PRINT STYLES - PDF/Print Optimization
+   ======================================== */
+@media print {
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  /* Hide unnecessary elements during print */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Ensure white background for print */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Remove shadows and borders to save ink */
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+
+  /* Optimize chart containers - Simplified to prevent disappearing */
+  .recharts-wrapper {
+    /* Do not force height or overflow here, it breaks SVG rendering */
+    page-break-inside: avoid;
+  }
+
+  /* Prevent page breaks inside important sections */
+  .print-no-break {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Force page break before section if needed */
+  .print-break-before {
+    page-break-before: always;
+    break-before: always;
+  }
+
+  /* Force page break after section if needed */
+  .print-break-after {
+    page-break-after: always;
+    break-after: always;
+  }
+
+  /* Optimize white space */
+  .print-compact {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  /* Ensure text is readable */
+  * {
+    color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Scale down large charts safely */
+  .chart-container {
+    transform: scale(0.75);
+    /* Troszkę mniejsze, żeby na pewno weszły */
+    transform-origin: top left;
+    width: 133% !important;
+    /* Kompensacja skali (1 / 0.75 ≈ 1.33) aby zająć pełną szerokość */
+    margin-bottom: -20% !important;
+    /* Kompensacja pustego miejsca na dole po skalowaniu */
+  }
+
+  /* Optimize spacing for print */
+  .max-w-7xl {
+    max-width: 100% !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+
+}

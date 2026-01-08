@@ -319,6 +319,11 @@ export default function FlixDashboard() {
                             Obliczanie kosztu energii FLIX
                         </h1>
                     </div>
+                    <img
+                        src="/ekovoltis-logo.png"
+                        alt="Ekovoltis"
+                        className="h-8 object-contain"
+                    />
                 </div>
             </header>
 
@@ -405,7 +410,7 @@ export default function FlixDashboard() {
                 {historyData.length > 0 && (
                     <div className="flex flex-col gap-8 mb-8">
                         {/* Trend Chart */}
-                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 print-no-break">
                             <div className="flex items-center justify-between mb-6">
                                 <h2 className="text-lg font-semibold text-gray-900">
                                     Trend średnich cen dla wybranych kwartałów
@@ -416,12 +421,14 @@ export default function FlixDashboard() {
                                     </div>
                                 </div>
                             </div>
-                            <PriceHistoryChart
-                                data={historyData}
-                                onDateSelect={setSelectedDate}
-                                selectedDate={selectedDate}
-                                overallAverage={overallAverage}
-                            />
+                            <div className="chart-container">
+                                <PriceHistoryChart
+                                    data={historyData}
+                                    onDateSelect={setSelectedDate}
+                                    selectedDate={selectedDate}
+                                    overallAverage={overallAverage}
+                                />
+                            </div>
                             <p className="text-sm text-gray-500 mt-4 text-center">
                                 Kliknij na punkt na wykresie, aby zobaczyć szczegóły dla danego dnia.
                             </p>
@@ -429,14 +436,16 @@ export default function FlixDashboard() {
 
                         {/* Hourly Profile Chart */}
                         {hourlyProfile.length > 0 && (
-                            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+                            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 print-no-break">
                                 <h2 className="text-lg font-semibold text-gray-900 mb-6">
                                     Typowy profil dnia (średnia z wybranych kwartałów)
                                 </h2>
-                                <AverageHourlyProfileChart
-                                    data={hourlyProfile}
-                                    overallAverage={overallAverage}
-                                />
+                                <div className="chart-container">
+                                    <AverageHourlyProfileChart
+                                        data={hourlyProfile}
+                                        overallAverage={overallAverage}
+                                    />
+                                </div>
                             </div>
                         )}
                     </div>
@@ -445,33 +454,37 @@ export default function FlixDashboard() {
                 {/* Weekly Profile Chart */}
                 {weeklyProfile.length > 0 && (
                     <>
-                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-8">
+                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 mb-8 print-no-break print-break-before">
                             <h2 className="text-lg font-semibold text-gray-900 mb-6">
                                 Typowy tydzień (średnia z wybranych kwartałów)
                             </h2>
-                            <PriceHeatMap
-                                data={weeklyProfile}
-                                overallAverage={overallAverage}
-                                selectedShiftId={selectedShiftId}
-                                weekendMode={weekendMode}
-                                customStartHour={customStartHour}
-                                customEndHour={customEndHour}
-                            />
+                            <div className="chart-container">
+                                <PriceHeatMap
+                                    data={weeklyProfile}
+                                    overallAverage={overallAverage}
+                                    selectedShiftId={selectedShiftId}
+                                    weekendMode={weekendMode}
+                                    customStartHour={customStartHour}
+                                    customEndHour={customEndHour}
+                                />
+                            </div>
                         </div>
 
                         {/* Work Profile Calculator */}
-                        <WorkProfileCalculator
-                            weeklyProfile={weeklyProfile}
-                            overallAverage={overallAverage}
-                            selectedShiftId={selectedShiftId}
-                            onShiftChange={setSelectedShiftId}
-                            weekendMode={weekendMode}
-                            onWeekendModeChange={setWeekendMode}
-                            customStartHour={customStartHour}
-                            setCustomStartHour={setCustomStartHour}
-                            customEndHour={customEndHour}
-                            setCustomEndHour={setCustomEndHour}
-                        />
+                        <div className="mt-8 print:mt-24">
+                            <WorkProfileCalculator
+                                weeklyProfile={weeklyProfile}
+                                overallAverage={overallAverage}
+                                selectedShiftId={selectedShiftId}
+                                onShiftChange={setSelectedShiftId}
+                                weekendMode={weekendMode}
+                                onWeekendModeChange={setWeekendMode}
+                                customStartHour={customStartHour}
+                                setCustomStartHour={setCustomStartHour}
+                                customEndHour={customEndHour}
+                                setCustomEndHour={setCustomEndHour}
+                            />
+                        </div>
                     </>
                 )}
 
