@@ -297,7 +297,7 @@ export default function FlixDashboard() {
     if (authLoading || loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00BFA5]"></div>
             </div>
         );
     }
@@ -312,11 +312,11 @@ export default function FlixDashboard() {
             <header className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-blue-600 transition-colors" title="Wróć do Portalu">
+                        <Link href="/" className="p-2 hover:bg-gray-100 rounded-full text-gray-500 hover:text-[#00BFA5] transition-colors" title="Wróć do Portalu">
                             <img src="/home-icon.jpg" alt="Home" className="w-[37px] h-[37px] object-contain" />
                         </Link>
                         <h1 className="text-xl font-semibold text-gray-900">
-                            Ceny Energii - Rynek Dnia Następnego
+                            Obliczanie kosztu energii FLIX
                         </h1>
                     </div>
                 </div>
@@ -353,16 +353,16 @@ export default function FlixDashboard() {
                                     className={`
                                         relative p-4 rounded-lg border-2 transition-all duration-200
                                         ${isSelected
-                                            ? 'border-blue-600 bg-blue-50 shadow-md'
-                                            : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/50'
+                                            ? 'border-[#00BFA5] bg-[#C5FAEA] shadow-md'
+                                            : 'border-gray-200 bg-white hover:border-[#00BFA5]/50 hover:bg-[#C5FAEA]/50'
                                         }
                                     `}
                                 >
                                     <div className="flex flex-col items-center gap-2">
-                                        <div className={`text-2xl font-bold ${isSelected ? 'text-blue-600' : 'text-gray-700'}`}>
+                                        <div className={`text-2xl font-bold ${isSelected ? 'text-[#008B7A]' : 'text-gray-700'}`}>
                                             {quarter}
                                         </div>
-                                        <div className={`text-xs font-medium ${isSelected ? 'text-blue-700' : 'text-gray-500'}`}>
+                                        <div className={`text-xs font-medium ${isSelected ? 'text-[#007A6A]' : 'text-gray-500'}`}>
                                             {info.startMonth}.{String(info.year).slice(2)} - {info.endMonth}.{String(info.year).slice(2)}
                                         </div>
                                         <div className={`
@@ -378,7 +378,7 @@ export default function FlixDashboard() {
 
                                     {isSelected && (
                                         <div className="absolute top-2 right-2">
-                                            <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                            <svg className="w-5 h-5 text-[#00BFA5]" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                             </svg>
                                         </div>
@@ -388,12 +388,12 @@ export default function FlixDashboard() {
                         })}
                     </div>
 
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="mt-4 p-3 bg-[#C5FAEA]/30 rounded-lg border border-[#00BFA5]/30">
                         <div className="flex items-start gap-2">
-                            <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <svg className="w-5 h-5 text-[#00BFA5] mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                             </svg>
-                            <div className="text-sm text-blue-800">
+                            <div className="text-sm text-[#00695C]">
                                 <strong>Logika kwartałów:</strong> System automatycznie używa danych z ukończonych kwartałów.
                                 Jeśli kwartał w bieżącym roku nie jest jeszcze zakończony, używane są dane z poprzedniego roku.
                             </div>
