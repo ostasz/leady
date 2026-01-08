@@ -27,7 +27,7 @@ export default function FlixDashboard() {
     const router = useRouter();
 
     // Quarter selection state
-    const [selectedQuarters, setSelectedQuarters] = useState<Quarter[]>(['Q1']);
+    const [selectedQuarters, setSelectedQuarters] = useState<Quarter[]>(['Q2', 'Q3']);
 
     // Data state
     const [prices, setPrices] = useState<EnergyPriceEntry[]>([]);
