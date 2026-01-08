@@ -178,6 +178,21 @@ export default function Dashboard() {
                     )}
 
 
+
+                    {/* FLIX Energy Calculator Card (Visible to everyone) */}
+                    <Link
+                        href="/apps/flix"
+                        className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-primary/20"
+                    >
+                        <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 mb-4 group-hover:bg-[#C5FAEA] transition-all duration-300">
+                            <img src="/flix-icon.png" alt="FLIX" className="h-10 w-10 object-contain" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Obliczanie kosztu energii FLIX</h3>
+                        <p className="text-gray-500 text-sm">
+                            Symulacja kosztów energii na podstawie kontraktów terminowych.
+                        </p>
+                    </Link>
+
                     {/* Energy Prices Card (Visible to everyone) */}
                     <Link
                         href="/apps/ceny-energii"
